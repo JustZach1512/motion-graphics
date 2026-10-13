@@ -1,0 +1,1220 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GROK Logo Reveal</title>
+<script src="assets.js"></script>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  #gl { display: block; }
+  #ui { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; gap: 12px; align-items: center;
+        padding: 10px 16px; border-radius: 999px; background: rgba(20, 20, 32, .72); backdrop-filter: blur(10px);
+        border: 1px solid rgba(140, 120, 255, .25); color: #cfd2ff; font: 500 13px/1 ui-monospace, Menlo, monospace; }
+  #ui button { all: unset; cursor: pointer; width: 28px; text-align: center; font-size: 16px; color: #fff; }
+  #ui input { width: min(52vw, 640px); accent-color: #7a5cff; }
+  body.render #ui { display: none; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="gl"></canvas></div>
+<div id="ui"><button id="play" title="Play / pause (space)">&#9654;</button><input id="scrub" type="range" min="0" max="12" step="0.001" value="0"><span id="tc">00.00</span></div>
+<script>
+/*
+  GROK — logo reveal, 12 s, 1920x1080, 80 BPM (beat = 0.75 s)
+
+  BEAT SHEET (time · picture · sound)
+  0.00  black; room fades up, spotlight shaft, dust in the light ......... sub drone + air, dark dyad pad
+  0.90  logo small and still, dark chrome; core ember pulses (0.9 1.5 1.85 2.05) .. soft heartbeat thumps
+  0.29–2.22  energy starts crawling along the rings ......................... riser (CC0) + noise swell
+  2.12  everything holds its breath ........................................ duck to near silence
+  2.25  IGNITION: flash, shockwave, particle burst, rings light up ......... impact + sub boom + bells, Dm(add9) pad
+  2.25–3.6 logo expands (spring) and starts to turn ......................... whoosh
+  3.00–8.25 gyroscope spin; sparks thrown off the rings; shapes fill the room
+            and pulse/step on every beat; ripple on strong beats .......... taiko on 3.0 4.5 6.0 7.5, soft kick between,
+                                                                            8th-note bell arpeggio, shaker build from 6.0
+  5.25 Bbmaj7 · 7.50 C(add9) ............................................... chord changes
+  8.25–8.81 rings land one after another ..................................... tom roll + glass ticks, reverse swell
+  9.00  LOCK: rings coplanar, logo dead centre, soft pulse .................. D(add9) brass swell, boom, triangle
+  9.20–10.4 logo glides up; "GROK" tracks in letter by letter (9.55+) ...... whoosh + rising sparkle per letter
+  10.35–11.2 light sweep across logo and wordmark ........................... high shimmer
+  11.30–12.0 fade to black ................................................... reverb tail, master fade
+*/
+'use strict';
+const Q = new URLSearchParams(location.search);
+const RENDER = Q.has('render');
+const PXS = +(Q.get('scale') || 1);                 // 0.5 = draft resolution
+const W = Math.round(1920 * PXS), H = Math.round(1080 * PXS);
+const DUR = 12, FPS = 60;
+const SUB = Math.max(1, +(Q.get('sub') || (RENDER ? 6 : 1)));   // motion-blur / AA subframes per frame
+const SHUTTER = 0.5 / FPS;                          // 180-degree shutter
+if (RENDER) document.body.classList.add('render');
+
+// ---------------------------------------------------------------- helpers
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const track = (v0, keys) => t => { let v = v0, p = v0; for (const [tk, val, w, z] of keys) { v += (val - p) * spring(t - tk, w, z); p = val; } return v; };
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const smooth = x => (x = clamp(x), x * x * (3 - 2 * x));
+const smoother = x => (x = clamp(x), x * x * x * (x * (x * 6 - 15) + 10));
+const easeOut3 = x => 1 - Math.pow(1 - clamp(x), 3);
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+// smooth keyframes: cubic Hermite through [t, v, slope?]; slope defaults to Catmull-Rom, 0 at the ends
+function spline(keys) {
+  const n = keys.length, m = keys.map((k, i) => k[2] !== undefined ? k[2] : (i === 0 || i === n - 1) ? 0 : (keys[i + 1][1] - keys[i - 1][1]) / (keys[i + 1][0] - keys[i - 1][0]));
+  return t => {
+    if (t <= keys[0][0]) return keys[0][1];
+    if (t >= keys[n - 1][0]) return keys[n - 1][1];
+    let i = 0; while (t > keys[i + 1][0]) i++;
+    const [t0, v0] = keys[i], [t1, v1] = keys[i + 1], h = t1 - t0, s = (t - t0) / h, s2 = s * s, s3 = s2 * s;
+    return (2 * s3 - 3 * s2 + 1) * v0 + (s3 - 2 * s2 + s) * h * m[i] + (-2 * s3 + 3 * s2) * v1 + (s3 - s2) * h * m[i + 1];
+  };
+}
+// cumulative of a beta-shaped velocity profile: 0 -> 1 with zero speed at both ends
+function profile(a, b) {
+  const N = 4096, c = new Float64Array(N + 1); let acc = 0;
+  for (let i = 1; i <= N; i++) { const u = (i - 0.5) / N; acc += Math.pow(u, a - 1) * Math.pow(1 - u, b - 1); c[i] = acc; }
+  for (let i = 0; i <= N; i++) c[i] /= acc;
+  return u => { u = clamp(u); const x = u * N, i = Math.floor(x); return i >= N ? 1 : c[i] + (c[i + 1] - c[i]) * (x - i); };
+}
+// soft pulse: quick attack, smooth decay (dt in seconds after the hit)
+const pulse = (dt, att = 0.03, dec = 0.32) => dt <= 0 ? 0 : (1 - Math.exp(-dt / att)) * Math.exp(-dt / dec);
+const bump = (dt, k) => dt <= 0 ? 0 : (dt / k) * Math.exp(1 - dt / k);
+
+// vec3 / mat3 (row-major)
+const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const mul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const norm = a => mul(a, 1 / Math.hypot(a[0], a[1], a[2]));
+const mm = (A, B) => { const C = new Array(9); for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) C[r * 3 + c] = A[r * 3] * B[c] + A[r * 3 + 1] * B[3 + c] + A[r * 3 + 2] * B[6 + c]; return C; };
+const mv = (M, v) => [M[0] * v[0] + M[1] * v[1] + M[2] * v[2], M[3] * v[0] + M[4] * v[1] + M[5] * v[2], M[6] * v[0] + M[7] * v[1] + M[8] * v[2]];
+const tr = M => [M[0], M[3], M[6], M[1], M[4], M[7], M[2], M[5], M[8]];
+const gl3 = M => [M[0], M[3], M[6], M[1], M[4], M[7], M[2], M[5], M[8]];   // row-major -> GLSL column-major
+const rotX = a => { const c = Math.cos(a), s = Math.sin(a); return [1, 0, 0, 0, c, -s, 0, s, c]; };
+const rotY = a => { const c = Math.cos(a), s = Math.sin(a); return [c, 0, s, 0, 1, 0, -s, 0, c]; };
+const rotZ = a => { const c = Math.cos(a), s = Math.sin(a); return [c, -s, 0, s, c, 0, 0, 0, 1]; };
+function rotAxis(u, a) {
+  const [x, y, z] = u, c = Math.cos(a), s = Math.sin(a), k = 1 - c;
+  return [c + x * x * k, x * y * k - z * s, x * z * k + y * s, y * x * k + z * s, c + y * y * k, y * z * k - x * s, z * x * k - y * s, z * y * k + x * s, c + z * z * k];
+}
+
+// ---------------------------------------------------------------- timeline
+const BEAT = 0.75;
+const T_IGN = 2.25, T_LOCK = 9.0, T_RISE = 9.2, T_TEXT = 9.55, T_FADE = 11.3;
+const EMBERS = [0.9, 1.5, 1.85, 2.05];
+const BEATS = [[3.0, 1], [3.75, .5], [4.5, .85], [5.25, .55], [6.0, 1], [6.75, .6], [7.5, .9], [8.25, .7], [8.4375, .45], [8.625, .6], [8.8125, .75], [9.0, 1.25]];
+const STRONG = [3.0, 4.5, 6.0, 7.5];
+const beatEnv = t => { let e = 0; for (const [tb, s] of BEATS) e += s * pulse(t - tb, 0.025, 0.26); return e; };
+const beatSteps = t => { let e = 0; for (const tb of STRONG) e += spring(t - tb, 7, 0.8); return e + 0.6 * spring(t - T_LOCK, 6, 0.85); };
+
+// ---------------------------------------------------------------- camera
+const FOV = 30 * Math.PI / 180;
+const FOCAL = (H / 2) / Math.tan(FOV / 2);
+const FLOOR_Y = -2.3;
+const camD = spline([[0, 15.9], [T_IGN, 14.3], [5.6, 12.85], [9.3, 11.95, -0.12], [12, 11.62]]);
+const camAz = spline([[0, 0], [T_IGN, 0.02], [5.0, -0.2], [7.6, 0.13], [9.45, 0, 0], [12, 0, 0]]);
+const camH = spline([[0, 1.35], [T_IGN, 1.08], [5.4, 1.78], [9.45, 0.62, 0], [12, 0.62, 0]]);
+const camRoll = spline([[0, 0], [T_IGN, 0], [5.3, 0.022], [7.9, -0.016], [9.5, 0, 0], [12, 0, 0]]);
+function camState(t) {
+  const dI = t - T_IGN;
+  let d = camD(t) + 0.38 * bump(dI, 0.22);                          // the blast nudges the camera back
+  const az = camAz(t), h = camH(t);
+  const shake = 0.018 * Math.exp(-Math.max(dI, 0) * 7) * (dI > 0 ? 1 : 0);
+  const target = [shake * Math.sin(dI * 83), shake * Math.sin(dI * 67 + 1), 0];
+  const pos = [target[0] + d * Math.sin(az), h, d * Math.cos(az)];
+  const f = norm(sub(target, pos));
+  let r = norm(cross(f, [0, 1, 0])), u = cross(r, f);
+  const rl = camRoll(t), cr = Math.cos(rl), sr = Math.sin(rl);
+  [r, u] = [add(mul(r, cr), mul(u, sr)), add(mul(u, cr), mul(r, -sr))];
+  return { pos, r, u, f, focal: FOCAL };
+}
+// where the logo ends up: centre at 41.5% of the frame height, measured from the top
+const camEnd = camState(DUR);
+const projectY = (cam, y) => { const v = sub([0, y, 0], cam.pos); return cam.focal * dot(v, cam.u) / dot(v, cam.f); };
+const Y_UP = (() => { let a = -2, b = 3; const want = H * (0.5 - 0.415); for (let i = 0; i < 60; i++) { const m = (a + b) / 2; if (projectY(camEnd, m) < want) a = m; else b = m; } return (a + b) / 2; })();
+
+// ---------------------------------------------------------------- logo
+const RING_R = [1.0, 0.755, 0.51];
+const SPAN = 255 * Math.PI / 180;
+const GAP_C = [38, 158, 278].map(a => a * Math.PI / 180);     // gap centres (degrees, counter-clockwise from +x)
+const RING_ARC = GAP_C.map(g => { const a0 = g + (2 * Math.PI - SPAN) / 2; return [a0, a0 + SPAN]; });
+const RINGS = [
+  { axis: norm([0.0, 1.0, 0.1]), turns: 1, spin: 1, w0: T_IGN + 0.04, w1: T_LOCK - 0.38 },
+  { axis: norm([1.0, 0.1, 0.0]), turns: -1, spin: -1, w0: T_IGN + 0.12, w1: T_LOCK - 0.19 },
+  { axis: norm([0.68, 0.72, 0.12]), turns: 1, spin: 1, w0: T_IGN + 0.2, w1: T_LOCK },
+];
+const S_TURN = profile(1.55, 2.35), S_SPIN = profile(1.8, 2.2);
+const yawSpin = track(0, [[T_IGN + 0.15, 0.34, 1.7, 0.92], [5.2, -0.27, 1.25, 0.9], [7.5, 0, 3.0, 0.68]]);
+const pitchSpin = track(0, [[T_IGN + 0.15, -0.2, 1.9, 0.92], [5.9, 0.15, 1.35, 0.9], [7.7, 0, 3.1, 0.66]]);
+const rollSpin = track(0, [[T_IGN + 0.1, 0.5, 1.4, 0.95], [6.4, -0.3, 1.2, 0.9], [7.6, 0, 2.8, 0.75]]);
+
+function logoState(t, cam) {
+  const dI = t - T_IGN, s = {};
+  s.ign = dI < 0 ? 0 : 1 - Math.exp(-dI * 18);
+  s.flash = dI < 0 ? 0 : Math.exp(-dI * 4.2) * (1 - Math.exp(-dI * 90));
+  const up = spring(dI, 5.0, 0.74), down = smoother(seg(t, 7.1, T_LOCK + 0.05));
+  s.E = up * (1 - down);
+  const inhale = smoother(seg(t, 1.9, 2.24));
+  s.scale = lerp(0.47 - 0.03 * inhale, 1.0, spring(dI, 6.2, 0.7)) + 0.2 * s.E + 0.025 * pulse(t - T_LOCK, 0.04, 0.35);
+  s.R = RING_R.map((r, i) => r * (1 + (0.12 + 0.08 * i) * s.E));
+  s.coreR = 0.13 * (1 + 0.3 * s.E) * (1 + 0.06 * beatEnv(t));
+  s.pos = [0, Y_UP * spring(t - T_RISE, 4.0, 1.0), 0];
+  // face the camera, then add the spin on top
+  const to = sub(cam.pos, s.pos);
+  const yawF = Math.atan2(to[0], to[2]), pitchF = Math.atan2(to[1], Math.hypot(to[0], to[2]));
+  s.G = mm(mm(rotY(yawF), rotX(-pitchF)), mm(rotY(yawSpin(t)), mm(rotX(pitchSpin(t)), rotZ(rollSpin(t)))));
+  s.M = RINGS.map(rg => { const u = seg(t, rg.w0, rg.w1); return mm(rotAxis(rg.axis, 2 * Math.PI * rg.turns * S_TURN(u)), rotZ(2 * Math.PI * rg.spin * S_SPIN(u))); });
+  // light levels
+  const ember = 0.05 + 0.05 * smooth(seg(t, 0.4, 1.4)) + EMBERS.reduce((a, te, i) => a + (0.12 + 0.07 * i) * pulse(t - te, 0.04, 0.22), 0);
+  const settle = 0.82 + 0.18 * Math.exp(-Math.max(t - T_LOCK, 0) * 1.2);
+  const breath = t > T_LOCK ? 1 + 0.045 * Math.sin((t - T_LOCK) * 2.6) * smooth(seg(t, T_LOCK, T_LOCK + 1)) : 1;
+  s.coreI = dI < 0 ? ember : (2.6 + 30 * s.flash + 1.2 * beatEnv(t)) * settle * breath;
+  s.coreLight = dI < 0 ? ember * 3 : (7 + 70 * s.flash + 3 * beatEnv(t)) * settle * breath;
+  s.glow = s.ign * (1 + 0.18 * beatEnv(t) + 0.35 * pulse(t - T_LOCK, 0.03, 0.5)) * (t > T_LOCK ? lerp(1, 0.9, smooth(seg(t, T_LOCK, 10.5))) * breath : 1);
+  s.ringGlow = [0, 1, 2].map(i => 1 + 0.6 * pulse(t - (RINGS[i].w1), 0.02, 0.3));
+  s.flowPh = t * 0.55 + 0.6 * S_TURN(seg(t, T_IGN, T_LOCK));
+  s.flowAmt = (t < T_IGN ? 0.9 * smooth(seg(t, 0.9, 2.2)) : 0.55 * (1 - smooth(seg(t, 8.4, 9.4)))) + 0.25 * pulse(t - T_LOCK, 0.05, 0.6);
+  s.glint = lerp(-1.9, 1.9, smooth(seg(t, 10.3, 10.95)));
+  s.bound = Math.max(...s.R) + 0.1;
+  return s;
+}
+const ringPointWorld = (L, i, ang, dr = 0, dz = 0) => {
+  const R = L.R[i] + dr, pl = mv(L.M[i], [R * Math.cos(ang), R * Math.sin(ang), dz]);
+  return add(L.pos, mv(L.G, mul(pl, L.scale)));
+};
+const PAL = [[0.04, 0.13, 1.0], [0.2, 0.1, 1.0], [0.5, 0.11, 1.0], [0.8, 0.16, 0.95]];
+const pal = x => { x = clamp(x) * 3; const i = Math.min(2, Math.floor(x)), k = x - i; return [0, 1, 2].map(c => lerp(PAL[i][c], PAL[i + 1][c], k)); };
+
+// ---------------------------------------------------------------- room
+const SPOT_POS = [0.0, 8.6, 0.9];
+const SPOT_DIR = norm(sub([0, -0.1, 0], SPOT_POS));
+function roomState(t) {
+  const on = smooth(seg(t, 0.15, 1.5));
+  const spotI = on * (t < T_IGN ? 1 : lerp(1, 0.28, smooth(seg(t, T_IGN, T_IGN + 1.2)))) * (t > T_LOCK ? lerp(1, 0.6, smooth(seg(t, T_LOCK, 10.5))) : 1);
+  const rim = 0.25 * on + 0.9 * (t < T_IGN ? 0 : 1 - Math.exp(-(t - T_IGN) * 3));
+  return { spotI, rim, room: on };
+}
+// ripples: ignition shockwave, strong beats, lock
+function ripples(t) {
+  const list = [];
+  const add1 = (t0, speed, I, w, chroma, far) => { const a = t - t0; if (a <= 0 || a > 4) return; list.push([0.25 + far * (1 - Math.exp(-a * speed)), I * Math.exp(-a * 1.5) * smooth(a / 0.05), w * (1 + a * 1.4), chroma]); };
+  add1(T_IGN, 1.5, 0.6, 0.03, 1, 15);
+  for (const tb of STRONG) add1(tb, 1.3, 0.16, 0.03, 0, 5.5);
+  add1(T_LOCK, 1.4, 0.3, 0.03, 1, 7);
+  list.sort((a, b) => b[1] - a[1]);
+  while (list.length < 4) list.push([0, 0, 1, 0]);
+  return list.slice(0, 4);
+}
+// background shapes: [x, y, z, size, type(0 circle, 1 polygon, 2 soft orb), sides, stroke, fill, blur, halo, colour 0..1, intensity, appear, rotSpeed, tiltX, tiltY, stepDir]
+const SHAPES = [
+  [0, 0, -2.6, 2.45, 0, 0, .009, 0, .03, .45, .7, .34, 2.32, 0, 0, 0, 0],
+  [0, 0.1, -6.5, 3.6, 1, 6, .014, .0, .09, .35, .15, .2, 2.6, .05, 0, 0, 1],
+  [0, 1.4, -12, 5.6, 1, 3, .02, .0, .22, .3, .85, .11, 2.95, -.035, 0, 0, -1],
+  [-8.2, 3.4, -9, 1.5, 0, 0, .018, .05, .28, .2, .1, .22, 3.3, 0, .3, .4, 0],
+  [9.0, 1.4, -11, 1.8, 1, 4, .02, .035, .34, .2, .75, .22, 3.6, .08, -.2, -.35, 1],
+  [-10.2, 0.2, -13, 2.2, 1, 3, .024, .03, .42, .2, .35, .2, 3.9, -.06, .25, .3, -1],
+  [10.5, 4.9, -15, 2.6, 1, 6, .026, .03, .55, .2, .9, .17, 4.2, .04, -.15, -.3, 1],
+  [4.4, 5.6, -12, 1.0, 0, 0, .02, .06, .32, .2, .5, .22, 4.5, 0, 0, 0, 0],
+  [-5.6, -1.0, -6.5, 0.85, 1, 4, .012, .02, .14, .25, .2, .26, 4.7, .1, .2, .5, -1],
+  [-6.5, 1.8, -19, 6.5, 2, 0, 0, .035, 1.5, 0, .05, 1, 3.0, 0, 0, 0, 0],
+  [7.5, 0.2, -21, 7.5, 2, 0, 0, .032, 1.8, 0, .9, 1, 3.4, 0, 0, 0, 0],
+  [-6.6, 2.6, 6.2, 0.62, 0, 0, .02, .02, .24, .2, .6, .28, 5.0, 0, 0, 0, 0],
+  [6.2, -1.1, 5.4, 0.7, 1, 3, .022, .02, .28, .2, .25, .26, 5.3, .15, .1, -.2, 1],
+  [5.9, 3.1, -5, 0.6, 1, 4, .01, .0, .07, .3, .3, .34, 5.6, .2, .3, -.4, 1],
+  [-4.2, 3.5, -4, 0.46, 1, 3, .009, .0, .07, .3, .8, .34, 5.9, -.25, -.2, .3, -1],
+  [0, 0.6, -15, 9.4, 0, 0, .02, 0, .4, .2, .45, .1, 3.15, 0, 0, 0, 0],
+];
+function shapeUniforms(t, L) {
+  const A = [], E1 = [], E2 = [], C = [], D = [];
+  const env = beatEnv(t), steps = beatSteps(t), calm = t > T_LOCK ? lerp(1, 0.72, smooth(seg(t, T_LOCK, 10.6))) : 1;
+  for (const [si, s] of SHAPES.entries()) {
+    const [x, y0, z, R, type, sides, stroke, fill, blur, halo, col, I, ta, rs, tx, ty, sd] = s;
+    const y = y0 + (si < 2 ? L.pos[1] : 0);          // the halo and the hexagon stay centred on the logo
+    const a = t - ta, vis = smooth(seg(t, ta, ta + 1.1));
+    const grow = 0.72 + 0.28 * spring(a, 3.6, 0.9);
+    const drift = si < 2 ? [0, 0, 0] : [0.12 * Math.sin(t * 0.21 + x), 0.1 * Math.sin(t * 0.17 + z) + 0.04 * t, 0];
+    const rot = (type === 1 ? Math.PI / 2 : 0) + rs * t + sd * steps * Math.PI / 12 * (sides === 4 ? 1 : 0.67);
+    // plane basis: tilt (slowly rocking), then in-plane rotation
+    const T = mm(rotY(ty + 0.12 * Math.sin(t * 0.3 + x)), rotX(tx + 0.1 * Math.sin(t * 0.27 + y)));
+    const ex = mv(T, [1, 0, 0]), ey = mv(T, [0, 1, 0]), cr = Math.cos(rot), sr = Math.sin(rot);
+    const e1 = add(mul(ex, cr), mul(ey, sr)), e2 = add(mul(ey, cr), mul(ex, -sr));
+    const size = R * grow * (1 + 0.035 * env);
+    A.push(x + drift[0], y + drift[1], z, size);
+    E1.push(...e1, type); E2.push(...e2, sides);
+    const c = pal(col), k = I * vis * (1 + 0.9 * env) * calm * (t < T_IGN ? 0 : 1);
+    C.push(c[0] * k, c[1] * k, c[2] * k, k);
+    D.push(stroke, fill, blur, halo);
+  }
+  return { A, E1, E2, C, D };
+}
+
+// ---------------------------------------------------------------- particles (pure functions of time)
+const P_N = { dust: 1700, burst: 2600, stream: 6800, lock: 1000, orbit: 520, ember: 420 };
+const PN = Object.values(P_N).reduce((a, b) => a + b, 0);
+const PT = new Float32Array(PN * 24);   // per particle: 0 type, 1 t0, 2 life, 3-5 p0, 6-8 v0, 9 drag, 10 size, 11-13 colour, 14 intensity, 15-18 params, 19 seed, 20 swirl
+const pType = new Uint8Array(PN);
+function bakeParticles() {
+  const r = rng(20261013);
+  const cam0 = camState(T_IGN), L0 = logoState(T_IGN + 0.001, cam0);
+  let n = 0;
+  const put = (type, o) => { const k = n * 24; pType[n] = type; PT.set([type, o.t0 || 0, o.life || 1e9, ...(o.p || [0, 0, 0]), ...(o.v || [0, 0, 0]), o.k || 1, o.size || 0.01, ...(o.c || [1, 1, 1]), o.I || 1, ...(o.x || [0, 0, 0, 0]), o.seed || r(), o.sw || 0, 0, 0], k); n++; };
+  // dust in the room
+  for (let i = 0; i < P_N.dust; i++) {
+    const p = [lerp(-8.5, 8.5, r()), lerp(FLOOR_Y + 0.15, 6.2, Math.pow(r(), 0.8)), lerp(-14, 9.5, r())];
+    if (Math.hypot(p[0], p[1], p[2]) < 1.2) p[2] -= 2.5;
+    put(0, { p, size: 0.006 + 0.012 * Math.pow(r(), 2), I: 0.6 + 1.2 * r(), x: [0.15 + 0.5 * r(), 0.15 + 0.45 * r(), 0.15 + 0.4 * r(), 0.2 + 0.6 * r()], c: [1, 1, 1] });
+  }
+  // ignition burst from the core
+  for (let i = 0; i < P_N.burst; i++) {
+    let d = norm([r() * 2 - 1, r() * 2 - 1, r() * 2 - 1]);
+    if (r() < 0.6) d = norm([d[0], d[1], d[2] * 0.22]);
+    d = mv(L0.G, d);
+    const sp = 2.2 + 12 * Math.pow(r(), 2.2), k = 1.9 + 1.6 * r(), q = r();
+    put(1, { t0: T_IGN + 0.035 * r(), life: 0.9 + 2.6 * Math.pow(r(), 1.4), p: add(L0.pos, mul(d, 0.12)), v: mul(d, sp), k, size: 0.007 + 0.016 * Math.pow(r(), 1.5), c: pal(q), I: 2.2 + 5 * r(), sw: (r() - 0.35) * 1.4 });
+  }
+  // sparks thrown off the spinning rings (spawn point & velocity baked from the logo at spawn time)
+  const speedAt = t => { let s = 0; for (const rg of RINGS) { const u = seg(t, rg.w0, rg.w1); s += Math.pow(u, 0.55) * Math.pow(1 - u, 1.35); } return s; };
+  for (let i = 0; i < P_N.stream; i++) {
+    let t0; do { t0 = lerp(T_IGN + 0.2, T_LOCK - 0.15, r()); } while (r() > 0.15 + 1.6 * speedAt(t0));
+    const ring = Math.floor(r() * 3), u = Math.pow(r(), 0.6), ang = RING_ARC[ring][0] + u * SPAN;
+    const cam = camState(t0), La = logoState(t0, cam), Lb = logoState(t0 + 0.002, camState(t0 + 0.002));
+    const dr = (r() - 0.5) * 0.1, dz = (r() - 0.5) * 0.05;
+    const pa = ringPointWorld(La, ring, ang, dr, dz), pb = ringPointWorld(Lb, ring, ang, dr, dz);
+    const vt = mul(sub(pb, pa), 1 / 0.002), out = norm(sub(pa, La.pos));
+    const v = add(add(mul(vt, 0.7 + 0.4 * r()), mul(out, 0.5 + 1.4 * r())), [(r() - .5) * .5, (r() - .5) * .5 + 0.15, (r() - .5) * .5]);
+    put(2, { t0, life: 0.6 + 1.9 * Math.pow(r(), 1.3), p: pa, v, k: 1.1 + 1.2 * r(), size: 0.005 + 0.012 * Math.pow(r(), 1.6), c: pal(u * 0.72 + ring * 0.14), I: 1.6 + 3.6 * r(), sw: (r() - 0.5) * 0.8 });
+  }
+  // gentle glitter wave at the lock
+  const camL = camState(T_LOCK), LL = logoState(T_LOCK, camL);
+  for (let i = 0; i < P_N.lock; i++) {
+    const ring = Math.floor(r() * 3), u = r(), ang = RING_ARC[ring][0] + u * SPAN;
+    const p = ringPointWorld(LL, ring, ang, (r() - .5) * .1, (r() - .5) * .06);
+    const out = norm(sub(p, LL.pos));
+    const v = add(mul(out, 0.9 + 3.4 * Math.pow(r(), 1.5)), mv(LL.G, [0, 0, (r() - 0.5) * 1.2]));
+    put(3, { t0: T_LOCK + 0.03 * r(), life: 0.9 + 2.1 * r(), p, v, k: 2.2 + r(), size: 0.005 + 0.01 * r(), c: pal(u * 0.72 + ring * 0.14), I: 1.4 + 2.6 * r() });
+  }
+  // slow orbit band during the end card
+  for (let i = 0; i < P_N.orbit; i++) {
+    const rad = 1.45 + 2.3 * Math.pow(r(), 0.8);
+    put(4, { t0: lerp(T_LOCK - 0.2, 10.6, r()), life: 1e9, size: 0.005 + 0.01 * Math.pow(r(), 2), c: pal(r()), I: 0.5 + 1.6 * Math.pow(r(), 2), x: [rad, r() * Math.PI * 2, (0.1 + 0.2 * r()) * (1.6 / rad), (r() - 0.5) * 0.5] });
+  }
+  // embers drifting up
+  for (let i = 0; i < P_N.ember; i++) {
+    const a = r() * Math.PI * 2, rr = 0.3 + 1.6 * Math.sqrt(r());
+    put(5, { t0: lerp(T_IGN + 0.4, 11.6, r()), life: 2 + 2.5 * r(), p: [rr * Math.cos(a), (r() - 0.5) * 1.6, rr * Math.sin(a) * 0.6], v: [(r() - .5) * .25, 0.18 + 0.4 * r(), (r() - .5) * .2], size: 0.004 + 0.007 * r(), c: pal(r()), I: 0.5 + 1.4 * r() });
+  }
+}
+const PDATA = new Float32Array(PN * 12);   // to GPU: pos.xyz size | prev.xyz pad | rgb pad
+function particleAt(i, t, cam, L, out) {
+  const k = i * 24, type = PT[k], t0 = PT[k + 1], life = PT[k + 2], seed = PT[k + 19];
+  let x, y, z, I = PT[k + 14], c0 = PT[k + 11], c1 = PT[k + 12], c2 = PT[k + 13];
+  if (type === 0) {                                  // dust: drift + blast push + slow vortex
+    const [ax, ay, az, sp] = [PT[k + 15], PT[k + 16], PT[k + 17], PT[k + 18]];
+    x = PT[k + 3] + ax * Math.sin(t * sp + seed * 40); y = PT[k + 4] + ay * Math.sin(t * sp * 0.8 + seed * 70) + 0.03 * t; z = PT[k + 5] + az * Math.sin(t * sp * 0.9 + seed * 90);
+    const dI = t - T_IGN;
+    if (dI > 0) {
+      const dx = x - L.pos[0], dy = y - L.pos[1], dz = z - L.pos[2], dd = Math.hypot(dx, dy, dz) + 1e-3;
+      const push = 1.6 * (1 - Math.exp(-dI * 2.2)) / (0.6 + dd * 0.55);
+      x += dx / dd * push; y += dy / dd * push; z += dz / dd * push;
+      const ang = 0.05 * dI / (0.4 + dd * 0.12), ca = Math.cos(ang), sa = Math.sin(ang);
+      const rx = x - L.pos[0], rz = z - L.pos[2]; x = L.pos[0] + rx * ca - rz * sa; z = L.pos[2] + rx * sa + rz * ca;
+    }
+    if (y < FLOOR_Y + 0.05) y = FLOOR_Y + 0.05;
+    // light: spotlight cone + logo
+    const vs = sub([x, y, z], SPOT_POS), ds = Math.hypot(vs[0], vs[1], vs[2]);
+    const cone = smooth(seg(dot(vs, SPOT_DIR) / ds, 0.965, 0.992));
+    const room = roomState(t);
+    const lx = x - L.pos[0], ly = y - L.pos[1], lz = z - L.pos[2], dl2 = lx * lx + ly * ly + lz * lz;
+    const lit = L.coreLight * 0.18 / (1 + dl2 * 0.6);
+    const sI = room.spotI * cone * 30 / (ds * ds) + 0.025 * room.room;
+    const tw = 0.6 + 0.4 * Math.sin(t * (2 + seed * 3) + seed * 50);
+    c0 = (sI * 0.9 + lit * 0.42) * I * tw; c1 = (sI * 0.95 + lit * 0.28) * I * tw; c2 = (sI * 1.0 + lit * 1.0) * I * tw;
+    out[0] = x; out[1] = y; out[2] = z; out[3] = c0; out[4] = c1; out[5] = c2; return;
+  }
+  const a = t - t0;
+  if (a < 0 || a > life) { out[3] = out[4] = out[5] = 0; out[0] = 0; out[1] = -100; out[2] = 0; return; }
+  if (type === 4) {                                  // orbit band around the logo
+    const [rad, ph, w, h] = [PT[k + 15], PT[k + 16], PT[k + 17], PT[k + 18]];
+    const ang = ph + w * (t - T_LOCK), lp = [rad * Math.cos(ang), h * 0.35 + 0.08 * Math.sin(t * 0.7 + seed * 9), rad * Math.sin(ang) * 0.9];
+    const tilt = mv(rotX(0.2), lp), wp = add(L.pos, mv(L.G, [tilt[0], tilt[1] * 1.0, tilt[2]]));
+    x = wp[0]; y = wp[1]; z = wp[2];
+    I *= smooth(a / 0.9) * (0.55 + 0.45 * Math.sin(t * (1.5 + seed * 2.5) + seed * 30));
+  } else {
+    const kd = PT[k + 9], e = (1 - Math.exp(-kd * a)) / kd;
+    x = PT[k + 3] + PT[k + 6] * e; y = PT[k + 4] + PT[k + 7] * e; z = PT[k + 5] + PT[k + 8] * e;
+    const sw = PT[k + 20];
+    if (sw !== 0) {                                   // swirl around the view axis through the logo
+      const ang = sw * (1 - Math.exp(-a * 1.2)), ca = Math.cos(ang), sa = Math.sin(ang);
+      const rx = x - L.pos[0], ry = y - L.pos[1]; x = L.pos[0] + rx * ca - ry * sa; y = L.pos[1] + rx * sa + ry * ca;
+    }
+    if (type === 5) { y += 0.02 * a * a; x += 0.08 * Math.sin(a * 1.3 + seed * 20); }
+    else y += 0.05 * a * a;                           // heat: sparks float up a little
+    if (y < FLOOR_Y) y = FLOOR_Y + (FLOOR_Y - y) * 0.3;
+    const u = a / life;
+    const fade = type === 5 ? Math.sin(Math.PI * u) : smooth(a / 0.02) * Math.pow(1 - u, 1.6);
+    const tw = 0.75 + 0.25 * Math.sin(a * (9 + seed * 14) + seed * 60);
+    I *= fade * tw;
+    const hot = type === 5 ? 0 : Math.exp(-a * 5);   // born white-hot, cools to its colour
+    c0 = lerp(c0, 1, hot); c1 = lerp(c1, 0.92, hot); c2 = lerp(c2, 1, hot);
+  }
+  out[0] = x; out[1] = y; out[2] = z; out[3] = c0 * I; out[4] = c1 * I; out[5] = c2 * I;
+}
+function particleFrame(t) {
+  const camA = camState(t), LA = logoState(t, camA);
+  const tb = t - SHUTTER, camB = camState(tb), LB = logoState(tb, camB);
+  const oa = new Float32Array(6), ob = new Float32Array(6);
+  for (let i = 0; i < PN; i++) {
+    particleAt(i, t, camA, LA, oa); particleAt(i, tb, camB, LB, ob);
+    if (ob[1] === -100 && oa[1] !== -100) particleAt(i, PT[i * 24 + 1] + 1e-4, camB, LB, ob);   // born inside the shutter: streak from the spawn point
+    const o = i * 12;
+    PDATA[o] = oa[0]; PDATA[o + 1] = oa[1]; PDATA[o + 2] = oa[2]; PDATA[o + 3] = PT[i * 24 + 10];
+    PDATA[o + 4] = ob[0]; PDATA[o + 5] = ob[1]; PDATA[o + 6] = ob[2]; PDATA[o + 7] = 0;
+    PDATA[o + 8] = oa[3]; PDATA[o + 9] = oa[4]; PDATA[o + 10] = oa[5]; PDATA[o + 11] = 0;
+  }
+}
+
+// ---------------------------------------------------------------- WebGL
+// Passes per frame: atmosphere (half res: shapes, ripples, light shafts, glow) -> floor reflection (half res)
+// -> room/floor (full res) -> logo (ray-marched, scissored, N sub-frames accumulated) -> composite -> particles
+// -> wordmark -> bloom + anamorphic streak -> final grade.
+const canvas = document.getElementById('gl');
+canvas.width = W; canvas.height = H; canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, preserveDrawingBuffer: true, premultipliedAlpha: false });
+if (!gl) throw new Error('WebGL2 not available');
+gl.getExtension('EXT_color_buffer_float'); gl.getExtension('EXT_color_buffer_half_float'); gl.getExtension('OES_texture_float_linear');
+
+const VS_FULL = `#version 300 es
+void main(){ vec2 p = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2); gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0); }`;
+
+const GLSL_COMMON = `#version 300 es
+precision highp float;
+uniform vec2 uRes, uJit; uniform float uTime, uMirror;
+uniform vec3 uCamPos, uCamR, uCamU, uCamF; uniform float uFocal;
+uniform vec3 uLogoPos; uniform mat3 uLogoInv, uLogoRot; uniform float uLogoScale;
+uniform float uFloorY; uniform vec3 uSpotPos, uSpotDir; uniform float uSpotI; uniform vec2 uSpotCos;
+uniform float uCoreLight, uRim, uRoom, uFog;
+const float PI = 3.14159265, TAU = 6.28318531;
+float hash12(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+float hash13(vec3 p3) { p3 = fract(p3 * 0.1031); p3 += dot(p3, p3.zyx + 31.32); return fract((p3.x + p3.y) * p3.z); }
+float vnoise(vec3 p) {
+  vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(hash13(i), hash13(i + vec3(1, 0, 0)), f.x), mix(hash13(i + vec3(0, 1, 0)), hash13(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(hash13(i + vec3(0, 0, 1)), hash13(i + vec3(1, 0, 1)), f.x), mix(hash13(i + vec3(0, 1, 1)), hash13(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}
+vec3 pal(float x) {
+  x = clamp(x, 0.0, 1.0) * 3.0;
+  vec3 a = vec3(0.04, 0.13, 1.0), b = vec3(0.2, 0.1, 1.0), c = vec3(0.5, 0.11, 1.0), d = vec3(0.8, 0.16, 0.95);
+  return x < 1.0 ? mix(a, b, x) : x < 2.0 ? mix(b, c, x - 1.0) : mix(c, d, x - 2.0);
+}
+vec3 camRay() { vec2 sc = gl_FragCoord.xy + uJit - 0.5 * uRes; return normalize(uCamR * sc.x + uCamU * sc.y + uCamF * uFocal); }
+`;
+
+const FS_LOGO = GLSL_COMMON + `
+layout(location = 0) out vec4 oColor;
+layout(location = 1) out vec4 oDepth;
+uniform float uWeight;
+uniform mat3 uRingInv[3]; uniform float uRingR[3]; uniform vec4 uRingEnd[3]; uniform vec2 uRingArc[3]; uniform vec3 uRingGlow;
+uniform float uCoreR, uBoundR, uGlow, uFlash, uCoreI, uFlowPh, uFlowAmt, uGlint;
+const float HW = 0.068, HT = 0.042, RR = 0.032;
+// ribbon arc in the ring's xy plane; the gap (< 180 deg) runs counter-clockwise from end e1 to start e0
+float sdArc(vec3 q, float R, vec4 e) {
+  vec2 p = q.xy, e0 = e.xy, e1 = e.zw;
+  bool gap = (e1.x * p.y - e1.y * p.x) >= 0.0 && (p.x * e0.y - p.y * e0.x) >= 0.0;
+  vec2 dir = dot(p, e0) > dot(p, e1) ? e0 : e1;
+  float r = gap ? dot(p, dir) - R : length(p) - R;
+  float tt = gap ? dot(p, vec2(-dir.y, dir.x)) : 0.0;
+  vec3 b = vec3(abs(tt), abs(r) - (HW - RR), abs(q.z) - (HT - RR));
+  return length(max(b, 0.0)) + min(max(b.x, max(b.y, b.z)), 0.0) - RR;
+}
+float mapLogo(vec3 p) {
+  float d = length(p) - uCoreR;
+  d = min(d, sdArc(uRingInv[0] * p, uRingR[0], uRingEnd[0]));
+  d = min(d, sdArc(uRingInv[1] * p, uRingR[1], uRingEnd[1]));
+  d = min(d, sdArc(uRingInv[2] * p, uRingR[2], uRingEnd[2]));
+  return d;
+}
+vec3 calcN(vec3 p, float e) {
+  const vec2 k = vec2(1, -1);
+  return normalize(k.xyy * mapLogo(p + k.xyy * e) + k.yyx * mapLogo(p + k.yyx * e) + k.yxy * mapLogo(p + k.yxy * e) + k.xxx * mapLogo(p + k.xxx * e));
+}
+bool traceLogo(vec3 ro, vec3 rd, out float tW, out vec3 pL, out vec3 dL) {
+  vec3 o = uLogoInv * (ro - uLogoPos) / uLogoScale, d = uLogoInv * rd;
+  float b = dot(o, d), c = dot(o, o) - uBoundR * uBoundR, h = b * b - c;
+  if (h < 0.0) return false;
+  h = sqrt(h);
+  float t = max(-b - h, 0.0), t1 = -b + h;
+  if (t1 < 0.0) return false;
+  for (int i = 0; i < 96; i++) {
+    vec3 p = o + d * t;
+    float dd = mapLogo(p);
+    if (dd < 0.3 * t / uFocal + 1e-5) { tW = t * uLogoScale; pL = p; dL = d; return true; }
+    t += dd * 0.92;
+    if (t > t1) break;
+  }
+  return false;
+}
+vec3 envL(vec3 r) {
+  float top = pow(max(dot(r, normalize(vec3(0.0, 1.0, 0.2))), 0.0), 16.0);
+  float lft = pow(max(dot(r, normalize(vec3(-1.0, 0.3, -0.3))), 0.0), 8.0);
+  float rgt = pow(max(dot(r, normalize(vec3(1.0, 0.2, -0.45))), 0.0), 8.0);
+  float frn = pow(max(dot(r, normalize(vec3(0.25, 0.35, 1.0))), 0.0), 6.0);
+  vec3 c = vec3(0.9, 0.95, 1.0) * top * (0.1 + 2.0 * uSpotI)
+         + vec3(0.1, 0.25, 1.0) * lft * uRim * 1.1
+         + vec3(0.55, 0.16, 1.0) * rgt * uRim * 1.1
+         + vec3(0.55, 0.6, 0.85) * frn * 0.05 * uRoom;
+  return c + vec3(0.25, 0.15, 1.0) * smoothstep(0.1, -0.5, r.y) * uCoreLight * 0.003;
+}
+vec3 shadeLogo(vec3 pL, vec3 dL) {
+  vec3 nL = calcN(pL, 0.0012);
+  vec3 N = uLogoRot * nL, rd = uLogoRot * dL, V = -rd;
+  vec3 Pw = uLogoPos + uLogoRot * (pL * uLogoScale);
+  float NoV = clamp(dot(N, V), 0.0, 1.0), fres = pow(1.0 - NoV, 5.0);
+  vec3 R = reflect(rd, N);
+  int id = 3; float best = length(pL) - uCoreR; vec3 qB = pL;
+  for (int i = 0; i < 3; i++) { vec3 q = uRingInv[i] * pL; float dd = sdArc(q, uRingR[i], uRingEnd[i]); if (dd < best) { best = dd; id = i; qB = q; } }
+  vec3 Lc = uLogoPos - Pw; float dl2 = dot(Lc, Lc) + 1e-4; vec3 Ld = Lc * inversesqrt(dl2);
+  vec3 core;
+  { float c = pow(NoV, 1.3); core = mix(vec3(0.38, 0.18, 1.0), vec3(1.0, 0.97, 1.0), c * c) * (0.25 + 0.75 * c) * uCoreI + envL(R) * (0.05 + 0.6 * fres); }
+  int ii = min(id, 2);
+  float ac = 0.5 * (uRingArc[ii].x + uRingArc[ii].y), span = uRingArc[ii].y - uRingArc[ii].x;
+  float a = atan(qB.y, qB.x) - ac; a -= TAU * floor((a + PI) / TAU);
+  float u = clamp(a / span + 0.5, 0.0, 1.0), fid = float(ii);
+  vec3 base = pal(u * 0.72 + fid * 0.14);
+  vec3 F0 = mix(vec3(0.5, 0.52, 0.62), base, 0.3), F = F0 + (1.0 - F0) * fres;
+  vec3 col = envL(R) * F;
+  vec3 Ls = normalize(uSpotPos - Pw), Hs = normalize(Ls + V);
+  col += vec3(1.0) * pow(max(dot(N, Hs), 0.0), 140.0) * uSpotI * 2.2 * F;
+  vec3 Hc = normalize(Ld + V), cl = vec3(0.62, 0.48, 1.0) * uCoreLight / (1.0 + 10.0 * dl2);
+  col += cl * (pow(max(dot(N, Hc), 0.0), 50.0) * 1.2 * F + max(dot(N, Ld), 0.0) * 0.04 * base);
+  float gi = ii == 0 ? uRingGlow.x : ii == 1 ? uRingGlow.y : uRingGlow.z;
+  float b = mix(0.14, 0.82, pow(u, 1.5)), tip = exp(-(1.0 - u) * 20.0), edge = pow(1.0 - NoV, 2.2);
+  float flow = pow(0.5 + 0.5 * cos(TAU * (u * 1.4 - uFlowPh - fid * 0.37)), 14.0);
+  vec3 em = base * (b + edge * 0.9) * uGlow * gi;
+  em += mix(base, vec3(1.0, 0.93, 1.0), 0.6) * tip * 1.1 * uGlow * gi;
+  em += mix(base, vec3(1.0), 0.35) * flow * uFlowAmt * (0.35 + 0.65 * u) * 1.3;
+  em += vec3(0.85, 0.85, 1.0) * uFlash * 1.8;
+  float g = exp(-pow((pL.x * 0.8 + pL.y * 0.6 - uGlint) / 0.11, 2.0));
+  em += vec3(1.0, 0.98, 1.0) * g * 1.3 * uGlow;
+  return id == 3 ? core : col + em;
+}
+void main() {
+  vec3 rd = camRay(), ro = uCamPos;
+  if (uMirror > 0.5) { ro.y = 2.0 * uFloorY - ro.y; rd.y = -rd.y; }
+  float tW; vec3 pL, dL;
+  if (!traceLogo(ro, rd, tW, pL, dL)) discard;
+  oColor = vec4(shadeLogo(pL, dL), 1.0) * uWeight;
+  oDepth = vec4(tW * dot(rd, uCamF), 0.0, 0.0, 1.0) * uWeight;
+}`;
+
+const FS_ATMOS = GLSL_COMMON + `
+layout(location = 0) out vec4 oBack;
+layout(location = 1) out vec4 oFront;
+#define NS 16
+uniform vec4 uShA[NS], uShE1[NS], uShE2[NS], uShC[NS], uShD[NS];
+uniform vec4 uRip[4];
+float sdNgon(vec2 p, float r, float n) {
+  float an = PI / n; vec2 acs = vec2(cos(an), sin(an));
+  float bn = mod(atan(p.x, p.y), 2.0 * an) - an;
+  p = length(p) * vec2(cos(bn), abs(sin(bn)));
+  p -= r * acs; p.y += clamp(-p.y, 0.0, r * acs.y);
+  return length(p) * sign(p.x);
+}
+vec3 ripple(float rho, vec4 R) {
+  if (R.y <= 0.0) return vec3(0);
+  if (R.w > 0.5) return R.y * vec3(0.5 * exp(-pow((rho - R.x * 1.004) / R.z, 2.0)), 0.62 * exp(-pow((rho - R.x) / R.z, 2.0)), exp(-pow((rho - R.x * 0.996) / R.z, 2.0)));
+  return vec3(0.32, 0.26, 1.0) * R.y * exp(-pow((rho - R.x) / R.z, 2.0));
+}
+vec3 coreGlow(vec3 ro, vec3 rd, float tEnd) {
+  vec3 q = ro - uLogoPos; float b = dot(rd, q), c = dot(q, q), h2 = max(c - b * b, 0.0);
+  float h1 = sqrt(h2 + 0.012), h3 = sqrt(h2 + 1.1);
+  float i1 = (atan((tEnd + b) / h1) - atan(b / h1)) / h1;
+  float i3 = (atan((tEnd + b) / h3) - atan(b / h3)) / h3;
+  return (vec3(0.5, 0.3, 1.0) * i1 * 0.0011 + vec3(0.1, 0.16, 1.0) * i3 * 0.0026) * uCoreLight * uLogoScale;
+}
+vec3 spotScatter(vec3 ro, vec3 rd, float tEnd, float j) {
+  // segment of the ray inside a vertical cylinder around the beam, between the floor and the lamp
+  vec2 oc = ro.xz - vec2(0.0, 0.45), d = rd.xz;
+  float A = dot(d, d), B = dot(oc, d), C = dot(oc, oc) - 3.0 * 3.0, h = B * B - A * C;
+  if (h <= 0.0 || uSpotI <= 0.001) return vec3(0);
+  h = sqrt(h);
+  float a = (-B - h) / A, b = (-B + h) / A;
+  float ty0 = (uFloorY - ro.y) / rd.y, ty1 = (uSpotPos.y - ro.y) / rd.y;
+  a = max(max(a, min(ty0, ty1)), 0.0); b = min(min(b, max(ty0, ty1)), tEnd);
+  if (b <= a) return vec3(0);
+  float acc = 0.0, dt = (b - a) / 16.0;
+  for (int i = 0; i < 16; i++) {
+    vec3 p = ro + rd * (a + (float(i) + j) * dt);
+    vec3 v = p - uSpotPos; float d2 = dot(v, v), cs = dot(v, uSpotDir) * inversesqrt(d2);
+    float f = smoothstep(uSpotCos.x, uSpotCos.y, cs);
+    float n = 0.35 + 0.95 * vnoise(p * vec3(0.7, 0.35, 0.7) + vec3(0.0, -uTime * 0.1, uTime * 0.04));
+    acc += f * n / (d2 + 4.0);
+  }
+  return vec3(0.72, 0.8, 1.0) * acc * dt * uSpotI * 0.42;
+}
+void main() {
+  vec3 rd = camRay(), ro = uCamPos;
+  float tF = rd.y < -1e-4 ? (uFloorY - ro.y) / rd.y : 1e5;
+  vec3 back = vec3(0), front = vec3(0);
+  for (int i = 0; i < NS; i++) {
+    vec4 C = uShC[i]; if (C.w <= 0.0) continue;
+    vec4 A = uShA[i], E1 = uShE1[i], E2 = uShE2[i], D = uShD[i];
+    vec3 n = cross(E1.xyz, E2.xyz); float dn = dot(rd, n);
+    if (abs(dn) < 1e-4) continue;
+    float t = dot(A.xyz - ro, n) / dn;
+    if (t < 0.0) continue;
+    vec3 P = ro + rd * t - A.xyz; vec2 p = vec2(dot(P, E1.xyz), dot(P, E2.xyz));
+    float v;
+    if (E1.w > 1.5) { float r = length(p) / A.w; v = D.y * exp(-r * r * 2.5); }
+    else {
+      float sd = E1.w < 0.5 ? length(p) - A.w : sdNgon(p, A.w, E2.w);
+      float sw = sqrt(D.x * D.x + D.z * D.z), amp = D.x / sw;
+      v = exp(-sd * sd / (sw * sw)) * amp + exp(-sd * sd / (14.0 * sw * sw)) * amp * D.w * 0.4
+        + smoothstep(D.z + 0.02, -D.z - 0.02, sd) * D.y * (0.55 + 0.45 * clamp(p.y / A.w, -1.0, 1.0));
+    }
+    vec3 c = C.rgb * v * exp(-uFog * 0.5 * t) * (t > tF ? 0.5 : 1.0);
+    if (A.z > uLogoPos.z + 1.5) front += c; else back += c;
+  }
+  vec3 n = -uCamF, c0 = uLogoPos + uCamF * 0.45; float dn = dot(rd, n);
+  if (abs(dn) > 1e-4) {
+    float t = dot(c0 - ro, n) / dn;
+    if (t > 0.0) { float rho = length(ro + rd * t - c0) / max(uLogoScale, 0.6); for (int k = 0; k < 4; k++) back += ripple(rho, uRip[k]); }
+  }
+  float tEnd = min(tF, 90.0);
+  front += coreGlow(ro, rd, tEnd) + spotScatter(ro, rd, tEnd, hash12(gl_FragCoord.xy + fract(uTime * 7.31) * 113.0));
+  oBack = vec4(back, 1.0); oFront = vec4(front, 1.0);
+}`;
+
+const FS_ROOM = GLSL_COMMON + `
+out vec4 o;
+uniform sampler2D uRefl, uBack; uniform vec4 uRip[4];
+void main() {
+  vec3 rd = camRay(), ro = uCamPos;
+  float tF = rd.y < -1e-4 ? (uFloorY - ro.y) / rd.y : 1e5;
+  vec2 suv = gl_FragCoord.xy / uRes;
+  float hz = exp(-abs(rd.y + 0.03) * 14.0) * exp(-abs(rd.x) * 2.5);
+  vec3 col = (vec3(0.0005, 0.0007, 0.0019) + vec3(0.0008, 0.001, 0.003) * hz) * uRoom;
+  if (tF < 1e4) {
+    vec3 P = ro + rd * tF;
+    float tex = 0.6 * vnoise(vec3(P.xz * 0.55, 0.0)) + 0.4 * vnoise(vec3(P.xz * 2.1, 4.0));
+    vec3 Lc = uLogoPos - P; float d2 = dot(Lc, Lc), ndl = max(Lc.y, 0.0) * inversesqrt(d2);
+    vec3 diff = vec3(0.3, 0.2, 1.0) * uCoreLight * ndl / (d2 + 0.4) * 0.022 * uLogoScale;
+    vec3 Ls = uSpotPos - P; float s2 = dot(Ls, Ls), cs = dot(-Ls, uSpotDir) * inversesqrt(s2);
+    float pool = smoothstep(uSpotCos.x - 0.02, uSpotCos.y, cs) * smoothstep(uSpotCos.x - 0.02, 1.0, cs) * (Ls.y * inversesqrt(s2)) / s2 * uSpotI * 55.0;
+    vec3 c = (diff + vec3(0.8, 0.86, 1.0) * pool) * 0.07 * (0.65 + 0.7 * tex);
+    vec2 px = 3.0 / uRes;
+    vec3 refl = textureLod(uRefl, suv, 2.4).rgb * 0.36 + (textureLod(uRefl, suv + vec2(px.x, 0), 3.0).rgb + textureLod(uRefl, suv - vec2(px.x, 0), 3.0).rgb
+              + textureLod(uRefl, suv + vec2(0, px.y), 3.0).rgb + textureLod(uRefl, suv - vec2(0, px.y), 3.0).rgb) * 0.16;
+    float NoV = max(-rd.y, 0.0), F = 0.035 + 0.965 * pow(1.0 - NoV, 5.0);
+    c += refl * F * (0.45 + 0.4 * tex) * 0.75;
+    float rho = length(P.xz - uLogoPos.xz);
+    for (int k = 0; k < 4; k++) { vec4 R = uRip[k]; if (R.y > 0.0) c += vec3(0.4, 0.4, 1.0) * R.y * exp(-pow((rho - R.x) / (R.z * 2.0), 2.0)) * 0.07; }
+    col = c * exp(-uFog * tF) + col * (1.0 - exp(-uFog * tF));
+  }
+  o = vec4(col + texture(uBack, suv).rgb, 1.0);
+}`;
+
+const FS_COMP = `#version 300 es
+precision highp float;
+uniform sampler2D uLogo, uRoomT, uFront; uniform vec2 uRes;
+out vec4 o;
+void main() {
+  ivec2 p = ivec2(gl_FragCoord.xy);
+  vec4 L = texelFetch(uLogo, p, 0);
+  o = vec4(L.rgb + texelFetch(uRoomT, p, 0).rgb * (1.0 - clamp(L.a, 0.0, 1.0)) + texture(uFront, gl_FragCoord.xy / uRes).rgb, 1.0);
+}`;
+
+const VS_PART = `#version 300 es
+precision highp float;
+layout(location = 0) in vec2 aCorner;
+layout(location = 1) in vec4 aP;
+layout(location = 2) in vec4 aQ;
+layout(location = 3) in vec4 aC;
+uniform vec2 uRes; uniform vec3 uCamPos, uCamR, uCamU, uCamF; uniform float uFocal, uMirror, uFloorY, uAperture, uFocusZ;
+out vec2 vL; out float vHalf, vR, vZ, vBokeh; out vec3 vCol;
+vec3 proj(vec3 p) { if (uMirror > 0.5) p.y = 2.0 * uFloorY - p.y; vec3 v = p - uCamPos; float z = dot(v, uCamF); return vec3(uFocal * dot(v, uCamR) / z, uFocal * dot(v, uCamU) / z, z); }
+void main() {
+  vec3 a = proj(aP.xyz), b = proj(aQ.xyz);
+  if (a.z < 0.4 || b.z < 0.4 || aC.r + aC.g + aC.b <= 1e-5) { gl_Position = vec4(-9.0, -9.0, 0.0, 1.0); return; }
+  float r = aP.w * uFocal / a.z;
+  float coc = uAperture * abs(1.0 / a.z - 1.0 / uFocusZ) * uFocal;
+  float R = sqrt(r * r + coc * coc + 0.55);
+  vBokeh = smoothstep(2.5, 7.0, coc);
+  float ext = mix(1.5 * R, R + 1.5, vBokeh);
+  vec2 d = a.xy - b.xy; float L = length(d);
+  if (L > 220.0) { d *= 220.0 / L; L = 220.0; }
+  vec2 dir = L > 1e-3 ? d / L : vec2(1.0, 0.0), nr = vec2(-dir.y, dir.x);
+  vec2 mid = a.xy - 0.5 * d;
+  vec2 off = vec2(aCorner.x * (0.5 * L + ext), aCorner.y * ext);
+  vL = off; vHalf = 0.5 * L; vR = R; vZ = a.z;
+  vCol = aC.rgb * (r * r + 0.06) / (R * R) / (1.0 + 0.8 * L / R) * (uMirror > 0.5 ? 0.45 : 1.0);
+  gl_Position = vec4((mid + dir * off.x + nr * off.y) / (0.5 * uRes), 0.0, 1.0);
+}`;
+const FS_PART = `#version 300 es
+precision highp float;
+in vec2 vL; in float vHalf, vR, vZ, vBokeh; in vec3 vCol;
+uniform sampler2D uDepth; uniform float uUseDepth;
+out vec4 o;
+void main() {
+  float dx = max(abs(vL.x) - vHalf, 0.0), dist = length(vec2(dx, vL.y));
+  float g = exp(-2.0 * dist * dist / (vR * vR));
+  float disc = (1.0 - smoothstep(vR - 1.2, vR, dist)) * 0.5 * (0.82 + 0.35 * smoothstep(0.45 * vR, vR, dist));
+  float f = mix(g, disc, vBokeh);
+  if (uUseDepth > 0.5) { vec4 zd = texelFetch(uDepth, ivec2(gl_FragCoord.xy), 0); float cov = clamp(zd.a, 0.0, 1.0), zs = zd.r / max(zd.a, 1e-4); f *= 1.0 - cov * smoothstep(zs - 0.03, zs + 0.03, vZ); }
+  if (f < 1e-4) discard;
+  o = vec4(vCol * f, 0.0);
+}`;
+
+const FS_TEXT = `#version 300 es
+precision highp float;
+uniform sampler2D uText; uniform vec2 uRes; uniform vec4 uRect; uniform float uI, uGleam; uniform vec2 uBand;
+out vec4 o;
+void main() {
+  vec2 q = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
+  float a = texture(uText, (q - uRect.xy) / uRect.zw).a;
+  if (a < 0.002) discard;
+  vec3 c = mix(vec3(1.0, 1.0, 1.0), vec3(0.74, 0.76, 1.0), smoothstep(uBand.x, uBand.y, q.y));
+  float g = exp(-pow((q.x + q.y * 0.45 - uGleam) / (uRes.y * 0.035), 2.0));
+  o = vec4(c * a * (uI + g * 3.0 * min(uI, 1.0)), 0.0);
+}`;
+
+const FS_DOWN = `#version 300 es
+precision highp float;
+uniform sampler2D uSrc; uniform vec2 uTexel; uniform vec2 uDst; uniform float uKaris;
+out vec4 o;
+vec3 S(vec2 uv) { return texture(uSrc, uv).rgb; }
+float lw(vec3 c) { return 1.0 / (1.0 + dot(c, vec3(0.2126, 0.7152, 0.0722))); }
+void main() {
+  vec2 uv = gl_FragCoord.xy / uDst, t = uTexel;
+  vec3 a = S(uv + t * vec2(-2, 2)), b = S(uv + t * vec2(0, 2)), c = S(uv + t * vec2(2, 2));
+  vec3 d = S(uv + t * vec2(-2, 0)), e = S(uv), f = S(uv + t * vec2(2, 0));
+  vec3 g = S(uv + t * vec2(-2, -2)), h = S(uv + t * vec2(0, -2)), i = S(uv + t * vec2(2, -2));
+  vec3 j = S(uv + t * vec2(-1, 1)), k = S(uv + t * vec2(1, 1)), l = S(uv + t * vec2(-1, -1)), m = S(uv + t * vec2(1, -1));
+  vec3 r;
+  if (uKaris > 0.5) {
+    vec3 g0 = (j + k + l + m) * 0.25, g1 = (a + b + d + e) * 0.25, g2 = (b + c + e + f) * 0.25, g3 = (d + e + g + h) * 0.25, g4 = (e + f + h + i) * 0.25;
+    float w0 = lw(g0) * 0.5, w1 = lw(g1) * 0.125, w2 = lw(g2) * 0.125, w3 = lw(g3) * 0.125, w4 = lw(g4) * 0.125;
+    r = (g0 * w0 + g1 * w1 + g2 * w2 + g3 * w3 + g4 * w4) / (w0 + w1 + w2 + w3 + w4);
+  } else r = e * 0.125 + (a + c + g + i) * 0.03125 + (b + d + f + h) * 0.0625 + (j + k + l + m) * 0.125;
+  o = vec4(r, 1.0);
+}`;
+const FS_UP = `#version 300 es
+precision highp float;
+uniform sampler2D uSrc; uniform vec2 uTexel; uniform vec2 uDst; uniform float uK;
+out vec4 o;
+void main() {
+  vec2 uv = gl_FragCoord.xy / uDst, t = uTexel;
+  vec3 s = texture(uSrc, uv).rgb * 4.0
+    + (texture(uSrc, uv + vec2(t.x, 0)).rgb + texture(uSrc, uv - vec2(t.x, 0)).rgb + texture(uSrc, uv + vec2(0, t.y)).rgb + texture(uSrc, uv - vec2(0, t.y)).rgb) * 2.0
+    + texture(uSrc, uv + t).rgb + texture(uSrc, uv - t).rgb + texture(uSrc, uv + vec2(t.x, -t.y)).rgb + texture(uSrc, uv + vec2(-t.x, t.y)).rgb;
+  o = vec4(s / 16.0 * uK, 1.0);
+}`;
+const FS_HBLUR = `#version 300 es
+precision highp float;
+uniform sampler2D uSrc; uniform vec2 uTexel; uniform vec2 uDst; uniform float uThresh;
+out vec4 o;
+void main() {
+  vec2 uv = gl_FragCoord.xy / uDst;
+  vec3 s = vec3(0); float wsum = 0.0;
+  for (int i = -4; i <= 4; i++) { float w = exp(-float(i * i) / 8.0); vec3 c = texture(uSrc, uv + vec2(float(i) * uTexel.x * 1.5, 0)).rgb; s += max(c - uThresh, 0.0) * w; wsum += w; }
+  o = vec4(s / wsum, 1.0);
+}`;
+const FS_FINAL = `#version 300 es
+precision highp float;
+uniform sampler2D uScene, uBloom, uStreak; uniform vec2 uRes; uniform vec4 uWave;
+uniform float uExposure, uFade, uBloomK, uStreakK, uSeed, uCA;
+out vec4 o;
+float hash12(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+vec3 aces(vec3 x) { return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
+vec3 srgb(vec3 c) { return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
+void main() {
+  vec2 fc = gl_FragCoord.xy, uv = fc / uRes;
+  vec2 dp = fc - uWave.xy; float r = length(dp);
+  float k = uWave.w * exp(-pow((r - uWave.z) / (uRes.y * 0.05), 2.0));
+  uv -= dp / (r + 1e-3) * k / uRes;
+  vec2 cu = uv - 0.5; float ca = uCA * dot(cu, cu);
+  vec3 c = vec3(texture(uScene, uv - cu * ca).r, texture(uScene, uv).g, texture(uScene, uv + cu * ca).b);
+  c += texture(uBloom, uv).rgb * uBloomK;
+  c += texture(uStreak, uv).rgb * uStreakK * vec3(0.32, 0.5, 1.0);
+  float vig = 1.0 - 0.6 * smoothstep(0.25, 1.05, length(cu * vec2(1.0, 0.86)) * 1.42);
+  c = aces(c * uExposure * vig);
+  c = srgb(c);
+  c = mix(vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))), c, 1.06);
+  float lum = dot(c, vec3(0.333));
+  float n = hash12(fc + uSeed * 517.0) + hash12(fc * 1.7 + uSeed * 911.0) - 1.0;
+  c += n * (0.012 + 0.03 * lum * (1.0 - lum));
+  c = c * uFade + (hash12(fc + uSeed * 37.0) - 0.5) / 255.0;
+  o = vec4(clamp(c, 0.0, 1.0), 1.0);
+}`;
+
+function compile(vsSrc, fsSrc, name) {
+  const mk = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(name + ': ' + gl.getShaderInfoLog(s)); return s; };
+  const p = gl.createProgram(); gl.attachShader(p, mk(gl.VERTEX_SHADER, vsSrc)); gl.attachShader(p, mk(gl.FRAGMENT_SHADER, fsSrc)); gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(name + ' link: ' + gl.getProgramInfoLog(p));
+  const cache = {};
+  p.u = n => (n in cache) ? cache[n] : (cache[n] = gl.getUniformLocation(p, n));
+  return p;
+}
+function tex(w, h, { mips = false, filter = gl.LINEAR } = {}) {
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  const levels = mips ? Math.floor(Math.log2(Math.max(w, h))) + 1 : 1;
+  gl.texStorage2D(gl.TEXTURE_2D, levels, gl.RGBA16F, w, h);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, mips ? gl.LINEAR_MIPMAP_LINEAR : filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  t.w = w; t.h = h; return t;
+}
+function fbo(...texs) {
+  const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+  texs.forEach((t, i) => gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, t, 0));
+  gl.drawBuffers(texs.map((_, i) => gl.COLOR_ATTACHMENT0 + i));
+  if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) throw new Error('FBO incomplete');
+  f.w = texs[0].w; f.h = texs[0].h; return f;
+}
+
+const progLogo = compile(VS_FULL, FS_LOGO, 'logo');
+const progAtmos = compile(VS_FULL, FS_ATMOS, 'atmos');
+const progRoom = compile(VS_FULL, FS_ROOM, 'room');
+const progComp = compile(VS_FULL, FS_COMP, 'comp');
+const progPart = compile(VS_PART, FS_PART, 'particles');
+const progText = compile(VS_FULL, FS_TEXT, 'text');
+const progDown = compile(VS_FULL, FS_DOWN, 'down');
+const progUp = compile(VS_FULL, FS_UP, 'up');
+const progHB = compile(VS_FULL, FS_HBLUR, 'hblur');
+const progFinal = compile(VS_FULL, FS_FINAL, 'final');
+
+const HW2 = Math.round(W / 2), HH2 = Math.round(H / 2);
+const texBack = tex(HW2, HH2), texFront = tex(HW2, HH2), fbAtmos = fbo(texBack, texFront);
+const texRefl = tex(HW2, HH2, { mips: true }), fbRefl = fbo(texRefl);
+const texRoom = tex(W, H), fbRoom = fbo(texRoom);
+const texLogo = tex(W, H, { filter: gl.NEAREST }), texDepth = tex(W, H, { filter: gl.NEAREST }), fbLogo = fbo(texLogo, texDepth);
+const texAccum = tex(W, H), fbAccum = fbo(texAccum);
+const mips = [], fbMips = [];
+for (let i = 1, w = W, h = H; i <= 6; i++) { w = Math.max(1, Math.round(w / 2)); h = Math.max(1, Math.round(h / 2)); const t = tex(w, h); mips.push(t); fbMips.push(fbo(t)); }
+const st = [], fbSt = [];
+for (let i = 0, w = mips[2].w; i < 3; i++) { w = Math.max(1, Math.round(w / 2)); const t = tex(w, mips[2].h); st.push(t); fbSt.push(fbo(t)); }
+
+// particles: instanced quads
+const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+const pbuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, pbuf); gl.bufferData(gl.ARRAY_BUFFER, PDATA.byteLength, gl.DYNAMIC_DRAW);
+for (let i = 0; i < 3; i++) { gl.enableVertexAttribArray(1 + i); gl.vertexAttribPointer(1 + i, 4, gl.FLOAT, false, 48, i * 16); gl.vertexAttribDivisor(1 + i, 1); }
+const vaoEmpty = gl.createVertexArray();
+
+// wordmark: drawn per frame on a 2D canvas covering only its band of the frame
+const WORD = 'GROK', FONT_PX = 98 * PXS, WEIGHT = 520, TRACK_END = 0.46;
+const TEXT_Y = 0.715;   // centre of the capitals, fraction of the height from the top
+const TR = [Math.round(W * 0.12), Math.round(H * (TEXT_Y - 0.13)), Math.round(W * 0.76), Math.round(H * 0.26)];
+const tcan = document.createElement('canvas'); tcan.width = TR[2]; tcan.height = TR[3];
+const tctx = tcan.getContext('2d');
+const texText = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, texText);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, TR[2], TR[3], 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+function drawText(t) {
+  if (t < T_TEXT - 0.02) return 0;
+  tctx.clearRect(0, 0, TR[2], TR[3]);
+  tctx.font = `${WEIGHT} ${FONT_PX}px Geist`;
+  tctx.textBaseline = 'alphabetic'; tctx.fillStyle = '#fff';
+  const capH = tctx.measureText('G').actualBoundingBoxAscent;
+  const track = lerp(1.25, TRACK_END, easeOut3(seg(t, T_TEXT, T_TEXT + 1.6))) * FONT_PX;
+  const ws = [...WORD].map(ch => tctx.measureText(ch).width);
+  const total = ws.reduce((a, b) => a + b, 0) + track * (WORD.length - 1);
+  let x = W / 2 - total / 2 - TR[0];
+  const base = H * TEXT_Y + capH / 2 - TR[1];
+  for (let i = 0; i < WORD.length; i++) {
+    const lt = t - (T_TEXT + i * 0.075);
+    const p = spring(lt, 6.2, 1.0), alpha = smooth(seg(lt, 0, 0.6));
+    if (alpha > 0) {
+      const blur = (1 - p) * 18 * PXS;
+      tctx.save(); tctx.globalAlpha = alpha;
+      tctx.filter = blur > 0.25 ? `blur(${blur.toFixed(2)}px)` : 'none';
+      tctx.fillText(WORD[i], x, base + (1 - p) * 30 * PXS);
+      tctx.restore();
+    }
+    x += ws[i] + track;
+  }
+  gl.bindTexture(gl.TEXTURE_2D, texText);
+  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, tcan);
+  return [H * TEXT_Y - capH / 2, H * TEXT_Y + capH / 2];
+}
+
+// ---------------------------------------------------------------- frame
+const RING_END = RING_ARC.flatMap(([a0, a1]) => [Math.cos(a0), Math.sin(a0), Math.cos(a1), Math.sin(a1)]);
+const SPOT_COS = [Math.cos(15 * Math.PI / 180), Math.cos(1.5 * Math.PI / 180)];
+function setCommon(p, S, res, focal, jit = [0, 0]) {
+  const { cam, L, room, t } = S;
+  gl.uniform2f(p.u('uRes'), res[0], res[1]); gl.uniform2f(p.u('uJit'), jit[0], jit[1]); gl.uniform1f(p.u('uTime'), t);
+  gl.uniform3fv(p.u('uCamPos'), cam.pos); gl.uniform3fv(p.u('uCamR'), cam.r); gl.uniform3fv(p.u('uCamU'), cam.u); gl.uniform3fv(p.u('uCamF'), cam.f);
+  gl.uniform1f(p.u('uFocal'), focal);
+  gl.uniform3fv(p.u('uLogoPos'), L.pos); gl.uniformMatrix3fv(p.u('uLogoInv'), false, gl3(tr(L.G))); gl.uniformMatrix3fv(p.u('uLogoRot'), false, gl3(L.G));
+  gl.uniform1f(p.u('uLogoScale'), L.scale);
+  gl.uniform1f(p.u('uFloorY'), FLOOR_Y); gl.uniform3fv(p.u('uSpotPos'), SPOT_POS); gl.uniform3fv(p.u('uSpotDir'), SPOT_DIR);
+  gl.uniform1f(p.u('uSpotI'), room.spotI); gl.uniform2fv(p.u('uSpotCos'), SPOT_COS);
+  gl.uniform1f(p.u('uCoreLight'), L.coreLight); gl.uniform1f(p.u('uRim'), room.rim); gl.uniform1f(p.u('uRoom'), room.room); gl.uniform1f(p.u('uFog'), 0.035);
+}
+function sceneAt(t) { const cam = camState(t); return { t, cam, L: logoState(t, cam), room: roomState(t) }; }
+// screen rectangle (GL pixels) covering the logo's bounding sphere, for the scissor test
+function logoRect(S, res, focal, mirror) {
+  const { cam, L } = S, c = mirror ? [L.pos[0], 2 * FLOOR_Y - L.pos[1], L.pos[2]] : L.pos;
+  const v = sub(c, cam.pos), z = dot(v, cam.f), Rw = L.bound * L.scale;
+  if (z < Rw + 0.5) return [0, 0, res[0], res[1]];
+  const cx = res[0] / 2 + focal * dot(v, cam.r) / z, cy = res[1] / 2 + focal * dot(v, cam.u) / z, rp = focal * Rw / Math.sqrt(z * z - Rw * Rw) * 1.12 + 4;
+  const x0 = clamp(Math.floor(cx - rp), 0, res[0]), x1 = clamp(Math.ceil(cx + rp), 0, res[0]), y0 = clamp(Math.floor(cy - rp), 0, res[1]), y1 = clamp(Math.ceil(cy + rp), 0, res[1]);
+  return [x0, y0, Math.max(0, x1 - x0), Math.max(0, y1 - y0)];
+}
+function drawLogo(S, { mirror = 0, weight = 1, jit = [0, 0], res = [W, H], focal = FOCAL }) {
+  const p = progLogo, L = S.L; gl.useProgram(p);
+  setCommon(p, S, res, focal, jit);
+  gl.uniform1f(p.u('uMirror'), mirror); gl.uniform1f(p.u('uWeight'), weight);
+  gl.uniformMatrix3fv(p.u('uRingInv'), false, L.M.flatMap(M => gl3(tr(M))));
+  gl.uniform1fv(p.u('uRingR'), L.R); gl.uniform4fv(p.u('uRingEnd'), RING_END); gl.uniform2fv(p.u('uRingArc'), RING_ARC.flat()); gl.uniform3fv(p.u('uRingGlow'), L.ringGlow);
+  gl.uniform1f(p.u('uCoreR'), L.coreR); gl.uniform1f(p.u('uBoundR'), L.bound); gl.uniform1f(p.u('uGlow'), L.glow); gl.uniform1f(p.u('uFlash'), L.flash);
+  gl.uniform1f(p.u('uCoreI'), L.coreI); gl.uniform1f(p.u('uFlowPh'), L.flowPh); gl.uniform1f(p.u('uFlowAmt'), L.flowAmt); gl.uniform1f(p.u('uGlint'), L.glint);
+  const r = logoRect(S, res, focal, mirror);
+  if (r[2] <= 0 || r[3] <= 0) return;
+  gl.enable(gl.SCISSOR_TEST); gl.scissor(r[0], r[1], r[2], r[3]);
+  gl.bindVertexArray(vaoEmpty); gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.disable(gl.SCISSOR_TEST);
+}
+function drawParticles(cam, { mirror = 0, res = [W, H], focal = FOCAL, depth = null }) {
+  const p = progPart; gl.useProgram(p);
+  gl.uniform2f(p.u('uRes'), res[0], res[1]);
+  gl.uniform3fv(p.u('uCamPos'), cam.pos); gl.uniform3fv(p.u('uCamR'), cam.r); gl.uniform3fv(p.u('uCamU'), cam.u); gl.uniform3fv(p.u('uCamF'), cam.f);
+  gl.uniform1f(p.u('uFocal'), focal); gl.uniform1f(p.u('uMirror'), mirror); gl.uniform1f(p.u('uFloorY'), FLOOR_Y);
+  gl.uniform1f(p.u('uAperture'), 0.055); gl.uniform1f(p.u('uFocusZ'), Math.hypot(...cam.pos));
+  gl.uniform1f(p.u('uUseDepth'), depth ? 1 : 0);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, depth || texRoom); gl.uniform1i(p.u('uDepth'), 0);
+  gl.bindVertexArray(vao); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, PN);
+}
+function pass(prog, fb, setup) {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.viewport(0, 0, fb ? fb.w : W, fb ? fb.h : H);
+  gl.useProgram(prog); setup(prog); gl.bindVertexArray(vaoEmpty); gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+const bindTex = (p, name, t, unit = 0) => { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t); gl.uniform1i(p.u(name), unit); };
+const HALTON = (i, b) => { let f = 1, r = 0; while (i > 0) { f /= b; r += f * (i % b); i = Math.floor(i / b); } return r; };
+const PROF = Q.has('prof') ? {} : null;
+const _px = new Uint8Array(4), sync = () => { gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, _px); };
+const mark = k => { if (!PROF) return; sync(); const n = performance.now(); PROF[k] = (PROF[k] || 0) + n - PROF._t; PROF._t = n; };
+window.PROF = PROF;
+
+function render(t) {
+  t = clamp(t, 0, DUR);
+  if (PROF) { sync(); PROF._t = performance.now(); }
+  const S = sceneAt(t), cam = S.cam, L = S.L, hf = FOCAL * HW2 / W;
+  particleFrame(t);
+  gl.bindBuffer(gl.ARRAY_BUFFER, pbuf); gl.bufferSubData(gl.ARRAY_BUFFER, 0, PDATA);
+  mark('particlesCPU');
+  gl.disable(gl.BLEND);
+  // 1. atmosphere (half res)
+  const sh = shapeUniforms(t, L), rip = ripples(t).flat();
+  pass(progAtmos, fbAtmos, p => {
+    setCommon(p, S, [HW2, HH2], hf);
+    gl.uniform4fv(p.u('uShA'), sh.A); gl.uniform4fv(p.u('uShE1'), sh.E1); gl.uniform4fv(p.u('uShE2'), sh.E2); gl.uniform4fv(p.u('uShC'), sh.C); gl.uniform4fv(p.u('uShD'), sh.D);
+    gl.uniform4fv(p.u('uRip'), rip);
+  });
+  mark('atmos');
+  // 2. floor reflection: mirrored logo + particles at half res, then mipmaps for the blur
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbRefl); gl.viewport(0, 0, HW2, HH2);
+  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+  drawLogo(S, { mirror: 1, res: [HW2, HH2], focal: hf });
+  gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+  drawParticles(cam, { mirror: 1, res: [HW2, HH2], focal: hf });
+  gl.disable(gl.BLEND);
+  gl.bindTexture(gl.TEXTURE_2D, texRefl); gl.generateMipmap(gl.TEXTURE_2D);
+  mark('reflection');
+  // 3. room: floor + back wall + shapes behind the logo
+  pass(progRoom, fbRoom, p => { setCommon(p, S, [W, H], FOCAL); bindTex(p, 'uRefl', texRefl, 0); bindTex(p, 'uBack', texBack, 1); gl.uniform4fv(p.u('uRip'), rip); });
+  mark('room');
+  // 4. logo, accumulated over sub-frames inside the shutter (motion blur + anti-aliasing), premultiplied coverage in alpha
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbLogo); gl.viewport(0, 0, W, H);
+  gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+  for (let s = 0; s < SUB; s++) {
+    const ts = SUB > 1 ? t + ((s + 0.5) / SUB - 0.5) * SHUTTER : t;
+    const jit = SUB > 1 ? [HALTON(s + 1, 2) - 0.5, HALTON(s + 1, 3) - 0.5] : [0, 0];
+    drawLogo(SUB > 1 ? sceneAt(ts) : S, { weight: 1 / SUB, jit });
+  }
+  gl.disable(gl.BLEND);
+  mark('logo');
+  // 5. composite logo over the room, light in the air on top
+  pass(progComp, fbAccum, p => { bindTex(p, 'uLogo', texLogo, 0); bindTex(p, 'uRoomT', texRoom, 1); bindTex(p, 'uFront', texFront, 2); gl.uniform2f(p.u('uRes'), W, H); });
+  // 6. particles (analytic streaks), occluded by the logo
+  gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+  drawParticles(cam, { depth: texDepth });
+  mark('particlesGPU');
+  // 7. wordmark
+  const band = drawText(t);
+  if (band) {
+    const ti = smooth(seg(t, T_TEXT, T_TEXT + 0.6)) * 1.9;
+    const gleam = lerp(-0.25, 1.25, smooth(seg(t, 10.45, 11.2))) * W;
+    gl.enable(gl.SCISSOR_TEST); gl.scissor(TR[0], H - TR[1] - TR[3], TR[2], TR[3]);
+    pass(progText, fbAccum, p => { bindTex(p, 'uText', texText); gl.uniform2f(p.u('uRes'), W, H); gl.uniform4fv(p.u('uRect'), TR); gl.uniform1f(p.u('uI'), ti); gl.uniform1f(p.u('uGleam'), gleam); gl.uniform2f(p.u('uBand'), band[0], band[1]); });
+    gl.disable(gl.SCISSOR_TEST);
+  }
+  gl.disable(gl.BLEND);
+  mark('text');
+  // 8. bloom pyramid + anamorphic streak
+  let src = texAccum;
+  for (let i = 0; i < mips.length; i++) {
+    const s0 = src;
+    pass(progDown, fbMips[i], p => { bindTex(p, 'uSrc', s0); gl.uniform2f(p.u('uTexel'), 1 / s0.w, 1 / s0.h); gl.uniform2f(p.u('uDst'), mips[i].w, mips[i].h); gl.uniform1f(p.u('uKaris'), i === 0 ? 1 : 0); });
+    src = mips[i];
+  }
+  let ssrc = mips[2];
+  for (let i = 0; i < st.length; i++) {
+    const s0 = ssrc;
+    pass(progHB, fbSt[i], p => { bindTex(p, 'uSrc', s0); gl.uniform2f(p.u('uTexel'), 1 / s0.w, 1 / s0.h); gl.uniform2f(p.u('uDst'), st[i].w, st[i].h); gl.uniform1f(p.u('uThresh'), i === 0 ? 1.2 : 0); });
+    ssrc = st[i];
+  }
+  gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+  for (let i = st.length - 2; i >= 0; i--) {
+    const s0 = st[i + 1];
+    pass(progUp, fbSt[i], p => { bindTex(p, 'uSrc', s0); gl.uniform2f(p.u('uTexel'), 1 / s0.w, 1 / s0.h); gl.uniform2f(p.u('uDst'), st[i].w, st[i].h); gl.uniform1f(p.u('uK'), 1); });
+  }
+  for (let i = mips.length - 2; i >= 0; i--) {
+    const s0 = mips[i + 1];
+    pass(progUp, fbMips[i], p => { bindTex(p, 'uSrc', s0); gl.uniform2f(p.u('uTexel'), 1 / s0.w, 1 / s0.h); gl.uniform2f(p.u('uDst'), mips[i].w, mips[i].h); gl.uniform1f(p.u('uK'), 0.9); });
+  }
+  gl.disable(gl.BLEND);
+  mark('bloom');
+  // 9. final: shockwave refraction, chromatic aberration, tone map, grain, fades
+  const dI = t - T_IGN, dL = t - T_LOCK;
+  const cv = sub(L.pos, cam.pos), cz = dot(cv, cam.f);
+  const cx = W / 2 + FOCAL * dot(cv, cam.r) / cz, cy = H / 2 + FOCAL * dot(cv, cam.u) / cz;
+  let wave = [cx, cy, 0, 0];
+  if (dI > 0 && dI < 2.5) wave = [cx, cy, (0.25 + 15 * (1 - Math.exp(-dI * 1.5))) * FOCAL / cz, 20 * PXS * Math.exp(-dI * 2.2)];
+  else if (dL > 0 && dL < 2.5) wave = [cx, cy, (0.25 + 7 * (1 - Math.exp(-dL * 1.4))) * FOCAL / cz, 6 * PXS * Math.exp(-dL * 2.4)];
+  const fade = smooth(seg(t, 0.0, 1.1)) * (1 - smoother(seg(t, T_FADE, DUR)));
+  pass(progFinal, null, p => {
+    bindTex(p, 'uScene', texAccum, 0); bindTex(p, 'uBloom', mips[0], 1); bindTex(p, 'uStreak', st[0], 2);
+    gl.uniform2f(p.u('uRes'), W, H); gl.uniform4fv(p.u('uWave'), wave);
+    gl.uniform1f(p.u('uExposure'), 1.0); gl.uniform1f(p.u('uFade'), fade);
+    gl.uniform1f(p.u('uBloomK'), 0.075 + 0.08 * (dI > 0 ? Math.exp(-dI * 2) : 0)); gl.uniform1f(p.u('uStreakK'), 0.04 + 0.2 * (dI > 0 ? Math.exp(-dI * 1.6) : 0));
+    gl.uniform1f(p.u('uSeed'), (Math.round(t * FPS) % 97) + 1); gl.uniform1f(p.u('uCA'), 0.012);
+  });
+  mark('final');
+}
+
+// ---------------------------------------------------------------- audio
+const b64buf = b64 => { const s = atob(b64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u.buffer; };
+const midi = n => 440 * Math.pow(2, (n - 69) / 12);
+window.buildAudio = async function (ctx) {
+  const sr = ctx.sampleRate, R = rng(4242);
+  const dec = async k => ctx.decodeAudioData(b64buf(ASSETS[k]));
+  const SFX = { riser: await dec('riser'), impact: await dec('impact'), whoosh: await dec('whoosh'), triangle: await dec('triangle') };
+  // master
+  const master = ctx.createGain(), comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -12; comp.knee.value = 10; comp.ratio.value = 2; comp.attack.value = 0.02; comp.release.value = 0.35;
+  master.connect(comp); comp.connect(ctx.destination);
+  master.gain.setValueAtTime(0.9, 0);
+  master.gain.setValueCurveAtTime(Float32Array.from({ length: 256 }, (_, i) => 0.9 * Math.pow(1 - i / 255, 2.2)), 11.0, 0.999);
+  // reverb (seeded, darkening tail)
+  const ir = ctx.createBuffer(2, Math.floor(sr * 4.8), sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch), r = rng(900 + ch); let lp = 0;
+    for (let i = 0; i < d.length; i++) { const t = i / sr; const a = 0.06 + 0.8 * Math.exp(-t * 1.5); lp += a * ((r() * 2 - 1) - lp); d[i] = t < 0.02 ? 0 : lp * Math.exp(-6.9 * t / 4.2) * Math.min(1, (t - 0.02) / 0.05) * 0.5; }
+  }
+  const rev = ctx.createConvolver(); rev.normalize = true; rev.buffer = ir;
+  const revIn = ctx.createGain(), revHP = ctx.createBiquadFilter(); revHP.type = 'highpass'; revHP.frequency.value = 170;
+  const revOut = ctx.createGain(); revOut.gain.value = 0.85;
+  revIn.connect(revHP); revHP.connect(rev); rev.connect(revOut); revOut.connect(master);
+  // ping-pong delay (dotted eighth)
+  const dIn = ctx.createGain(), dL = ctx.createDelay(2), dR = ctx.createDelay(2); dL.delayTime.value = dR.delayTime.value = 0.5625;
+  const fbL = ctx.createGain(), fbR = ctx.createGain(); fbL.gain.value = fbR.gain.value = 0.36;
+  const dlp = ctx.createBiquadFilter(); dlp.type = 'lowpass'; dlp.frequency.value = 4200;
+  const pL = ctx.createStereoPanner(), pR = ctx.createStereoPanner(); pL.pan.value = -0.75; pR.pan.value = 0.75;
+  dIn.connect(dlp); dlp.connect(dL); dL.connect(fbL); fbL.connect(dR); dR.connect(fbR); fbR.connect(dL);
+  dL.connect(pL); dR.connect(pR); pL.connect(master); pR.connect(master); pL.connect(revIn); pR.connect(revIn);
+  const bus = (dry, wet, delay = 0) => { const g = ctx.createGain(); const a = ctx.createGain(), b = ctx.createGain(); a.gain.value = dry; b.gain.value = wet; g.connect(a); a.connect(master); g.connect(b); b.connect(revIn); if (delay) { const c = ctx.createGain(); c.gain.value = delay; g.connect(c); c.connect(dIn); } return g; };
+  // seeded noise
+  const nb = ctx.createBuffer(2, sr * 6, sr);
+  for (let ch = 0; ch < 2; ch++) { const d = nb.getChannelData(ch), r = rng(31 + ch); for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1; }
+  const noise = (t0, t1, dest, off = 0) => { const s = ctx.createBufferSource(); s.buffer = nb; s.loop = true; s.connect(dest); s.start(t0, off % 5); s.stop(t1); return s; };
+  const filt = (type, f, q = 0.7) => { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; };
+  const env = (g, pts) => { g.gain.setValueAtTime(pts[0][1], pts[0][0]); for (let i = 1; i < pts.length; i++) g.gain.linearRampToValueAtTime(pts[i][1], pts[i][0]); };
+  const sample = (buf, t, { gain = 1, rate = 1, pan = 0, lp = 0, hp = 0, dest }) => {
+    const s = ctx.createBufferSource(); s.buffer = buf; s.playbackRate.value = rate;
+    let n = s; if (lp) { const f = filt('lowpass', lp); n.connect(f); n = f; } if (hp) { const f = filt('highpass', hp); n.connect(f); n = f; }
+    const g = ctx.createGain(); g.gain.value = gain; const p = ctx.createStereoPanner(); p.pan.value = pan; n.connect(g); g.connect(p); p.connect(dest); s.start(t);
+  };
+
+  // --- buses
+  const padBus = ctx.createGain(), padLP = filt('lowpass', 300, 0.6); padBus.connect(padLP); padLP.connect(bus(0.75, 0.8));
+  env(padBus, [[0, 1], [T_IGN, 1], [T_IGN + 0.01, 0.8], [8.9, 1.05], [T_LOCK, 1.05], [T_LOCK + 0.3, 1.25], [12, 0.95]]);
+  const f = padLP.frequency;
+  f.setValueAtTime(320, 0); f.linearRampToValueAtTime(480, 2.1); f.setValueAtTime(900, T_IGN); f.exponentialRampToValueAtTime(2300, 3.4);
+  f.linearRampToValueAtTime(2900, 8.9); f.setValueAtTime(3600, T_LOCK); f.exponentialRampToValueAtTime(1500, 12);
+  const bellBus = bus(0.5, 0.7, 0.45), drumBus = bus(0.85, 0.32), fxBus = bus(0.7, 0.6), subBus = bus(1.0, 0.04);
+
+  // --- sub drone + air
+  const drone = ctx.createGain(); const dlp2 = filt('lowpass', 150); drone.connect(dlp2); dlp2.connect(subBus);
+  for (const [fq, g] of [[midi(26), 0.55], [midi(38), 1], [midi(45), 0.3]]) { const o = ctx.createOscillator(); o.frequency.value = fq; const og = ctx.createGain(); og.gain.value = g; o.connect(og); og.connect(drone); o.start(0); o.stop(DUR); }
+  env(drone, [[0, 0], [1.8, 0.05], [2.1, 0.055], [2.2, 0.006], [T_IGN, 0.006], [T_IGN + 0.05, 0.06], [8.9, 0.055], [T_LOCK + 0.1, 0.07], [12, 0.05]]);
+  const air = ctx.createGain(), airBP = filt('bandpass', 1100, 0.45); air.connect(bus(0.25, 1.0)); airBP.connect(air);
+  noise(0, DUR, airBP, 1.3);
+  airBP.frequency.setValueAtTime(900, 0); airBP.frequency.linearRampToValueAtTime(3200, 2.1); airBP.frequency.setValueAtTime(1800, T_IGN); airBP.frequency.linearRampToValueAtTime(5200, 8.8); airBP.frequency.linearRampToValueAtTime(2400, 12);
+  env(air, [[0, 0], [1.5, 0.03], [2.1, 0.045], [2.2, 0.006], [T_IGN, 0.006], [T_IGN + 0.2, 0.03], [8.9, 0.045], [12, 0.025]]);
+
+  // --- pad (detuned saws with slow chorus)
+  const pad = (notes, t0, t1, { gain = 0.016, att = 0.5, rel = 0.6 } = {}) => {
+    for (const n of notes) {
+      const g = ctx.createGain(); g.connect(padBus);
+      g.gain.setValueAtTime(0, t0); g.gain.setTargetAtTime(gain, t0, att / 3); g.gain.setValueAtTime(gain, t1); g.gain.setTargetAtTime(0, t1, rel / 3);
+      [-13, -4.5, 4, 12.5].forEach((dt, j) => {
+        const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = midi(n); o.detune.value = dt;
+        const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.18 + 0.11 * j + 0.05 * R(); lg.gain.value = 4; lfo.connect(lg); lg.connect(o.detune);
+        const p = ctx.createStereoPanner(); p.pan.value = [-0.7, -0.25, 0.25, 0.7][j];
+        o.connect(p); p.connect(g); o.start(t0); lfo.start(t0); o.stop(t1 + rel * 2.5); lfo.stop(t1 + rel * 2.5);
+      });
+    }
+  };
+  pad([50, 57, 62], 0.5, 2.12, { gain: 0.02, att: 1.4, rel: 0.12 });                 // dark dyad, cut for the inhale
+  pad([50, 53, 57, 64, 69], T_IGN, 5.25, { gain: 0.03, att: 0.12, rel: 0.7 });    // Dm(add9)
+  pad([46, 50, 53, 57, 60, 65], 5.25, 7.5, { gain: 0.028, att: 0.5, rel: 0.7 });   // Bbmaj7(9)
+  pad([48, 55, 62, 64, 67], 7.5, 9.0, { gain: 0.031, att: 0.45, rel: 0.4 });       // C(add9)
+  pad([50, 57, 62, 64, 66, 69], T_LOCK, 12.4, { gain: 0.032, att: 0.18, rel: 1.2 }); // D(add9)
+
+  // --- brass swell on the lock (saws through an opening low-pass)
+  for (const n of [50, 57, 62, 66]) {
+    const lp = filt('lowpass', 350, 1.2), g = ctx.createGain(); lp.connect(g); g.connect(bus(0.6, 0.7));
+    lp.frequency.setValueAtTime(350, T_LOCK); lp.frequency.exponentialRampToValueAtTime(3000, T_LOCK + 0.16); lp.frequency.exponentialRampToValueAtTime(900, T_LOCK + 2.4);
+    g.gain.setValueAtTime(0, T_LOCK - 0.01); g.gain.linearRampToValueAtTime(0.03, T_LOCK + 0.05); g.gain.setTargetAtTime(0.014, T_LOCK + 0.2, 0.6); g.gain.setTargetAtTime(0, 11.0, 0.3);
+    [-7, 7].forEach(dt => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = midi(n); o.detune.value = dt; o.connect(lp); o.start(T_LOCK - 0.01); o.stop(12.2); });
+  }
+  // --- bass
+  const bass = (n, t0, t1, gain = 0.13) => {
+    const g = ctx.createGain(), lp = filt('lowpass', 260, 0.8); g.connect(lp); lp.connect(bus(0.9, 0.08));
+    g.gain.setValueAtTime(0, t0); g.gain.setTargetAtTime(gain, t0, 0.05); g.gain.setValueAtTime(gain, t1); g.gain.setTargetAtTime(0, t1, 0.12);
+    const o1 = ctx.createOscillator(); o1.frequency.value = midi(n); const o2 = ctx.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = midi(n); o2.detune.value = 6;
+    const g2 = ctx.createGain(); g2.gain.value = 0.35; o1.connect(g); o2.connect(g2); g2.connect(g); o1.start(t0); o2.start(t0); o1.stop(t1 + 1); o2.stop(t1 + 1);
+  };
+  bass(38, T_IGN, 5.25, 0.07); bass(34, 5.25, 7.5, 0.07); bass(36, 7.5, 9.0, 0.075); bass(38, T_LOCK, 12.3, 0.085);
+
+  // --- "choir" (formant-filtered saws) for the top line
+  const choir = (notes, t0, t1, gain = 0.02) => {
+    for (const n of notes) {
+      const g = ctx.createGain(); g.gain.setValueAtTime(0, t0); g.gain.setTargetAtTime(gain, t0, 0.35); g.gain.setValueAtTime(gain, t1); g.gain.setTargetAtTime(0, t1, 0.3);
+      const sum = ctx.createGain(); sum.connect(g); g.connect(bus(0.35, 1.0));
+      for (const [ff, q, a] of [[730, 9, 1], [1150, 10, 0.5], [2650, 12, 0.25]]) { const b = filt('bandpass', ff, q), ga = ctx.createGain(); ga.gain.value = a * 4; b.connect(ga); ga.connect(sum); [-6, 6].forEach(dt => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = midi(n); o.detune.value = dt; const v = ctx.createOscillator(), vg = ctx.createGain(); v.frequency.value = 5.1; vg.gain.value = 7; v.connect(vg); vg.connect(o.detune); o.connect(b); o.start(t0); v.start(t0); o.stop(t1 + 1.5); v.stop(t1 + 1.5); }); }
+    }
+  };
+  choir([69, 74], T_IGN + 0.3, 5.25); choir([69, 77], 5.25, 7.5); choir([72, 76], 7.5, 9.0); choir([74, 78, 81], T_LOCK, 12.3, 0.022);
+
+  // --- bells (FM)
+  const bell = (t, n, { gain = 0.03, ratio = 3.5, index = 2.5, dec = 1.0, pan = 0, dest = bellBus } = {}) => {
+    const fq = midi(n), car = ctx.createOscillator(), mod = ctx.createOscillator(), mg = ctx.createGain(), g = ctx.createGain(), p = ctx.createStereoPanner();
+    car.frequency.value = fq; mod.frequency.value = fq * ratio; mg.gain.setValueAtTime(index * fq, t); mg.gain.setTargetAtTime(index * fq * 0.08, t, dec * 0.25);
+    mod.connect(mg); mg.connect(car.frequency); car.connect(g); g.connect(p); p.pan.value = pan; p.connect(dest);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.004); g.gain.setTargetAtTime(0, t + 0.004, dec / 3);
+    car.start(t); mod.start(t); car.stop(t + dec * 3); mod.stop(t + dec * 3);
+  };
+  // arpeggio on eighths through the spin
+  const chordAt = t => t < 5.25 ? [62, 65, 69, 76, 81, 77] : t < 7.5 ? [62, 65, 69, 72, 77, 74] : [64, 67, 72, 74, 79, 76];
+  for (let i = 0, t = 2.625; t < 8.95; i++, t += 0.375) {
+    const ch = chordAt(t), n = ch[i % ch.length];
+    bell(t, n, { gain: (0.028 + 0.03 * seg(t, 2.6, 8.6)) * (0.8 + 0.4 * R()), ratio: 2, index: 1.6, dec: 0.55, pan: (i % 2 ? 0.45 : -0.45) });
+  }
+  bell(T_IGN, 86, { gain: 0.03, dec: 2.2, pan: -0.3 }); bell(T_IGN, 93, { gain: 0.022, dec: 2.4, pan: 0.3 }); bell(T_IGN + 0.01, 100, { gain: 0.012, dec: 2.0 });
+  bell(8.62, 93, { gain: 0.03, dec: 0.8, pan: -0.4 }); bell(8.81, 98, { gain: 0.03, dec: 0.8, pan: 0.4 });
+  bell(T_LOCK, 86, { gain: 0.032, dec: 2.6 }); bell(T_LOCK, 90, { gain: 0.022, dec: 2.6, pan: 0.25 }); bell(T_LOCK, 93, { gain: 0.02, dec: 2.6, pan: -0.25 });
+  [86, 90, 93, 98].forEach((n, i) => bell(T_TEXT + 0.04 + i * 0.075, n, { gain: 0.02, dec: 1.0, pan: -0.3 + 0.2 * i }));
+  bell(10.5, 105, { gain: 0.009, dec: 1.8, ratio: 3.5 }); bell(10.56, 102, { gain: 0.008, dec: 1.8 });
+
+  // --- drums
+  const drum = (t, { f0 = 120, f1 = 46, dec = 0.55, gain = 0.5, nz = 0.16, nf = 900 } = {}) => {
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + 0.16);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.003); g.gain.setTargetAtTime(0, t + 0.01, dec / 4);
+    o.connect(g); g.connect(drumBus); o.start(t); o.stop(t + dec * 2);
+    const ng = ctx.createGain(), nl = filt('lowpass', nf); ng.gain.setValueAtTime(0, t); ng.gain.linearRampToValueAtTime(nz, t + 0.002); ng.gain.setTargetAtTime(0, t + 0.004, 0.03);
+    nl.connect(ng); ng.connect(drumBus); noise(t, t + 0.3, nl, t * 3.7);
+  };
+  EMBERS.forEach((te, i) => drum(te, { f0: 75, f1: 40, dec: 0.5, gain: 0.12 + 0.05 * i, nz: 0.01 }));
+  for (const [tb, s] of BEATS) { if (tb >= T_LOCK) continue; const strong = STRONG.includes(tb); drum(tb, strong ? { gain: 0.55, f0: 130, f1: 44, dec: 0.8, nz: 0.2 } : { gain: 0.32 * s / 0.6, f0: 95 + (tb > 8.3 ? 25 * (tb - 8.3) : 0), f1: 48, dec: 0.45, nz: 0.1 }); }
+  for (let t = 6.0; t < 8.95; t += 0.1875) {          // shaker build
+    const g = ctx.createGain(), hp = filt('highpass', 7000), p = ctx.createStereoPanner(); p.pan.value = Math.round((t - 6) / 0.1875) % 2 ? 0.35 : -0.35;
+    const acc = Math.round((t - 6) / 0.1875) % 2 ? 1.4 : 1, a = (0.006 + 0.02 * seg(t, 6, 8.9)) * acc;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + 0.004); g.gain.setTargetAtTime(0, t + 0.006, 0.018);
+    hp.connect(g); g.connect(p); p.connect(drumBus); noise(t, t + 0.12, hp, t * 5.1);
+  }
+
+  // --- risers, impacts, whooshes
+  sample(SFX.riser, T_IGN - 1.96, { gain: 0.55, dest: fxBus });
+  const swell = (t0, t1, f0, f1, peak, dest = fxBus) => {
+    const bp = filt('bandpass', f0, 1.2), g = ctx.createGain(); bp.connect(g); g.connect(dest); noise(t0, t1 + 0.05, bp, t0 * 2.3);
+    bp.frequency.setValueAtTime(f0, t0); bp.frequency.exponentialRampToValueAtTime(f1, t1);
+    g.gain.setValueAtTime(0.0003, t0); g.gain.exponentialRampToValueAtTime(peak, t1 - 0.02); g.gain.linearRampToValueAtTime(0, t1);
+  };
+  swell(1.0, T_IGN - 0.03, 350, 6000, 0.07);
+  swell(7.9, T_LOCK - 0.01, 600, 7500, 0.055);
+  const boom = (t, { f0 = 62, f1 = 28, gain = 0.9, dec = 1.9 } = {}) => {
+    const o = ctx.createOscillator(), g = ctx.createGain(), ws = ctx.createWaveShaper(), curve = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) { const x = i / 511.5 - 1; curve[i] = Math.tanh(x * 2.2) / Math.tanh(2.2); }
+    ws.curve = curve; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + 1.1);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.006); g.gain.setTargetAtTime(0, t + 0.02, dec / 4);
+    o.connect(ws); ws.connect(g); g.connect(subBus); o.start(t); o.stop(t + dec * 2.5);
+  };
+  const burst = (t, { gain = 0.3, f0 = 7000, f1 = 380, dec = 0.9 } = {}) => {
+    const lp = filt('lowpass', f0, 0.5), g = ctx.createGain(); lp.connect(g); g.connect(bus(0.45, 1.1)); noise(t, t + dec * 2.5, lp, t * 1.9);
+    lp.frequency.setValueAtTime(f0, t); lp.frequency.exponentialRampToValueAtTime(f1, t + dec);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.004); g.gain.setTargetAtTime(0, t + 0.01, dec / 3.5);
+  };
+  boom(T_IGN); burst(T_IGN); sample(SFX.impact, T_IGN, { gain: 0.9, rate: 0.82, dest: fxBus }); sample(SFX.impact, T_IGN + 0.004, { gain: 0.5, rate: 0.55, lp: 2500, dest: fxBus });
+  boom(T_LOCK, { f0: 56, f1: 32, gain: 0.8, dec: 1.6 }); burst(T_LOCK, { gain: 0.18, f0: 5000, dec: 0.8 }); sample(SFX.impact, T_LOCK, { gain: 0.45, rate: 0.9, dest: fxBus });
+  sample(SFX.triangle, T_LOCK, { gain: 0.42, dest: bellBus }); sample(SFX.triangle, 10.48, { gain: 0.14, rate: 1.5, hp: 2000, dest: bellBus });
+  const whoosh = (t, { rate = 0.6, gain = 0.3, pan = 0, lp = 3500, hp = 0 } = {}) => sample(SFX.whoosh, t, { gain, rate, pan, lp, hp, dest: fxBus });
+  const air2 = (t0, dur, peak, p0, p1) => {
+    const bp = filt('bandpass', 400, 1.4), g = ctx.createGain(), p = ctx.createStereoPanner(); bp.connect(g); g.connect(p); p.connect(fxBus); noise(t0, t0 + dur + 0.1, bp, t0 * 4.1);
+    bp.frequency.setValueAtTime(300, t0); bp.frequency.exponentialRampToValueAtTime(2600, t0 + dur * 0.55); bp.frequency.exponentialRampToValueAtTime(500, t0 + dur);
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(peak, t0 + dur * 0.55); g.gain.linearRampToValueAtTime(0, t0 + dur);
+    p.pan.setValueAtTime(p0, t0); p.pan.linearRampToValueAtTime(p1, t0 + dur);
+  };
+  whoosh(2.36, { rate: 0.5, gain: 0.35 }); air2(2.5, 1.3, 0.05, -0.6, 0.6);
+  air2(4.0, 1.2, 0.04, 0.6, -0.6); air2(5.5, 1.2, 0.045, -0.6, 0.6); air2(7.0, 1.2, 0.05, 0.6, -0.6);
+  whoosh(8.5, { rate: 0.7, gain: 0.25, pan: 0 });
+  whoosh(T_TEXT - 0.06, { rate: 1.05, gain: 0.2, hp: 900, lp: 9000 }); air2(T_TEXT - 0.1, 0.9, 0.03, -0.3, 0.3);
+};
+
+// ---------------------------------------------------------------- boot
+async function boot() {
+  const face = new FontFace('Geist', b64buf(ASSETS.geist), { weight: '100 900' });
+  await face.load(); document.fonts.add(face); await document.fonts.ready;
+  bakeParticles();
+  window.VIDEO = { w: W, h: H, duration: DUR, fps: FPS, sub: SUB };
+  window.seek = t => { render(t); gl.finish(); };
+  if (!RENDER) preview(); else render(0);
+}
+function preview() {
+  const stage = document.getElementById('stage');
+  const fit = () => { const s = Math.min(innerWidth / W, innerHeight / H); stage.style.transform = `translate(${(innerWidth - W * s) / 2}px, ${(innerHeight - H * s) / 2}px) scale(${s})`; };
+  addEventListener('resize', fit); fit();
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  const btn = document.getElementById('play'), scrub = document.getElementById('scrub'), tc = document.getElementById('tc');
+  async function play() {
+    ac ??= new AudioContext();
+    if (!buf) { const off = new OfflineAudioContext(2, Math.ceil(48000 * DUR), 48000); await buildAudio(off); buf = await off.startRendering(); }
+    src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination);
+    src.start(0, offset % DUR); startAt = ac.currentTime; playing = true; btn.innerHTML = '&#10074;&#10074;';
+  }
+  function pause() { if (!playing) return; offset = now(); src.stop(); playing = false; btn.innerHTML = '&#9654;'; }
+  function now() { return playing ? (offset + ac.currentTime - startAt) % DUR : offset; }
+  btn.onclick = () => playing ? pause() : play();
+  addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); btn.onclick(); } });
+  scrub.oninput = () => { const was = playing; pause(); offset = +scrub.value; if (was) play(); };
+  let last = -1;
+  (function loop() { const t = now(); if (t !== last) { render(t); last = t; } scrub.value = t; tc.textContent = t.toFixed(2).padStart(5, '0'); requestAnimationFrame(loop); })();
+}
+boot();
+</script>
+</body>
+</html>
