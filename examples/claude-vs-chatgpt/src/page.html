@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude vs ChatGPT</title>
+<style>
+/*@@FONTS@@*/
+:root { color-scheme: dark; }
+html, body { margin: 0; height: 100%; background: #111014; color: #EDEBE4; font-family: Inter, system-ui, sans-serif; }
+body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; overflow: hidden; }
+#wrap { position: relative; flex: none; overflow: hidden; border-radius: 10px; }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: #F4EFE6; transform-origin: 0 0; }
+.layer { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.layer > svg { position: absolute; left: 0; top: 0; overflow: visible; }
+#L3card { perspective: 1600px; }
+#L3tilt { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 960px 560px; }
+#FLASH { background: #fff; opacity: 0; pointer-events: none; }
+#controls { display: flex; align-items: center; gap: 12px; width: min(92vw, 1100px); padding: 0 16px; box-sizing: border-box; }
+#controls button { background: #FFD23F; color: #17120F; border: 0; border-radius: 999px; font: 800 15px Inter, sans-serif; padding: 9px 18px; cursor: pointer; }
+#controls input { flex: 1; accent-color: #FFD23F; }
+#controls span { font: 600 13px 'Press Start 2P', monospace; min-width: 120px; text-align: right; }
+body.render { display: block; background: transparent; }
+body.render #wrap { border-radius: 0; width: 1920px; height: 1080px; }
+body.render #controls { display: none; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div id="cam" class="layer">
+    <div id="L1" class="layer"></div>
+    <div id="L2" class="layer"></div>
+    <div id="L3" class="layer"><div id="L3bg" class="layer"></div><div id="L3card" class="layer"><div id="L3tilt"></div></div><div id="L3fx" class="layer"></div></div>
+    <div id="L4" class="layer"></div>
+  </div>
+  <div id="LT" class="layer"></div>
+  <div id="HUD" class="layer"></div>
+  <div id="FLASH" class="layer"></div>
+</div></div>
+<div id="controls"><button id="play">▶ Play</button><input id="scrub" type="range" min="0" max="15" step="0.001" value="0"><span id="tc">00.00</span></div>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="fWhite"><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/></filter>
+    <linearGradient id="metaGrad" x1="0" x2="1"><stop offset="0" stop-color="#0064E0"/><stop offset="1" stop-color="#0082FB"/></linearGradient>
+    <pattern id="dotInk" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(18)"><circle cx="11" cy="11" r="2.6" fill="#17120F"/></pattern>
+    <pattern id="dotWhite" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(18)"><circle cx="11" cy="11" r="2.6" fill="#ffffff"/></pattern>
+    <pattern id="dotBig" width="34" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(18)"><circle cx="17" cy="17" r="5" fill="#17120F"/></pattern>
+    <radialGradient id="vig" cx="50%" cy="50%" r="75%"><stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".28"/></radialGradient>
+    <radialGradient id="stageGlow" cx="62%" cy="58%" r="60%"><stop offset="0%" stop-color="#4A3A8C"/><stop offset="100%" stop-color="#1E1640"/></radialGradient>
+    <linearGradient id="hpFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF08A"/><stop offset=".5" stop-color="#FFD23F"/><stop offset="1" stop-color="#F2A516"/></linearGradient>
+    <linearGradient id="spot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".0"/><stop offset=".25" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity=".06"/></linearGradient>
+  </defs>
+</svg>
+<script>
+/*@@SFX@@*/
+/*@@CORE@@*/
+/*@@SCENES@@*/
+/*@@AUDIO@@*/
+/*@@MAIN@@*/
+</script>
+</body>
+</html>
