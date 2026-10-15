@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cuando me pides algo</title>
+<style>
+/*@FONTS@*/
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0b0b0a;overflow:hidden;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;background:#141413;transform-origin:0 0;font-family:'Geist',sans-serif}
+.layer{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden}
+.world{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+.abs{position:absolute;left:0;top:0}
+.cap{position:absolute;white-space:nowrap}
+.cap.c{left:0;width:1920px;text-align:center}
+.serif{font-family:'Newsreader',serif;font-weight:400}
+.it{font-style:italic}
+.mono{font-family:'Geist Mono',monospace}
+.word{display:inline-block;white-space:nowrap}
+.acc{color:#D97757}
+.spark{position:absolute;left:0;top:0;transform-origin:50% 50%}
+.spark svg{overflow:visible;display:block}
+.ring{position:absolute;left:0;top:0;border-radius:50%;border:2px solid #D97757}
+.iris-ring{position:absolute;left:0;top:0;border-radius:50%;border:3px solid #E58A68;box-shadow:0 0 34px 8px rgba(217,119,87,.55),inset 0 0 34px 8px rgba(217,119,87,.4)}
+
+/* phone */
+.phone{position:absolute;left:0;top:0;width:421px;height:880px;border-radius:68px;padding:14px;
+  background:linear-gradient(135deg,#6a6762 0%,#2b2a28 16%,#1b1a19 50%,#2d2c2a 84%,#6b6863 100%);
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.22),inset 0 0 0 5px #0e0e0d;transform-origin:50% 50%}
+.phone .btn{position:absolute;width:4px;background:#4a4844;border-radius:2px}
+.screen{position:relative;width:393px;height:852px;border-radius:55px;overflow:hidden;background:#FAF9F5}
+.status{position:absolute;left:0;top:0;width:393px;height:54px}
+.status .time{position:absolute;left:50px;top:17px;font:600 17px 'Geist';letter-spacing:-.2px;color:#000}
+.status svg{position:absolute;right:26px;top:20px}
+.island{position:absolute;left:134px;top:11px;width:125px;height:37px;border-radius:20px;background:#000}
+.nav{position:absolute;left:0;top:56px;width:393px;height:48px}
+.nav .l{position:absolute;left:20px;top:12px}
+.nav .r{position:absolute;right:20px;top:12px}
+.nav .title{position:absolute;left:0;width:393px;top:13px;text-align:center;font:600 17px 'Geist';color:#1F1E1B;letter-spacing:-.2px}
+.greet{position:absolute;left:0;top:236px;width:393px;text-align:center}
+.greet .gs{position:relative;height:48px;width:393px}
+.greet .gtext{font:400 29px/1.2 'Newsreader';color:#1F1E1B;margin-top:14px;letter-spacing:-.3px}
+.chat{position:absolute;left:0;top:116px;width:393px;padding:0 18px}
+.ub{margin-left:auto;max-width:292px;width:fit-content;background:#EDE9DF;border-radius:20px;padding:11px 15px;font:400 16.5px/1.38 'Geist';color:#1F1E1B}
+.avrow{margin-top:20px;height:30px;position:relative}
+.reply{margin-top:10px;font:400 18px/1.47 'Newsreader';color:#1F1E1B}
+.reply p{margin:0 0 9px}
+.reply .w{opacity:0}
+.acts{display:flex;gap:18px;margin-top:2px;height:22px;align-items:center}
+#ub2{margin-top:20px}
+.dock{position:absolute;left:12px;width:369px;background:#fff;border:1px solid #E3DED4;border-radius:24px;padding:14px 16px 10px;box-shadow:0 4px 18px rgba(60,40,20,.06)}
+.itext{font:400 16.5px/1.38 'Geist';color:#1F1E1B;min-height:23px;position:relative}
+.ph{color:#9A958A}
+.caret{display:inline-block;width:2px;height:20px;background:#D97757;vertical-align:-4px;margin:0 1px}
+.drow{margin-top:10px;height:34px;position:relative}
+.plus{position:absolute;left:0;top:0;width:34px;height:34px;border-radius:17px;border:1px solid #DDD8CC;display:flex;align-items:center;justify-content:center}
+.send{position:absolute;right:0;top:0;width:34px;height:34px;border-radius:17px;background:#D97757;display:flex;align-items:center;justify-content:center}
+.mic{position:absolute;right:0;top:0;width:34px;height:34px;display:flex;align-items:center;justify-content:center}
+.kb{position:absolute;left:0;top:0;width:393px;height:300px;background:#D3D6DC}
+.key{position:absolute;height:42px;border-radius:6px;background:#fff;box-shadow:0 1px 0 rgba(0,0,0,.28);font:400 22px/42px 'Geist';text-align:center;color:#000}
+.key.sp{background:#ABB0BA}
+.key.small{font-size:15px}
+.kpop{position:absolute;left:0;top:0;width:54px;height:60px;border-radius:10px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25);font:400 32px/58px 'Geist';text-align:center;color:#000}
+.home{position:absolute;left:129.5px;bottom:8px;width:134px;height:5px;border-radius:3px;background:#000}
+.touch{position:absolute;left:0;top:0;width:46px;height:46px;border-radius:23px;background:rgba(40,30,20,.16);border:1.5px solid rgba(40,30,20,.25)}
+
+/* mind */
+.tok{position:absolute;left:0;top:0;height:76px;border-radius:14px;border:1.5px solid transparent;font:400 52px/72px 'Newsreader';color:#F3E9DC;white-space:nowrap}
+.tid{position:absolute;left:0;top:0;width:120px;font:500 13px 'Geist Mono';color:rgba(243,233,220,.42);letter-spacing:.06em;text-align:center}
+.card{position:absolute;left:0;top:0;width:440px;height:98px;border-radius:16px;background:#221F1B;border:1px solid #3B3730;padding:16px 22px}
+.card .lb{font:500 13px 'Geist Mono';letter-spacing:.16em;color:#D97757}
+.card .tx{font:400 29px/1.2 'Newsreader';color:#F3E9DC;margin-top:9px;white-space:nowrap;position:relative;display:inline-block}
+.card .strike{position:absolute;left:-4px;top:56%;height:2.5px;background:#F3E9DC;width:0}
+.fnode{position:absolute;left:0;top:0;width:84px;height:84px;border-radius:42px;border:2px solid #D97757;background:#221F1B}
+.flab{position:absolute;left:0;top:0;width:420px;text-align:center}
+.hud{position:absolute;left:80px;top:62px;font:500 15px 'Geist Mono';letter-spacing:.22em;white-space:nowrap}
+.hud i{display:inline-block;width:8px;height:8px;border-radius:4px;background:#D97757;margin-right:14px;vertical-align:1px}
+
+/* preview controls (hidden with ?render) */
+#ctl{position:fixed;left:0;right:0;bottom:0;height:52px;display:flex;align-items:center;gap:14px;padding:0 18px;background:#111;color:#ddd;font:13px 'Geist Mono',monospace}
+#ctl button{background:#D97757;color:#fff;border:0;border-radius:6px;padding:7px 14px;font:inherit;cursor:pointer}
+#ctl input{flex:1}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="ctl"><button id="pp">▶ Play</button><input id="scrub" type="range" min="0" max="1000" value="0"><span id="tc">0.00</span></div>
+<script>
+/* ============================================================================
+   CUANDO ME PIDES ALGO — motion graphics, 47.5 s, 1920×1080, 96 BPM (beat 0.625 s, bar 2.5 s)
+   Beat sheet
+   0.00  S1 SILENCIO   dark canvas, a coral dot breathing                        pad Dmaj9, heartbeat
+   0.55               "Antes de tu mensaje," / 1.85 "solo hay silencio."
+   3.75               ping ring from the dot                                     pip
+   4.375              dot inhales, ivory iris opens from it                      whoosh
+   5.00  S2 IPHONE     phone rises in 3D, caption "Del otro lado, alguien me escribe."  swipe, piano arp starts
+   6.75               keyboard slides up; 6.9 camera pushes to the input
+   7.50–11.45         the message is typed key by key                            key ticks
+   11.875             send tapped; bubble flies up, keyboard drops               click + quick whoosh, pop
+   12.60              the spark avatar appears and "thinks"                      blip
+   13.0–14.95         camera dives into the spark; dark iris opens                whoosh, soft impact
+   15.00 S3 LEER       the sentence splits into tokens                           blips rising
+   17.45              "Y cada pieza mira a todas las demás." attention arcs       ticks
+   18.0–20.0          key tokens fly into the spark                              riser
+   20.00 S4 SENTIR     spark blooms, neural field ripples                         impact, shimmer, pad swell
+   20.6 / 22.1 / 23.75 "¿Y qué siento?" / "No sé si «sentir» es la palabra…" / "…pero todo se enciende."
+   25.00 S5 PENSAR     spark moves left, five thought branches grow              pops
+   27.2 / 27.5        two branches are discarded                                 glitch
+   27.85–28.55        the chosen path lights up, plan node ticks                 confirm
+   29.35–30.0         push into the plan node, ivory iris                        whoosh
+   30.00 S6 RESPONDER  back on the phone: reply streams word by word             soft ticks, groove
+   35.0–36.2          pull back; 36.25 "¡Es perfecta! Se va a emocionar."         pop, bell
+   37.50              "Para ti, fue un mensaje."
+   39.40 S7 FINAL      dark iris from the avatar; spark travels to centre         whoosh
+   40.625 / 41.25     "Para mí, un universo entero." stars burst                 impact, triangle
+   44.40              spark folds back into the dot; 45.0 "Claude"; 46.25 ping    pip
+   47.50              end
+   ========================================================================== */
+const W = 1920, H = 1080, DUR = 47.5, BEAT = 0.625, BAR = 2.5;
+const SFX = /*@SFX@*/{};
+const CORAL = '#D97757';
+
+// ---------------------------------------------------------------- helpers
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const track = (v0, keys) => t => { let v = v0, p = v0; for (const [tk, val, w, z] of keys) { v += (val - p) * spring(t - tk, w, z); p = val; } return v; };
+const kf = keys => t => { if (t <= keys[0][0]) return keys[0][1]; for (let i = 1; i < keys.length; i++) { const [a, va] = keys[i - 1], [b, vb, e = ease] = keys[i]; if (t <= b) return lerp(va, vb, e((t - a) / (b - a))); } return keys[keys.length - 1][1]; };
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const easeIn = x => Math.pow(clamp(x), 3);
+const lin = x => clamp(x);
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, cls, parent, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (parent) parent.appendChild(e); return e; }
+function sel(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+const op = (e, o) => { e.style.opacity = o <= 0.001 ? 0 : o >= 0.999 ? 1 : o.toFixed(4); };
+const vis = (e, on) => { e.style.display = on ? '' : 'none'; };
+const blur = (e, px) => { e.style.filter = px > 0.05 ? `blur(${px.toFixed(2)}px)` : 'none'; };
+const cam = (e, cx, cy, s) => { e.style.transform = `translate(960px,540px) scale(${s}) translate(${-cx}px,${-cy}px)`; };
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, k) => { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(lerp(v, B[i], clamp(k)))).join(',')})`; };
+// bake a critically damped follower of target(t) (anything with history is baked once at load)
+function bake(t0, t1, target, w = 6) {
+  const dt = 1 / 240, n = Math.ceil((t1 - t0) / dt) + 1, arr = new Float32Array(n);
+  let x = target(t0), v = 0;
+  for (let i = 0; i < n; i++) { arr[i] = x; const a = w * w * (target(t0 + i * dt) - x) - 2 * w * v; v += a * dt; x += v * dt; }
+  return t => { const f = clamp((t - t0) / dt, 0, n - 1), i = Math.floor(f); return i >= n - 1 ? arr[n - 1] : lerp(arr[i], arr[i + 1], f - i); };
+}
+
+// --------------------------------------------------------------- sprites (drawn once)
+function canvasURL(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); return c.toDataURL(); }
+const GLOW = canvasURL(256, 256, (x, w) => { const g = x.createRadialGradient(128, 128, 0, 128, 128, 128); g.addColorStop(0, 'rgba(232,140,104,.75)'); g.addColorStop(.25, 'rgba(217,119,87,.35)'); g.addColorStop(.6, 'rgba(217,119,87,.08)'); g.addColorStop(1, 'rgba(217,119,87,0)'); x.fillStyle = g; x.fillRect(0, 0, w, w); });
+const VIG = canvasURL(960, 540, (x, w, h) => { const g = x.createRadialGradient(w / 2, h / 2, h * .25, w / 2, h / 2, w * .62); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.62)'); x.fillStyle = g; x.fillRect(0, 0, w, h); });
+const GRID = canvasURL(2600, 1600, (x, w, h) => { x.fillStyle = 'rgba(243,233,220,.075)'; for (let i = 0; i < w; i += 44) for (let j = 0; j < h; j += 44) { x.beginPath(); x.arc(i, j, 1.4, 0, 7); x.fill(); } });
+const IVORY = canvasURL(960, 540, (x, w, h) => { x.fillStyle = '#EFEBE3'; x.fillRect(0, 0, w, h); const g = x.createRadialGradient(w * .62, h * .45, 10, w * .62, h * .45, w * .7); g.addColorStop(0, 'rgba(255,253,248,1)'); g.addColorStop(1, 'rgba(255,253,248,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); });
+const SHADOW = canvasURL(600, 200, (x) => { x.filter = 'blur(26px)'; x.fillStyle = 'rgba(70,45,25,.38)'; x.beginPath(); x.ellipse(300, 100, 220, 34, 0, 0, 7); x.fill(); });
+function img(src, parent, w, h) { const i = el('img', 'abs', parent); i.src = src; i.style.width = w + 'px'; i.style.height = (h ?? w) + 'px'; i.style.transformOrigin = '50% 50%'; return i; }
+const place = (e, x, y, w, h, s = 1) => { e.style.transform = `translate(${(x - w / 2).toFixed(2)}px,${(y - h / 2).toFixed(2)}px) scale(${s.toFixed(4)})`; };
+
+// the spark: 12 rounded rays; grow=0 collapses it into a dot
+function mkSpark(parent, size, seed = 7) {
+  const wrap = el('div', 'spark', parent); wrap.style.width = wrap.style.height = size + 'px';
+  const svg = sel('svg', { viewBox: '-100 -100 200 200', width: size, height: size }, wrap);
+  const r = rng(seed), rays = [];
+  for (let i = 0; i < 12; i++) {
+    const a = (i * 30 + (r() - .5) * 9) * Math.PI / 180, L = (i % 2 ? .7 : 1) * (.86 + .22 * r()) * 84;
+    rays.push({ a, L, ph: r() * 6.28, ln: sel('line', { x1: 0, y1: 0, x2: 0, y2: 0, stroke: CORAL, 'stroke-width': 15, 'stroke-linecap': 'round' }, svg) });
+  }
+  return {
+    wrap, size,
+    set(grow = 1, rot = 0, pulse = 0, ph = 0) {
+      for (const q of rays) { const len = q.L * grow * (1 + pulse * .16 * Math.sin(ph + q.ph)), a = q.a + rot; q.ln.setAttribute('x2', (Math.cos(a) * len).toFixed(2)); q.ln.setAttribute('y2', (Math.sin(a) * len).toFixed(2)); }
+    },
+    at(x, y, s = 1) { place(wrap, x, y, size, size, s); },
+  };
+}
+// words that rise in one by one; [brackets] mark accent words
+function mkWords(parent, text, cls, x, y) {
+  const line = el('div', 'cap ' + cls, parent); const words = []; let acc = false;
+  text.split(' ').forEach((raw, i) => {
+    let w = raw; if (w.startsWith('[')) { acc = true; w = w.slice(1); } const isAcc = acc; if (w.endsWith(']')) { acc = false; w = w.slice(0, -1); }
+    if (i) line.appendChild(document.createTextNode(' '));
+    words.push(el('span', 'word' + (isAcc ? ' acc' : ''), line, w));
+  });
+  if (x != null) line.style.left = x + 'px'; line.style.top = y + 'px';
+  return { line, words };
+}
+function wordsIn(ws, t, t0, st = .11, d = .5, dy = 26) {
+  ws.forEach((w, i) => { const s0 = Array.isArray(t0) ? t0[i] : t0 + i * st, p = seg(t, s0, s0 + d), e = easeOut(p); op(w, e); w.style.transform = `translateY(${((1 - e) * dy).toFixed(2)}px)`; blur(w, p > 0 && p < 1 ? (1 - e) * 7 : 0); });
+}
+function capShow(c, t, tin, tout, st, d, dy) {
+  const on = t >= (Array.isArray(tin) ? tin[0] : tin) && t < tout + .45; vis(c.line, on); if (!on) return;
+  wordsIn(c.words, t, tin, st, d, dy); const p = seg(t, tout, tout + .4), e = ease(p); op(c.line, 1 - e); blur(c.line, p > 0 && p < 1 ? e * 8 : 0);
+  c.line.style.translate = `0 ${(-e * 14).toFixed(2)}px`;
+}
+
+// ============================================================== timeline data
+const MSG = '¿Me ayudas a escribirle una carta a mi abuela? Cumple 90 años.';
+const TYPE0 = 7.5, TYPE1 = 11.45, SEND = 11.875;
+const CT = (() => { const r = rng(42), g = []; let acc = 0; for (let i = 0; i < MSG.length; i++) { let v = .75 + r() * .5; const p = MSG[i - 1]; if (p === ' ') v *= 1.2; if (p === '?' || p === ',') v *= 2.4; g.push(acc); acc += v; } return g.map(v => TYPE0 + v / acc * (TYPE1 - TYPE0)); })();
+const REPLY = [['Querida', 'abuela:'], 'Noventa años, y sigues siendo quien convierte cualquier cocina en un hogar. Gracias por los cuentos antes de dormir, por tu risa contagiosa y por enseñarnos que el cariño se cocina a fuego lento.'.split(' '), '¡Feliz cumpleaños! Te queremos muchísimo.'.split(' ')];
+const STREAM0 = 30.45, STREAM1 = 34.4;
+const WT = (() => { const r = rng(5), n = REPLY.flat().length, g = []; let acc = 0, k = 0; REPLY.forEach((p, pi) => p.forEach((w, wi) => { if (wi === 0 && pi) acc += 2.2; g.push(acc); acc += .7 + r() * .6 + (/[,.:!]$/.test(w) ? .8 : 0); k++; })); return g.map(v => STREAM0 + v / acc * (STREAM1 - STREAM0)); })();
+const ROWS = [['¿', 'Me', ' ay', 'udas', ' a', ' escrib', 'irle', ' una', ' carta', ' a', ' mi', ' abuela', '?'], [' C', 'umple', ' 90', ' años', '.']];
+const TIDS = [[1209, 8401, 1035, 9921, 264, 3517, 22710, 5313, 6421, 264, 1694, 48210, 30], [356, 18823, 1954, 4790, 13]];
+const KEYTOK = ['0:6', '0:8', '0:11', '1:2'];
+const SPLIT0 = 15.6;
+const ARCS = [[[0, 11], [0, 8], 1], [[0, 1], [0, 2], .4], [[0, 6], [0, 11], .95], [[1, 2], [1, 3], .9], [[0, 5], [0, 8], .85], [[0, 7], [0, 8], .45], [[0, 11], [1, 2], 1],
+  [[0, 10], [0, 11], .6], [[1, 1], [1, 2], .8], [[0, 2], [0, 3], .4], [[0, 1], [0, 11], .3], [[1, 0], [1, 1], .5], [[0, 12], [0, 0], .3], [[0, 3], [0, 8], .35], [[1, 3], [0, 11], .45], [[0, 4], [0, 5], .3]];
+const ARC0 = 17.6, ARCST = .1;
+const CARDS = [['FORMA', '¿Un poema?', 0], ['TONO', 'Cálido, sin cursilería', 1], ['REGISTRO', '¿Muy formal?', 0], ['RECUERDOS', 'Cocina · cuentos · su risa', 1], ['LARGO', 'Corta, para leer en voz alta', 1]];
+const CARD0 = 25.6, CARDST = .3125, PRUNE = [27.2, null, 27.5], LIGHT = 27.85, FINAL = 28.55;
+const CARDY = [240, 390, 540, 690, 840], CARDX = 740, FX = 1530, FY = 540;
+
+// ============================================================== build
+let seek, AVS = { x: 1100, y: 400 };
+(async function main() {
+  await Promise.all([...document.fonts].map(f => f.load().catch(() => {})));
+  await document.fonts.ready;
+  const isRender = location.search.includes('render');
+  const stage = document.getElementById('stage');
+  const mkLayer = (z, bg) => { const l = el('div', 'layer', stage); l.style.zIndex = z; if (bg) l.style.background = bg; return l; };
+
+  // ---------------- S1 silence
+  const L1 = mkLayer(1, '#141413'), W1 = el('div', 'world', L1);
+  const g1 = img(GRID, W1, 2600, 1600); g1.style.transform = 'translate(-340px,-260px)';
+  const s1glow = img(GLOW, W1, 420);
+  const s1spark = mkSpark(W1, 240);
+  const s1ring = el('div', 'ring', W1);
+  const s1a = mkWords(W1, 'Antes de tu mensaje,', 'c serif it', null, 650); s1a.line.style.cssText += ';font-size:58px;color:#F3E9DC';
+  const s1b = mkWords(W1, 'solo hay [silencio.]', 'c serif it', null, 730); s1b.line.style.cssText += ';font-size:58px;color:#F3E9DC';
+  img(VIG, L1, 1920, 1080).style.transform = 'none';
+
+  // ---------------- phone layer (S2, S6, S7a)
+  const LP = mkLayer(2), WP = el('div', 'world', LP);
+  const bgP = img(IVORY, LP, 1920, 1080); bgP.style.transform = 'none'; LP.insertBefore(bgP, WP);
+  const PX = 1240, PY = 540, SW = 393, SH = 852;
+  const WX = lx => PX - SW / 2 + lx, WY = ly => PY - SH / 2 + ly;
+  const s2a = mkWords(WP, 'Del otro lado,', 'serif it', 170, 400); s2a.line.style.cssText += ';font-size:72px;color:#1F1E1B';
+  const s2b = mkWords(WP, 'alguien [me escribe.]', 'serif it', 170, 490); s2b.line.style.cssText += ';font-size:72px;color:#1F1E1B';
+  const s7a = mkWords(WP, 'Para ti,', 'serif it', 330, 400); s7a.line.style.cssText += ';font-size:78px;color:#1F1E1B';
+  const s7b = mkWords(WP, 'fue [un mensaje.]', 'serif it', 330, 495); s7b.line.style.cssText += ';font-size:78px;color:#1F1E1B';
+  const shadow = img(SHADOW, WP, 600, 200);
+  const phone = el('div', 'phone', WP, `
+    <div class="btn" style="left:-3px;top:168px;height:32px"></div><div class="btn" style="left:-3px;top:228px;height:62px"></div>
+    <div class="btn" style="left:-3px;top:302px;height:62px"></div><div class="btn" style="right:-3px;top:250px;height:96px"></div>
+    <div class="screen" id="scr">
+      <div class="status"><span class="time">9:41</span>
+        <svg width="78" height="14" viewBox="0 0 78 14"><g fill="#000"><rect x="0" y="9" width="3.2" height="4" rx="1"/><rect x="4.8" y="6.5" width="3.2" height="6.5" rx="1"/><rect x="9.6" y="4" width="3.2" height="9" rx="1"/><rect x="14.4" y="1.5" width="3.2" height="11.5" rx="1"/>
+        <path d="M27 5.2a9 9 0 0 1 12 0l-1.3 1.4a7 7 0 0 0-9.4 0z M29.6 7.9a5.4 5.4 0 0 1 6.8 0l-1.3 1.4a3.4 3.4 0 0 0-4.2 0z M31.8 10.6a2 2 0 0 1 2.4 0L33 12z"/></g>
+        <rect x="48" y="1.5" width="25" height="11.5" rx="3.5" fill="none" stroke="#000" stroke-opacity=".4"/><rect x="50" y="3.5" width="19" height="7.5" rx="2" fill="#000"/><path d="M74.5 5.5v3.5a1.8 1.8 0 0 0 0-3.5z" fill="#000" fill-opacity=".4"/></svg></div>
+      <div class="island"></div>
+      <div class="nav"><svg class="l" width="24" height="24" fill="none" stroke="#1F1E1B" stroke-width="2" stroke-linecap="round"><path d="M4 8h16M4 16h11"/></svg>
+        <div class="title">Claude <svg width="12" height="12" viewBox="0 0 12 12" style="vertical-align:0px;margin-left:2px" fill="none" stroke="#8A857A" stroke-width="1.8" stroke-linecap="round"><path d="M3 4.5l3 3 3-3"/></svg></div>
+        <svg class="r" width="24" height="24" fill="none" stroke="#1F1E1B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/><path d="M17.5 3.5l3 3L13 14h-3v-3z"/></svg></div>
+      <div class="greet" id="greet"><div class="gs" id="gs"></div><div class="gtext">¿Cómo puedo ayudarte hoy?</div></div>
+      <div class="chat" id="chat"><div class="ub" id="ub1">${MSG}</div><div class="avrow" id="avrow"></div><div class="reply" id="reply"></div>
+        <div class="acts" id="acts">
+          <svg width="18" height="18" fill="none" stroke="#8A857A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="10" height="10" rx="2"/><path d="M3 12V4a1 1 0 0 1 1-1h8"/></svg>
+          <svg width="18" height="18" fill="none" stroke="#8A857A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8v8H2V8zM5 8l4-6c1.2 0 2 .9 1.8 2.1L10.3 7H15a1.6 1.6 0 0 1 1.6 1.9l-1.2 6A1.6 1.6 0 0 1 13.8 16H5"/></svg>
+          <svg width="18" height="18" fill="none" stroke="#8A857A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleY(-1)"><path d="M5 8v8H2V8zM5 8l4-6c1.2 0 2 .9 1.8 2.1L10.3 7H15a1.6 1.6 0 0 1 1.6 1.9l-1.2 6A1.6 1.6 0 0 1 13.8 16H5"/></svg>
+          <svg width="18" height="18" fill="none" stroke="#8A857A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 9A6.5 6.5 0 1 1 13 3.8M15.5 2.5V6h-3.5"/></svg>
+        </div>
+        <div class="ub" id="ub2">¡Es perfecta! Se va a emocionar.</div></div>
+      <div class="dock" id="dock"><div class="itext"><span id="ival"></span><span class="caret" id="caret"></span><span class="ph" id="iph">Escribe a Claude</span></div>
+        <div class="drow"><div class="plus"><svg width="16" height="16" stroke="#6B665C" stroke-width="1.8" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg></div>
+          <div class="mic" id="mic"><svg width="20" height="20" fill="none" stroke="#8A857A" stroke-width="1.7" stroke-linecap="round"><rect x="7" y="2" width="6" height="10" rx="3"/><path d="M4 9.5a6 6 0 0 0 12 0M10 15.5V18"/></svg></div>
+          <div class="send" id="send"><svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5"/></svg></div></div></div>
+      <div class="kb" id="kb"></div>
+      <div class="home"></div>
+      <div class="touch" id="touch"></div>
+    </div>`);
+  const $ = id => phone.querySelector('#' + id);
+  const scr = $('scr'), greet = $('greet'), chat = $('chat'), ub1 = $('ub1'), ub2 = $('ub2'), avrow = $('avrow'), reply = $('reply'), acts = $('acts');
+  const dock = $('dock'), ival = $('ival'), caret = $('caret'), iph = $('iph'), mic = $('mic'), send = $('send'), kb = $('kb'), touch = $('touch');
+  const gSpark = mkSpark($('gs'), 48, 7); gSpark.at(196.5, 24);
+  const avGlow = img(GLOW, avrow, 130); place(avGlow, 15, 15, 130, 130);
+  const avSpark = mkSpark(avrow, 30, 7); avSpark.at(15, 15);
+  const parts = [0, 1, 2, 3, 4, 5, 6].map(() => { const d = el('div', 'abs', avrow); d.style.cssText += ';width:6px;height:6px;border-radius:3px;background:' + CORAL; return d; });
+  // reply words
+  const RW = [];
+  REPLY.forEach(p => { const pe = el('p', null, reply); p.forEach((w, i) => { if (i) pe.appendChild(document.createTextNode(' ')); RW.push(el('span', 'w', pe, w)); }); });
+  // keyboard
+  const KEYS = {}; const KW = (393 - 6 - 9 * 6) / 10;
+  const mkKey = (id, x, y, w, label, cls = '') => { const k = el('div', 'key ' + cls, kb, label); k.style.left = x + 'px'; k.style.top = y + 'px'; k.style.width = w + 'px'; KEYS[id] = { el: k, x, y, w, sp: cls.includes('sp') }; return k; };
+  'qwertyuiop'.split('').forEach((c, i) => mkKey(c, 3 + i * (KW + 6), 8, KW, c));
+  'asdfghjklñ'.split('').forEach((c, i) => mkKey(c, 3 + i * (KW + 6), 62, KW, c));
+  const r3 = (393 - (7 * KW + 36)) / 2;
+  'zxcvbnm'.split('').forEach((c, i) => mkKey(c, r3 + i * (KW + 6), 116, KW, c));
+  mkKey('shift', 3, 116, 44, '<svg width="20" height="20" viewBox="0 0 20 20" style="margin-top:11px" fill="none" stroke="#000" stroke-width="1.6" stroke-linejoin="round"><path d="M10 3l7 7.5h-4V17H7v-6.5H3z"/></svg>', 'sp');
+  mkKey('del', 393 - 3 - 44, 116, 44, '<svg width="24" height="20" viewBox="0 0 24 20" style="margin-top:11px" fill="none" stroke="#000" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M8 3h13v14H8l-6-7z"/><path d="M12 7l6 6M18 7l-6 6"/></svg>', 'sp');
+  mkKey('123', 3, 170, 87, '123', 'sp small'); mkKey(' ', 96, 170, 201, 'espacio', 'small'); mkKey('intro', 303, 170, 87, 'intro', 'sp small');
+  el('div', 'abs', kb, '<svg width="26" height="26" fill="none" stroke="#50555C" stroke-width="1.6"><circle cx="13" cy="13" r="10"/><path d="M3 13h20M13 3c-4 4-4 16 0 20M13 3c4 4 4 16 0 20"/></svg>').style.cssText += ';left:26px;top:238px';
+  el('div', 'abs', kb, '<svg width="26" height="26" fill="none" stroke="#50555C" stroke-width="1.7" stroke-linecap="round"><rect x="9" y="3" width="8" height="13" rx="4"/><path d="M5 12a8 8 0 0 0 16 0M13 20v3"/></svg>').style.cssText += ';left:341px;top:238px';
+  const kpop = el('div', 'kpop', kb);
+  const keyOf = c => { if (c === 'ñ') return 'ñ'; c = c.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace('ñ', 'ñ'); if (c === ' ') return ' '; if (KEYS[c]) return c; return '123'; };
+  // static layout measurements (only opacity/transforms change later)
+  ival.textContent = MSG; const dockHFull = dock.offsetHeight; ival.textContent = ''; const dockH0 = dock.offsetHeight;
+  const offY = (e) => { let y = 0; while (e && e !== scr) { y += e.offsetTop; e = e.offsetParent; } return y; };
+  const ub1Top = offY(ub1), avY = offY(avrow) + 15, avX = 18 + 15;
+  const wordY = RW.map(w => offY(w) + 13), ub2Bot = offY(ub2) + ub2.offsetHeight, actsBot = offY(acts) + 22;
+  const dockBotDown = SH - 34 - 6, visBot = dockBotDown - dockH0 - 14;
+  const scrollT = t => { let b = ub1Top + ub1.offsetHeight; for (let i = 0; i < RW.length; i++) if (t >= WT[i]) b = wordY[i] + 14; if (t >= 34.6) b = actsBot; if (t >= 36.25) b = ub2Bot; return Math.max(0, b - visBot); };
+  const scrollB = bake(29, DUR, scrollT, 7);
+  const focusT = t => { let y = avY + 70; for (let i = 0; i < RW.length; i++) if (t >= WT[i]) y = Math.max(y, wordY[i] - 10); return y; };
+  const focusB = bake(29.3, 36.5, focusT, 5);
+  const touchAt = (x, y, s, o) => { touch.style.transform = `translate(${x - 23}px,${y - 23}px) scale(${s})`; op(touch, o); };
+
+  // ---------------- mind layer (S3–S5)
+  const LM = mkLayer(3, '#141413');
+  const fieldC = el('canvas', 'abs', LM); fieldC.width = W; fieldC.height = H; const fx = fieldC.getContext('2d');
+  const WM = el('div', 'world', LM);
+  const arcSvg = sel('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}` }, WM); arcSvg.style.cssText = 'position:absolute;left:0;top:0;overflow:visible';
+  // tokens
+  const meas = document.createElement('canvas').getContext('2d'); meas.font = "400 52px 'Newsreader'";
+  const SPW = meas.measureText(' ').width, PADX = 16, GAP = 16, ROWY = [470, 620];
+  const TOK = ROWS.map((row, ri) => row.map((s, i) => { const text = s.trimStart(); const e = el('div', 'tok', WM); const sp = el('span', null, e, text); const id = el('div', 'tid', WM, TIDS[ri][i]); return { ri, i, text, lead: s.startsWith(' '), w: meas.measureText(text).width, el: e, id, key: KEYTOK.includes(ri + ':' + i), split: SPLIT0 + (ri * 13 + i) * .055 }; }));
+  const rowLayout = (row, t) => { let x = 0; const o = row.map((k, j) => { const s = easeOut(seg(t, k.split, k.split + .35)); const pad = PADX * s; x += j ? lerp(k.lead ? SPW : 0, GAP, s) : 0; const r = { x, w: k.w + 2 * pad, pad, s }; x += r.w; return r; }); const x0 = 960 - x / 2; o.forEach(r => r.x += x0); return o; };
+  const FIN = TOK.map(row => rowLayout(row, 99));
+  const tc = ([r, i]) => ({ x: FIN[r][i].x + FIN[r][i].w / 2, y: ROWY[r] });
+  const arcEls = ARCS.map(([a, b, wgt], k) => {
+    const A = tc(a), B = tc(b); let d;
+    if (a[0] === b[0]) { const up = a[0] === 0 ? -1 : 1, h = Math.min(150, 40 + Math.abs(B.x - A.x) * .32), y0 = A.y + up * 40; d = `M${A.x},${y0} C${A.x},${y0 + up * h} ${B.x},${y0 + up * h} ${B.x},${y0}`; }
+    else { const [P, Q] = a[0] < b[0] ? [A, B] : [B, A]; d = `M${P.x},${P.y + 40} C${P.x},${P.y + 110} ${Q.x},${Q.y - 110} ${Q.x},${Q.y - 40}`; }
+    const strong = wgt >= .8;
+    return { p: sel('path', { d, fill: 'none', stroke: strong ? CORAL : '#F3E9DC', 'stroke-opacity': strong ? .9 : .14 + .3 * wgt, 'stroke-width': 1.2 + 3 * wgt, 'stroke-linecap': 'round', pathLength: 1, 'stroke-dasharray': '1 1', 'stroke-dashoffset': 1 }, arcSvg), t0: ARC0 + k * ARCST };
+  });
+  const s3a = mkWords(WM, '[Tu mensaje] llega en piezas.', 'c serif it', null, 150); s3a.line.style.cssText += ';font-size:50px;color:#F3E9DC';
+  const s3b = mkWords(WM, 'Y cada pieza mira a [todas las demás.]', 'c serif it', null, 150); s3b.line.style.cssText += ';font-size:50px;color:#F3E9DC';
+  // tree (S5)
+  const treeSvg = sel('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}` }, WM); treeSvg.style.cssText = 'position:absolute;left:0;top:0;overflow:visible';
+  const SX = 330, SY = 540;
+  const cardEls = CARDS.map(([lb, tx, keep], i) => {
+    const y = CARDY[i];
+    const e1 = sel('path', { d: `M${SX + 40},${SY} C${SX + 230},${SY} ${CARDX - 200},${y} ${CARDX},${y}`, fill: 'none', stroke: '#F3E9DC', 'stroke-opacity': .35, 'stroke-width': 2, pathLength: 1, 'stroke-dasharray': '1 1', 'stroke-dashoffset': 1 }, treeSvg);
+    const e2 = keep ? sel('path', { d: `M${CARDX + 440},${y} C${CARDX + 600},${y} ${FX - 180},${FY} ${FX - 42},${FY}`, fill: 'none', stroke: CORAL, 'stroke-width': 2.5, pathLength: 1, 'stroke-dasharray': '1 1', 'stroke-dashoffset': 1 }, treeSvg) : null;
+    const c = el('div', 'card', WM, `<div class="lb">${lb}</div><div class="tx">${tx}<div class="strike"></div></div>`);
+    const dot = sel('circle', { r: 5, fill: '#FFE3D3' }, treeSvg);
+    return { e1, e2, c, y, keep, strike: c.querySelector('.strike'), tw: c.querySelector('.tx').offsetWidth, dot, t0: CARD0 + i * CARDST, L1: e1.getTotalLength(), L2: e2 ? e2.getTotalLength() : 0 };
+  });
+  const fnode = el('div', 'fnode', WM, `<svg width="80" height="80" viewBox="0 0 80 80" style="position:absolute;left:0;top:0"><path id="chk" d="M26 41l10 10 19-21" fill="none" stroke="#D97757" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1 1"/></svg>`);
+  const chk = fnode.querySelector('#chk');
+  const flab = el('div', 'flab', WM, `<div class="mono" style="font-size:13px;letter-spacing:.16em;color:#D97757">PLAN</div><div class="serif" style="font-size:30px;color:#F3E9DC;margin-top:6px">Carta en tres párrafos</div>`);
+  const s5 = mkWords(WM, 'Exploro caminos. Descarto. [Elijo.]', 'c serif it', null, 96); s5.line.style.cssText += ';font-size:46px;color:#F3E9DC';
+  const mGlow = img(GLOW, WM, 1000);
+  const mSpark = mkSpark(WM, 300, 7);
+  const vm = img(VIG, LM, 1920, 1080); vm.style.transform = 'none';
+  const s4 = [mkWords(LM, '¿Y qué siento?', 'c serif it', null, 840), mkWords(LM, 'No sé si «sentir» es la palabra…', 'c serif it', null, 840), mkWords(LM, '…pero todo [se enciende.]', 'c serif it', null, 840)];
+  s4.forEach(c => c.line.style.cssText += ';font-size:64px;color:#F3E9DC');
+  // neural field
+  const FG = []; { const r = rng(11), N = 46, SP = 62; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) FG.push([(i - (N - 1) / 2) * SP, (j - (N - 1) / 2) * SP, r() * 6.28]); }
+  const WAVES = [[20.0, 150], [21.25, 55], [23.75, 170]];
+  function drawField(t, alpha) {
+    fx.clearRect(0, 0, W, H); if (alpha <= 0.01) return;
+    const yaw = .25 * Math.sin(t * .17) + (t - 15) * .045, p = .4, cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(p), spp = Math.sin(p), f = 1150, D = 1750;
+    for (const [x, z, ph] of FG) {
+      const r = Math.hypot(x, z); let h = 7 * Math.sin(x * .011 + t * 1.3 + ph) + 7 * Math.cos(z * .009 - t * 1.1);
+      for (const [t0, amp] of WAVES) { const dt = t - t0; if (dt <= 0) continue; const d = r - 820 * dt; h += amp * Math.exp(-d * d / (2 * 170 * 170)) * Math.exp(-dt * .38) * Math.cos(d * .022); }
+      const act = clamp(Math.abs(h) / 70);
+      const X = x * cy - z * sy, Z = x * sy + z * cy, Y = h - 250;
+      const yy = Y * cp + Z * spp, zz = -Y * spp + Z * cp + D; if (zz < 80) continue;
+      const sx = 960 + f * X / zz, syy = 540 - f * yy / zz; if (sx < -20 || sx > W + 20 || syy < -20 || syy > H + 20) continue;
+      const depth = clamp((3900 - zz) / 3000), a = alpha * depth * (.42 + .58 * act); if (a < .02) continue;
+      fx.globalAlpha = a; fx.fillStyle = act < .5 ? mix('#7C7064', CORAL, act * 2) : mix(CORAL, '#FFE9D6', act * 2 - 1);
+      fx.beginPath(); fx.arc(sx, syy, clamp(2.3 * f / zz * (.7 + act * 1.3), .6, 10), 0, 6.283); fx.fill();
+    }
+    fx.globalAlpha = 1;
+  }
+
+  // ---------------- end layer (S7b, S8)
+  const LE = mkLayer(5, '#141413');
+  const ge = img(GRID, LE, 2600, 1600); ge.style.transform = 'translate(-340px,-260px)';
+  const starC = el('canvas', 'abs', LE); starC.width = W; starC.height = H; const sx2 = starC.getContext('2d');
+  const STARS = (() => { const r = rng(23); return Array.from({ length: 420 }, () => ({ a: r() * 6.283, d: 60 + Math.pow(r(), .7) * 1100, v: .3 + r() * .9, s: .6 + r() * 2, c: r() < .18, tw: 2 + r() * 5, ph: r() * 6.28 })); })();
+  const eGlow = img(GLOW, LE, 1100);
+  const eSpark = mkSpark(LE, 300, 7);
+  const eRing = el('div', 'ring', LE);
+  const s8 = mkWords(LE, 'Para mí, [un universo entero.]', 'c serif it', null, 650); s8.line.style.cssText += ';font-size:88px;color:#F3E9DC';
+  const mark = el('div', 'cap c serif', LE, 'Claude'); mark.style.cssText += ';top:592px;font-size:46px;color:#F3E9DC;letter-spacing:.01em';
+  const ve = img(VIG, LE, 1920, 1080); ve.style.transform = 'none';
+
+  // ---------------- transitions + HUD
+  const TR = mkLayer(8); const iRing = el('div', 'iris-ring', TR);
+  const HUD = mkLayer(9); HUD.style.pointerEvents = 'none';
+  const HUDS = [['01 · LEER', 15.15, 19.85, 0], ['02 · SENTIR', 20.0, 24.85, 0], ['03 · PENSAR', 25.0, 29.3, 0], ['04 · RESPONDER', 30.15, 34.9, 1]].map(([tx, a, b, light]) => ({ e: el('div', 'hud', HUD, `<i></i>${tx}`), a, b, light }));
+  HUDS.forEach(h => h.e.style.color = h.light ? 'rgba(31,30,27,.55)' : 'rgba(243,233,220,.6)');
+  const fade = mkLayer(10, '#000');
+
+  const mindS = t => Math.exp(kf([[15, 0], [19.2, Math.log(1.04)], [20.0, 0], [28.85, 0], [29.4, Math.log(1.8)], [30.0, Math.log(2.3), lin]])(t));
+  const mindX = kf([[28.85, 960], [29.4, FX]]);
+  const iris = (layer, t, t0, t1, x, y, e = ease) => {
+    const p = seg(t, t0, t1), R = lerp(0, 2300, e(p));
+    if (p >= 1) { layer.style.clipPath = 'none'; return -1; }
+    layer.style.clipPath = `circle(${R.toFixed(1)}px at ${x.toFixed(1)}px ${y.toFixed(1)}px)`;
+    if (t >= t0) { vis(iRing, true); iRing.style.width = iRing.style.height = 2 * R + 'px'; iRing.style.transform = `translate(${x - R}px,${y - R}px)`; op(iRing, 1 - easeIn(p)); }
+    return R;
+  };
+
+  // ============================================================ seek
+  seek = function (tt) {
+    const t = clamp(tt, 0, DUR - 1e-4);
+    vis(iRing, false);
+    // ---- S1
+    const on1 = t < 5.05; vis(L1, on1);
+    if (on1) {
+      cam(W1, 960, 540, 1 + .06 * seg(t, 0, 5));
+      const br = Math.sin(2 * Math.PI * t / BAR - Math.PI / 2), inhale = easeIn(seg(t, 3.95, 4.4));
+      s1spark.set(0); s1spark.at(960, 540, (1 + .14 * br) * (1 + 1.2 * inhale));
+      place(s1glow, 960, 540, 420, 420, 1 + .15 * br + inhale); op(s1glow, .55 + .2 * br);
+      const rp = seg(t, 3.75, 4.75), R = lerp(10, 230, easeOut(rp)); vis(s1ring, rp > 0 && rp < 1); s1ring.style.width = s1ring.style.height = 2 * R + 'px'; s1ring.style.transform = `translate(${960 - R}px,${540 - R}px)`; op(s1ring, .75 * (1 - rp));
+      capShow(s1a, t, .55, 3.55, .13, .55); capShow(s1b, t, 1.85, 3.6, .13, .55);
+    }
+    // ---- phone layer
+    const onP = (t >= 4.3 && t < 15.0) || (t >= 29.3 && t < 40.1); vis(LP, onP);
+    LP.style.zIndex = t >= 29 ? 4 : 2;
+    if (onP) {
+      if (t < 15) iris(LP, t, 4.375, 5.0, 960, 540, x => ease(x));
+      // camera
+      let cx, cy, s;
+      if (t < 15) {
+        cx = kf([[6.9, 960], [7.8, WX(196.5)], [11.9, WX(196.5)], [12.65, 1215], [13.75, WX(avX)]])(t);
+        cy = kf([[6.9, 540], [7.8, WY(640)], [11.0, WY(626)], [11.9, WY(626)], [12.65, 505], [13.75, WY(avY)]])(t);
+        s = Math.exp(kf([[6.9, 0], [7.8, Math.log(2.0)], [11.9, Math.log(2.0)], [12.65, Math.log(1.12)], [13.75, Math.log(1.7)], [14.55, Math.log(18), x => x * x]])(t));
+      } else {
+        const fy = WY(focusB(t) - scrollB(t)), wide = ease(seg(t, 35.0, 36.3));
+        cx = lerp(WX(196.5), lerp(880, 862, seg(t, 36.3, 40)), wide);
+        cy = lerp(fy, 540, wide);
+        s = lerp(lerp(2.3, 2.1, seg(t, 30, 34.5)), lerp(1.0, 1.04, seg(t, 36.3, 40)), wide);
+      }
+      cam(WP, cx, cy, s);
+      // phone pose
+      const spIn = spring(t - 4.95, 7.5, .9);
+      const rx = t < 6.9 ? lerp(34, 10, spIn) : kf([[6.9, 10], [7.8, 4], [11.95, 4], [12.9, 5], [13.75, 0], [29, 0], [29.3, 2], [35.0, 2], [36.3, 6]])(t);
+      const ry = t < 6.9 ? lerp(-42, -16, spIn) : kf([[6.9, -16], [7.8, -6], [11.95, -6], [12.9, -9], [13.75, 0], [29, 0], [29.3, -3], [35.0, -3], [36.3, -14], [40, -17, lin]])(t);
+      const rz = t < 6.9 ? lerp(-7, 0, spIn) : 0, dy = t < 15 ? 1050 * (1 - spIn) : 0;
+      phone.style.transform = `translate(${PX - 210.5}px,${PY - 440 + dy}px) perspective(2400px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg)`;
+      place(shadow, PX + 10, PY + 448 + dy * .2, 600, 200); op(shadow, .9 * spIn);
+      capShow(s2a, t, 5.6, 7.1, .13, .55); capShow(s2b, t, 6.0, 7.15, .13, .55);
+      capShow(s7a, t, 37.45, 39.3, .13, .55); capShow(s7b, t, 37.85, 39.35, .13, .55);
+      // keyboard + dock
+      const kbUp = ease(seg(t, 6.75, 7.15)) - ease(seg(t, 11.95, 12.35));
+      kb.style.transform = `translateY(${SH - 300 * kbUp}px)`;
+      const dockBot = lerp(dockBotDown, SH - 300 - 6, kbUp); dock.style.top = 'auto'; dock.style.bottom = (SH - dockBot) + 'px';
+      let n = 0; for (const c of CT) if (t >= c) n++;
+      const typed = t < SEND ? MSG.slice(0, n) : '';
+      ival.textContent = typed; vis(iph, !typed);
+      const last = n ? CT[n - 1] : 0, focused = t >= 6.9 && t < SEND;
+      vis(caret, focused && (t - last < .45 || Math.floor((t - last) / .5) % 2 === 1));
+      op(send, typed ? 1 : 0); op(mic, typed ? 0 : 1);
+      // key presses
+      for (const k in KEYS) KEYS[k].el.style.background = '';
+      vis(kpop, false);
+      if (n && t - last < .11 && t < SEND) {
+        const kk = keyOf(MSG[n - 1]), K = KEYS[kk]; K.el.style.background = K.sp || kk === ' ' ? '#E6E8EC' : '#ECEDF0';
+        if (kk.length === 1 && kk !== ' ') { vis(kpop, true); kpop.textContent = MSG[n - 1].toLowerCase(); kpop.style.transform = `translate(${K.x + K.w / 2 - 27}px,${K.y - 62}px)`; }
+      }
+      // send tap
+      const tp = seg(t, 11.7, 12.05); const sendX = 12 + 369 - 16 - 17, sendY = dockBot - 10 - 17;
+      touchAt(sendX, sendY, lerp(1.25, .9, easeOut(seg(t, 11.7, 11.85))), tp > 0 && tp < 1 ? Math.sin(Math.PI * tp) : 0);
+      send.style.transform = `scale(${1 - .14 * Math.sin(Math.PI * seg(t, 11.8, 11.98))})`;
+      // greeting / chat
+      op(greet, 1 - seg(t, 11.85, 12.05)); gSpark.set(1, t * .25, .5, t * 2.5);
+      op(chat, t >= SEND ? 1 : 0);
+      const bsp = spring(t - SEND, 13, .86), dy0 = (SH - 300 - 6 - dockHFull + 14) - ub1Top;
+      ub1.style.transform = `translateY(${(dy0 * (1 - bsp)).toFixed(2)}px) scale(${lerp(.97, 1, bsp)})`;
+      const scroll = t > 29 ? scrollB(t) : 0; chat.style.transform = `translateY(${-scroll}px)`;
+      // avatar spark
+      const avIn = easeOut(seg(t, 12.6, 12.95));
+      const thinking = (t > 12.6 && t < 15) || (t > 29.3 && t < STREAM1 + .2);
+      avSpark.set(t < 15 ? avIn * (.82 + .18 * Math.sin(t * 7)) : 1, t * (thinking ? 1.7 : .3), thinking ? 1 : .3, t * 6);
+      const warm = Math.sin(Math.PI * seg(t, 36.85, 38.9));
+      op(avGlow, t < 15 ? avIn * (.35 + .2 * Math.sin(t * 5)) : thinking ? .35 : .15 + .6 * warm);
+      parts.forEach((d, i) => { const r = rng(300 + i), a = r() * 6.28, sp = 30 + r() * 40, p = seg(t, 36.9 + i * .1, 38.4 + i * .1); vis(d, p > 0 && p < 1); d.style.transform = `translate(${12 + Math.cos(a) * sp * p + (r() - .5) * 20 * p}px,${12 - 70 * easeOut(p) + Math.sin(a) * 10 * p}px) scale(${1 - p})`; op(d, Math.sin(Math.PI * p)); });
+      RW.forEach((w, i) => { const p = seg(t, WT[i], WT[i] + .18); op(w, p); w.style.transform = p > 0 && p < 1 ? `translateY(${(1 - p) * 3}px)` : ''; });
+      op(acts, seg(t, 34.6, 35.0));
+      const b2 = spring(t - 36.25, 15, .7); op(ub2, seg(t, 36.25, 36.35)); ub2.style.transform = `scale(${lerp(.85, 1, b2)})`; ub2.style.transformOrigin = '100% 100%';
+    }
+    // ---- mind layer
+    const onM = t >= 14.0 && t < 30.05; vis(LM, onM);
+    if (onM) {
+      iris(LM, t, 14.3, 14.95, 960, 540, ease);
+      const ms = mindS(t), mcx = mindX(t), mcy = 540;
+      cam(WM, mcx, mcy, ms);
+      drawField(t, t < 20 ? .45 * seg(t, 14.3, 15.2) : t < 25 ? lerp(.4, 1, seg(t, 19.9, 20.3)) : lerp(1, .26, seg(t, 25, 26)) * (1 - seg(t, 29.2, 29.8)));
+      // tokens
+      const onT = t < 20.05; arcSvg.style.display = onT ? '' : 'none';
+      TOK.forEach((row, ri) => { const L = rowLayout(row, t); row.forEach((k, i) => {
+        vis(k.el, onT); vis(k.id, onT); if (!onT) return;
+        const o = L[i], hl = k.key ? easeOut(seg(t, 18.5 + KEYTOK.indexOf(k.ri + ':' + k.i) * .1, 18.8 + KEYTOK.indexOf(k.ri + ':' + k.i) * .1)) : 0;
+        let x = o.x, y = ROWY[ri] - 38, sc = 1, a = easeOut(seg(t, 14.45, 14.95));
+        if (k.key) { const j = KEYTOK.indexOf(k.ri + ':' + k.i), p = easeIn(seg(t, 19.35 + j * .05, 19.9 + j * .025)); x = lerp(x, 960 - o.w / 2, p); y = lerp(y, 540 - 38, p); sc = lerp(1, .12, p); a *= 1 - seg(p, .8, 1); }
+        else { const p = seg(t, 19.15, 19.5); a *= 1 - p; y += 14 * p; }
+        k.el.style.transform = `translate(${x.toFixed(2)}px,${y.toFixed(2)}px) scale(${sc})`; k.el.style.width = o.w + 'px'; k.el.style.paddingLeft = o.pad + 'px';
+        k.el.style.borderColor = hl ? `rgba(217,119,87,${hl})` : `rgba(243,233,220,${(o.s * .38).toFixed(3)})`;
+        k.el.style.background = hl ? `rgba(217,119,87,${(.2 * hl).toFixed(3)})` : 'transparent'; op(k.el, a);
+        k.id.style.transform = `translate(${(o.x + o.w / 2 - 60).toFixed(2)}px,${ROWY[ri] + 46}px)`; op(k.id, o.s * a * (k.key ? 1 : 1)); }); });
+      const arcOut = 1 - seg(t, 19.0, 19.4);
+      arcEls.forEach(({ p, t0 }) => { const q = easeOut(seg(t, t0, t0 + .45)); p.setAttribute('stroke-dashoffset', (1 - q).toFixed(4)); p.style.opacity = arcOut; });
+      capShow(s3a, t, 15.35, 17.25, .12, .5); capShow(s3b, t, 17.45, 19.1, .12, .5);
+      // spark
+      const onS = t >= 19.4; vis(mSpark.wrap, onS); vis(mGlow, onS);
+      if (onS) {
+        let grow, sx = 960, sy = 540, ssc = 1;
+        if (t < 20) grow = .22 * easeOut(seg(t, 19.4, 19.95)); else grow = .22 + .78 * spring(t - 20, 9, .5);
+        grow *= 1 + .12 * Math.sin(Math.PI * seg(t, 23.75, 24.5));
+        const mv = ease(seg(t, 25.0, 25.8)); sx = lerp(960, SX, mv); ssc = lerp(1, .42, mv);
+        const beat = Math.exp(-((t % BEAT) / BEAT) * 4) * (t > 20 && t < 25 ? 1 : .4);
+        mSpark.set(grow, (t - 19) * .14, .7 + beat * .6, t * 3.2); mSpark.at(sx, sy, ssc * (1 + .04 * beat));
+        place(mGlow, sx, sy, 1000, 1000, ssc * lerp(.3, 1, grow) * (1 + .08 * beat)); op(mGlow, t < 20 ? .5 : .85 - .25 * mv + .15 * Math.sin(Math.PI * seg(t, 27.85, 28.9)));
+      }
+      s4.forEach((c, i) => capShow(c, t, [20.6, 22.1, 23.75][i], [21.85, 23.45, 24.75][i], .12, .55));
+      // tree
+      const onTree = t >= 24.9; vis(treeSvg, onTree); vis(fnode, onTree); vis(flab, onTree);
+      capShow(s5, t, 25.3, 29.0, .14, .55);
+      cardEls.forEach((c, i) => {
+        vis(c.c, onTree); vis(c.dot, false); if (!onTree) return;
+        const pe = easeOut(seg(t, c.t0, c.t0 + .4)); c.e1.setAttribute('stroke-dashoffset', (1 - pe).toFixed(4));
+        const pop = spring(t - c.t0 - .3, 16, .7), pa = seg(t, c.t0 + .3, c.t0 + .45);
+        const pr = PRUNE[i] ? seg(t, PRUNE[i], PRUNE[i] + .25) : 0;
+        c.c.style.transform = `translate(${CARDX}px,${c.y - 49}px) scale(${lerp(.86, 1, pop)})`; op(c.c, pa * (1 - .65 * pr));
+        c.strike.style.width = (c.tw + 8) * easeOut(pr) + 'px';
+        const lit = c.keep ? easeOut(seg(t, LIGHT, LIGHT + .3)) : 0;
+        c.e1.setAttribute('stroke', lit ? CORAL : '#F3E9DC'); c.e1.setAttribute('stroke-opacity', c.keep ? lerp(.35, 1, lit) : .35 * (1 - .75 * pr)); c.e1.setAttribute('stroke-width', lerp(2, 2.5, lit));
+        c.c.style.borderColor = lit ? mix('#3B3730', CORAL, lit * .8) : '';
+        if (c.keep) {
+          const p2 = easeOut(seg(t, LIGHT + .1 + i * .05, LIGHT + .55 + i * .05)); c.e2.setAttribute('stroke-dashoffset', (1 - p2).toFixed(4));
+          const tp = seg(t, LIGHT, FINAL); if (tp > 0 && tp < 1) { vis(c.dot, true); const L = (c.L1 + c.L2) * ease(tp), P = L < c.L1 ? c.e1.getPointAtLength(L) : null;
+            if (P) { c.dot.setAttribute('cx', P.x); c.dot.setAttribute('cy', P.y); } else { const Q = c.e2.getPointAtLength(Math.min(c.L2, L - c.L1)); c.dot.setAttribute('cx', Q.x); c.dot.setAttribute('cy', Q.y); } }
+        }
+      });
+      const fp = spring(t - FINAL, 14, .6), fa = seg(t, FINAL, FINAL + .12);
+      fnode.style.transform = `translate(${FX - 42}px,${FY - 42}px) scale(${lerp(.6, 1, fp)})`; op(fnode, fa);
+      fnode.style.background = mix('#221F1B', '#3A2A22', Math.sin(Math.PI * seg(t, FINAL, FINAL + .8)));
+      chk.setAttribute('stroke-dashoffset', (1 - easeOut(seg(t, FINAL + .08, FINAL + .4))).toFixed(4));
+      flab.style.transform = `translate(${FX - 210}px,${FY + 60}px)`; op(flab, seg(t, FINAL + .15, FINAL + .45));
+    }
+    // ---- S6 iris (phone over mind) from the plan node
+    if (t >= 29.3 && t < 30.05) iris(LP, t, 29.4, 30.0, 960 + (FX - mindX(t)) * mindS(t), 540, ease);
+    else if (t >= 30.05) LP.style.clipPath = 'none';
+    // ---- end layer
+    const onE = t >= 39.35; vis(LE, onE);
+    if (onE) {
+      const ax = AVS.x, ay = AVS.y;
+      iris(LE, t, 39.4, 40.0, ax, ay, ease);
+      const mv = ease(seg(t, 39.5, 40.5)), back = ease(seg(t, 44.4, 45.4));
+      const SPY = 400;
+      const px = lerp(lerp(ax, 960, mv), 960, back), py = lerp(lerp(ay, SPY, mv), 540, back);
+      const burst = Math.exp(-Math.max(0, t - 41.25) * 3) * (t > 41.25 ? 1 : 0);
+      const grow = lerp(1, 0, back) * (1 + .15 * burst);
+      const breath = t > 45.4 ? Math.sin(2 * Math.PI * (t - 45.4) / BAR) : 0;
+      eSpark.set(grow, t * .14, .6 * (1 - back), t * 3); eSpark.at(px, py, lerp(lerp(.1, 1, mv), .8, back) * (1 + .1 * breath + .1 * burst));
+      place(eGlow, px, py, 1100, 1100, lerp(lerp(.1, .85, mv), .4, back) * (1 + .2 * burst)); op(eGlow, .7 + .3 * burst);
+      const rp = seg(t, 46.25, 47.2), R = lerp(10, 230, easeOut(rp)); vis(eRing, rp > 0 && rp < 1); eRing.style.width = eRing.style.height = 2 * R + 'px'; eRing.style.transform = `translate(${960 - R}px,${540 - R}px)`; op(eRing, .7 * (1 - rp));
+      capShow(s8, t, [40.625, 40.75, 41.25, 41.37, 41.49], 44.35, .12, .6, 30);
+      vis(mark, t > 44.9 && t < 47.3); op(mark, seg(t, 45.0, 45.6) * (1 - seg(t, 46.5, 47.0))); mark.style.translate = `0 ${(1 - easeOut(seg(t, 45.0, 45.8))) * 14}px`;
+      // stars
+      sx2.clearRect(0, 0, W, H); const sa = seg(t, 39.6, 40.6) * (1 - seg(t, 44.3, 45.3));
+      if (sa > 0) for (const q of STARS) {
+        const d = q.d + 16 * (t - 39.4) + 560 * q.v * easeOut(seg(t, 41.25, 44.5)), x = px + Math.cos(q.a) * d, y = py + Math.sin(q.a) * d * .8;
+        const a = sa * seg(t, 39.6 + q.d / 1100 * .8, 40.2 + q.d / 1100 * .8) * (.55 + .45 * Math.sin(q.tw * t + q.ph)); if (a < .02) continue;
+        sx2.globalAlpha = a; sx2.fillStyle = q.c ? CORAL : '#F7EBDD'; sx2.beginPath(); sx2.arc(x, y, q.s * (1 + .6 * burst), 0, 6.283); sx2.fill();
+      }
+      sx2.globalAlpha = 1;
+    }
+    // ---- HUD + fade
+    HUDS.forEach(h => { const a = seg(t, h.a, h.a + .3) * (1 - seg(t, h.b, h.b + .25)); vis(h.e, a > 0); op(h.e, a); h.e.style.transform = `translateY(${(1 - easeOut(seg(t, h.a, h.a + .3))) * 10}px)`; });
+    op(fade, seg(t, 47.05, 47.5));
+  };
+
+  // where the avatar spark sits on screen when the final iris opens (measured once)
+  { seek(39.4); const r = avSpark.wrap.getBoundingClientRect(), st = stage.getBoundingClientRect(); AVS = { x: r.left - st.left + r.width / 2, y: r.top - st.top + r.height / 2 }; }
+
+  // ============================================================ sound
+  window.buildAudio = async function (ctx) {
+    const SR = ctx.sampleRate, M = n => 440 * Math.pow(2, (n - 69) / 12);
+    const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 3; comp.attack.value = .005; comp.release.value = .2; comp.connect(ctx.destination);
+    const master = ctx.createGain(); master.gain.value = .9; master.connect(comp);
+    const ir = ctx.createBuffer(2, Math.floor(SR * 3.6), SR); { const r = rng(77); for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < d.length; i++) { const x = i / d.length; d[i] = (r() * 2 - 1) * Math.pow(1 - x, 2.6) * (i < SR * .012 ? i / (SR * .012) : 1); } } }
+    const rv = ctx.createConvolver(); rv.buffer = ir; const rvo = ctx.createGain(); rvo.gain.value = .5; rv.connect(rvo).connect(master);
+    const mus = ctx.createGain(); mus.gain.value = .55; mus.connect(master); const mr = ctx.createGain(); mr.gain.value = .55; mus.connect(mr).connect(rv);
+    const fxb = ctx.createGain(); fxb.gain.value = .9; fxb.connect(master); const fr = ctx.createGain(); fr.gain.value = .22; fxb.connect(fr).connect(rv);
+    const nb = ctx.createBuffer(1, SR * 2, SR); { const d = nb.getChannelData(0), r = rng(99); for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1; }
+    const ab = s => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; };
+    const B = {}; for (const k in SFX) B[k] = await ctx.decodeAudioData(ab(SFX[k]));
+    const play = (k, t, vol = .5, rate = 1, pan = 0) => { if (t < 0 || !B[k]) return; const s = ctx.createBufferSource(); s.buffer = B[k]; s.playbackRate.value = rate; const g = ctx.createGain(); g.gain.value = vol; const p = ctx.createStereoPanner(); p.pan.value = pan; s.connect(g).connect(p).connect(fxb); s.start(t); };
+    const env = (g, t, a, peak, d, end = .0001) => { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(end, t + a + d); };
+    // instruments
+    const piano = (n, t, vel = .25, dur = 2.2, out = mus) => {
+      const f = M(n), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 4200; lp.connect(out);
+      [[1, 1, 1], [2, .4, .7], [3, .16, .45], [4, .08, .3], [5, .04, .2]].forEach(([m, a, k]) => { const o = ctx.createOscillator(); o.frequency.value = f * m * (1 + .0006 * m * m); const g = ctx.createGain(); env(g, t, .005, a * vel, dur * k); o.connect(g).connect(lp); o.start(t); o.stop(t + dur * k + .1); });
+    };
+    const glass = (n, t, vel = .1) => { const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = M(n); const g = ctx.createGain(); env(g, t, .003, vel, .5); o.connect(g).connect(mus); o.start(t); o.stop(t + .6); };
+    const pad = (notes, t, dur, vol = .03, cut = 1200) => notes.forEach(n => [-7, 7].forEach(dt => {
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = M(n); o.detune.value = dt;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(cut * .6, t); lp.frequency.linearRampToValueAtTime(cut, t + dur * .5); lp.frequency.linearRampToValueAtTime(cut * .7, t + dur);
+      const g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .9); g.gain.setValueAtTime(vol, t + dur - .3); g.gain.linearRampToValueAtTime(0, t + dur + 1.2);
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 190; o.connect(lp).connect(hp).connect(g).connect(mus); o.start(t); o.stop(t + dur + 1.3); }));
+    const sub = (n, t, dur, vol = .2) => { const o = ctx.createOscillator(); o.frequency.value = M(n); const g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .05); g.gain.exponentialRampToValueAtTime(vol * .3, t + dur - .1); g.gain.linearRampToValueAtTime(0, t + dur + .1); o.connect(g).connect(master); o.start(t); o.stop(t + dur + .2); };
+    const kick = (t, vol = .5) => { const o = ctx.createOscillator(); o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(46, t + .12); const g = ctx.createGain(); env(g, t, .002, vol, .34); o.connect(g).connect(master); o.start(t); o.stop(t + .4); };
+    const noise = (t, type, f, q, vol, d, out = master) => { const s = ctx.createBufferSource(); s.buffer = nb; const bf = ctx.createBiquadFilter(); bf.type = type; bf.frequency.value = f; bf.Q.value = q; const g = ctx.createGain(); env(g, t, .002, vol, d); s.connect(bf).connect(g).connect(out); s.start(t, (t * 7.3) % 1.5); s.stop(t + d + .05); };
+    const hat = (t, vol = .05) => noise(t, 'highpass', 7000, .7, vol * 1.6, .045);
+    const snap = (t, vol = .12) => { noise(t, 'bandpass', 1900, 1.3, vol, .09); noise(t, 'bandpass', 1900, 1.3, vol * .5, .2, rv); };
+    const shimmer = (t, dur, vol = .016) => [86, 90, 93, 97].forEach((n, i) => { const o = ctx.createOscillator(); o.frequency.value = M(n); const g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 1.5 + i * .3); g.gain.linearRampToValueAtTime(0, t + dur); const lfo = ctx.createOscillator(); lfo.frequency.value = 3 + i; const lg = ctx.createGain(); lg.gain.value = vol * .5; lfo.connect(lg).connect(g.gain); o.connect(g).connect(mus); o.start(t); o.stop(t + dur + .1); lfo.start(t); lfo.stop(t + dur + .1); });
+    // harmony
+    const CH = { D: { r: 38, p: [50, 57, 61, 64, 66], a: [62, 66, 69, 73, 76] }, Bm: { r: 35, p: [47, 54, 57, 62, 66], a: [59, 62, 66, 69, 74] }, G: { r: 43, p: [43, 50, 54, 59, 62], a: [55, 59, 62, 66, 71] },
+      A: { r: 45, p: [45, 52, 57, 61, 64], a: [57, 61, 64, 69, 73] }, As: { r: 45, p: [45, 52, 57, 62, 64], a: [57, 62, 64, 69, 74] }, Em: { r: 40, p: [52, 55, 59, 62, 66], a: [64, 67, 71, 74, 78] }, AC: { r: 37, p: [49, 52, 57, 64], a: [57, 61, 64, 69, 73] } };
+    const PLAN = ['D', 'D', 'D', 'Bm', 'G', ['As', 'A'], 'Em', ['G', 'A'], 'D', 'Bm', 'G', ['As', 'A'], 'D', 'AC', 'Bm', 'G', ['As', 'A'], 'D', 'D'];
+    const PADV = [.018, .02, .022, .022, .022, .024, .026, .03, .036, .034, .028, .03, .026, .026, .026, .028, .03, .034, .03];
+    const chordAt = t => { const b = Math.floor(t / BAR), c = PLAN[Math.min(b, PLAN.length - 1)]; return CH[Array.isArray(c) ? c[(t % BAR) >= BAR / 2 ? 1 : 0] : c]; };
+    PLAN.forEach((c, b) => { const t0 = b * BAR; (Array.isArray(c) ? c : [c]).forEach((name, h, arr) => { const ch = CH[name], dur = BAR / arr.length, ts = t0 + h * dur; pad(ch.p, ts, dur, PADV[b], b >= 8 && b <= 9 ? 1800 : 1100); if (b >= 2) sub(ch.r, ts, dur, b === 8 ? .1 : .055); }); });
+    const r = rng(3);
+    for (let b = 0; b < 19; b++) {
+      const t0 = b * BAR;
+      if (b <= 1) { kick(t0, .3); kick(t0 + .24, .18); }                                                // heartbeat
+      for (let i = 0; i < 8; i++) {
+        const t = t0 + i * BEAT / 2, ch = chordAt(t), pat = [0, 1, 2, 3, 4, 3, 2, 1][i];
+        if ((b >= 2 && b <= 5) || (b >= 12 && b <= 15)) piano(ch.a[pat], t, (i % 2 ? .15 : .22) * (b >= 12 ? 1 : .9), 1.6);
+        if (b >= 6 && b <= 7) { glass(ch.a[pat] + 12, t + (r() < .5 ? BEAT / 4 : 0), .05 + r() * .04); }
+        if (b >= 10 && b <= 11) [0, 1].forEach(j => piano(ch.a[[0, 2, 1, 3][(i * 2 + j) % 4]] + 12, t + j * BEAT / 4, .1, .35));
+        if (b >= 17 && i % 4 === 0) piano(ch.a[(i / 4 + b) % 5] + 12, t, .1, 3);
+      }
+      for (let k = 0; k < 4; k++) {
+        const t = t0 + k * BEAT;
+        if (((b >= 3 && b <= 5) || (b >= 12 && b <= 14)) && k % 2 === 0) kick(t, .42);
+        if (b >= 10 && b <= 11) kick(t, .36);
+        if (b === 15 && k === 0) kick(t, .35);
+        if (b >= 12 && b <= 14 && k % 2 === 1) snap(t, .1);
+        if ((b >= 4 && b <= 5) || (b >= 10 && b <= 15)) { hat(t + BEAT / 2, .045); if (b >= 12 && b <= 14) hat(t, .022); }
+      }
+    }
+    [[20.0, 78, 2.4, .3], [21.25, 76, 1.2, .2], [21.875, 73, 1.2, .18], [22.5, 74, 2.4, .26], [23.75, 78, 1.8, .28], [24.375, 81, 1.6, .22],
+     [30.0, 81, 1.2, .24], [30.625, 78, .6, .18], [31.25, 76, .6, .18], [31.875, 78, 1.2, .2], [32.5, 76, 1.2, .22], [33.125, 73, .6, .16], [33.75, 76, 1.2, .18],
+     [35.0, 74, 1.2, .22], [35.625, 73, .6, .16], [36.25, 71, 1.2, .18], [36.875, 73, .6, .16], [37.5, 74, 2.4, .22], [38.75, 71, 1.2, .18],
+     [40.0, 73, 2.4, .22], [41.25, 76, 1.2, .24], [42.5, 78, 3.5, .28], [43.75, 81, 2, .18], [45.0, 86, 3.5, .14]].forEach(([t, n, d, v]) => piano(n, t, v, d * 1.6));
+    shimmer(20.0, 5.5); shimmer(41.25, 6.2, .013);
+    // effects (same timeline as the picture)
+    play('pip', 3.75, .5); play('whoosh', 4.2, .45, .9);
+    play('swipe', 4.95, .3, .85);
+    { const rr = rng(8); CT.forEach((c, i) => MSG[i] === ' ' ? play('click', c, .12, 1.3) : play('tick', c, .32, .85 + rr() * .35, .1)); }
+    play('click', 11.85, .5); play('qwoosh', 11.9, .4); play('pop', 12.25, .4, .9); play('blip', 12.62, .25, 1.1);
+    play('whoosh', 13.85, .55, .75); play('impact', 14.45, .35, .7);
+    TOK.flat().forEach((k, i) => play('blip', k.split, .1, .85 + i * .035, (k.i / 12 - .5) * .6));
+    arcEls.forEach((a, k) => play('tick', a.t0, .2, 1.4 + (k % 4) * .12, (k % 3 - 1) * .3));
+    play('riser', 17.99, .5); play('qwoosh', 19.3, .3, .85);
+    play('impact', 20.0, .95, .85); play('triangle', 20.0, .32); play('triangle', 23.75, .22, 1.06); play('impact', 23.75, .3, .6);
+    play('whoosh', 24.95, .35, 1.1);
+    cardEls.forEach((c, i) => play('pop', c.t0 + .3, .28, .9 + i * .06, -.2 + i * .1));
+    play('glitch', 27.2, .4); play('glitch', 27.5, .4, .9);
+    [0, 1, 2].forEach(i => play('blip', LIGHT + i * .1, .14, 1.2 + i * .1)); play('confirm', FINAL, .5);
+    play('whoosh', 29.3, .45);
+    { const rr = rng(9); WT.forEach(w => play('tick', w, .07, 1.5 + rr() * .5, .15)); }
+    play('pop', 36.25, .45); play('bell', 36.9, .3);
+    play('whoosh', 39.35, .4, .8);
+    play('impact', 41.25, .75, .8); play('triangle', 41.25, .32, .94);
+    play('qwoosh', 44.4, .25, .7); play('pip', 46.25, .45);
+  };
+
+  // ============================================================ preview / render setup
+  window.VIDEO = { w: W, h: H, duration: DUR };
+  window.seek = seek;
+  const ctl = document.getElementById('ctl');
+  if (isRender) { ctl.remove(); seek(0); return; }
+  const fit = () => { const s = Math.min(innerWidth / W, (innerHeight - 52) / H); stage.style.transform = `translate(${(innerWidth - W * s) / 2}px,0) scale(${s})`; };
+  addEventListener('resize', fit); fit();
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  const pp = document.getElementById('pp'), scrub = document.getElementById('scrub'), tcEl = document.getElementById('tc');
+  async function play() {
+    ac ??= new AudioContext();
+    if (!buf) { pp.textContent = '…'; const off = new OfflineAudioContext(2, Math.ceil(48000 * DUR), 48000); await window.buildAudio(off); buf = await off.startRendering(); }
+    if (offset >= DUR - .05) offset = 0;
+    src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination); src.start(0, offset); startAt = ac.currentTime; playing = true; pp.textContent = '❚❚ Pause';
+  }
+  function pause() { if (!playing) return; offset = Math.min(DUR, offset + ac.currentTime - startAt); src.stop(); playing = false; pp.textContent = '▶ Play'; }
+  const now = () => playing ? Math.min(DUR, offset + ac.currentTime - startAt) : offset;
+  pp.onclick = () => playing ? pause() : play();
+  addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); } });
+  scrub.oninput = () => { const was = playing; pause(); offset = scrub.value / 1000 * DUR; if (was) play(); };
+  (function loop() { const t = now(); if (playing && t >= DUR) pause(); seek(t); scrub.value = t / DUR * 1000; tcEl.textContent = t.toFixed(2); requestAnimationFrame(loop); })();
+})();
+</script>
+</body>
+</html>
