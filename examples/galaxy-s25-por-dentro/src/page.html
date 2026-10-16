@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galaxy S25 por dentro</title>
+<style>
+/*__FONTS__*/
+:root {
+  --ink: #05070c;
+  --text: #f4f7fb;
+  --muted: #9fb0c6;
+  --accent: #5cb8ff;
+  --accent-2: #9d8cff;
+  --line: rgba(230, 240, 255, .72);
+}
+html, body { margin: 0; background: #000; height: 100%; overflow: hidden; }
+body { font-family: 'Inter Variable', system-ui, sans-serif; color: var(--text); }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--ink); transform-origin: 0 0; }
+#bg { position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 55% 70% at 62% 48%, rgba(40, 78, 140, .42), rgba(10, 20, 40, 0) 70%),
+    radial-gradient(ellipse 90% 90% at 50% 50%, #0b1322 0%, #05070c 70%); }
+#bgGlow { position: absolute; inset: 0; opacity: 0;
+  background: radial-gradient(ellipse 40% 55% at 64% 50%, rgba(92, 184, 255, .30), rgba(92, 184, 255, 0) 70%); }
+#gl { position: absolute; inset: 0; }
+#gl canvas { width: 1920px !important; height: 1080px !important; display: block; }
+#vignette { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 75% 75% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%); }
+#grain { position: absolute; inset: 0; pointer-events: none; opacity: .055; background-repeat: repeat; }
+#ui { position: absolute; inset: 0; pointer-events: none; }
+#ui svg { position: absolute; inset: 0; overflow: visible; }
+.abs { position: absolute; white-space: nowrap; will-change: transform, opacity; }
+
+/* streak */
+#streak { left: 0; top: 539px; height: 2px; width: 1920px; transform-origin: 50% 50%;
+  background: linear-gradient(90deg, rgba(92,184,255,0), #dff1ff 50%, rgba(92,184,255,0)); }
+#streakGlow { left: 0; top: 440px; height: 200px; width: 1920px; transform-origin: 50% 50%;
+  background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(92,184,255,.35), rgba(92,184,255,0) 70%); }
+
+/* intro + end titles */
+.kicker { font-family: 'Inter Variable'; font-weight: 600; font-size: 20px; letter-spacing: .32em; text-transform: uppercase; color: var(--accent); }
+.hero { font-family: 'Outfit Variable'; font-weight: 600; letter-spacing: -.02em; line-height: 1.02; }
+.mask { overflow: hidden; display: block; padding: 0 .06em .08em; margin-bottom: -.08em; }
+.mask > span { display: inline-block; will-change: transform; }
+
+/* chapter block */
+.chapter { left: 132px; top: 0; width: 640px; white-space: normal; }
+.chapter .num { font-family: 'Inter Variable'; font-weight: 600; font-size: 18px; letter-spacing: .3em; color: var(--accent); display: flex; align-items: center; gap: 18px; }
+.chapter .num i { display: block; height: 1px; width: 56px; background: var(--accent); transform-origin: 0 50%; }
+.chapter h2 { margin: 22px 0 0; font-family: 'Outfit Variable'; font-weight: 600; font-size: 66px; line-height: 1.04; letter-spacing: -.02em; }
+.chapter p { margin: 22px 0 0; font-weight: 350; font-size: 26px; line-height: 1.45; color: #c7d3e3; max-width: 560px; }
+.chapter .chips { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 12px; max-width: 600px; }
+.chip { font-weight: 500; font-size: 20px; padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(160, 200, 255, .35); background: rgba(92, 184, 255, .08); color: #e8f2ff; white-space: nowrap; }
+
+/* callouts */
+.callout { font-family: 'Inter Variable'; }
+.callout b { display: block; font-family: 'Outfit Variable'; font-weight: 500; font-size: 30px; letter-spacing: -.01em; color: #fff; }
+.callout small { display: block; margin-top: 4px; font-weight: 400; font-size: 19px; color: var(--muted); }
+.callout.mini b { font-size: 22px; font-weight: 500; }
+.dot { width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; border: 1.5px solid #fff; box-sizing: border-box; }
+.dot::after { content: ''; position: absolute; left: 4px; top: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+/* magnifier */
+#mag { width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 50%; overflow: hidden; border: 1.5px solid rgba(255,255,255,.8); box-shadow: 0 0 0 8px rgba(92,184,255,.08); }
+#mag canvas { width: 260px; height: 260px; display: block; }
+
+/* die card */
+#die { width: 380px; padding: 26px; border-radius: 26px; background: rgba(12, 20, 34, .78); border: 1px solid rgba(160, 200, 255, .22); white-space: normal; }
+#die .t { font-size: 15px; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; color: var(--muted); }
+#die .grid { position: relative; margin-top: 18px; height: 300px; }
+.blk { position: absolute; border-radius: 10px; border: 1px solid rgba(160, 200, 255, .25); background: rgba(92,184,255,.05); box-sizing: border-box; padding: 10px 12px; }
+.blk b { display: block; font-family: 'Outfit Variable'; font-weight: 600; font-size: 22px; }
+.blk small { display: block; font-size: 14px; color: var(--muted); margin-top: 2px; }
+.core { position: absolute; border-radius: 4px; background: rgba(92,184,255,.2); }
+
+/* nav */
+#nav { left: 132px; bottom: 58px; display: flex; gap: 10px; align-items: center; }
+#nav .seg { width: 46px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.16); overflow: hidden; }
+#nav .seg i { display: block; height: 100%; width: 100%; background: #fff; transform-origin: 0 50%; transform: scaleX(0); }
+#navLabel { left: 132px; bottom: 76px; font-size: 14px; font-weight: 600; letter-spacing: .28em; color: rgba(255,255,255,.55); }
+
+#fade { position: absolute; inset: 0; background: #000; pointer-events: none; }
+
+/* preview controls */
+#controls { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 12px; align-items: center; padding: 10px 16px; background: rgba(10,12,18,.92); font: 13px 'Inter Variable', sans-serif; color: #cfd8e6; z-index: 10; }
+#controls button { font: inherit; color: #fff; background: #2a3142; border: 0; border-radius: 6px; padding: 6px 14px; cursor: pointer; }
+#controls input { flex: 1; }
+#controls span { font-variant-numeric: tabular-nums; min-width: 92px; }
+body.render #controls { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div>
+  <div id="bgGlow"></div>
+  <div id="gl"></div>
+  <div id="vignette"></div>
+  <div id="ui"><svg id="lines" width="1920" height="1080"></svg></div>
+  <div id="grain"></div>
+  <div id="fade"></div>
+</div>
+<div id="controls"><button id="playBtn">▶ Reproducir</button><input id="scrub" type="range" min="0" max="1000" value="0"><span id="time">0.00 s</span></div>
+<script>
+/*__SCRIPT__*/
+</script>
+</body>
+</html>

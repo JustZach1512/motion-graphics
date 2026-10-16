@@ -1,0 +1,6 @@
+node_modules/
+*.mp4
+*.png
+*.frames/
+*.pcm
+*_segs.txt
