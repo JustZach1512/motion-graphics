@@ -6,7 +6,7 @@
     "build": "node build.mjs",
     "stills": "node render.mjs galaxy-s25-por-dentro.html check.png --stills",
     "draft": "node render.mjs galaxy-s25-por-dentro.html draft.mp4 30 1 4",
-    "final": "node render.mjs galaxy-s25-por-dentro.html galaxy-s25-por-dentro.mp4 30 4 4"
+    "final": "node render.mjs galaxy-s25-por-dentro.html galaxy-s25-por-dentro.mp4 30 3 4"
   },
   "devDependencies": {
     "@fontsource-variable/inter": "5.1.1",

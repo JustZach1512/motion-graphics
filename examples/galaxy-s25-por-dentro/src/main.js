@@ -621,8 +621,8 @@ function buildUI() {
 
 // callouts: anchor -> elbow -> label
 const CALLOUTS = [
-  { a: 'glass', t0: 11.0, t1: 15.4, dx: -120, dy: -80, len: 60, side: -1, title: 'Gorilla Glass Victus 2', sub: 'Protección delante y detrás' },
-  { a: 'fp', t0: 12.9, t1: 15.4, dx: -200, dy: 50, len: 60, side: -1, title: 'Lector de huellas', sub: 'Integrado en la pantalla' },
+  { a: 'glass', t0: 11.0, t1: 15.4, dx: -210, dy: -60, len: 60, side: -1, title: 'Gorilla Glass Victus 2', sub: 'Protección delante y detrás' },
+  { a: 'fp', t0: 12.9, t1: 15.4, dx: -250, dy: 50, len: 60, side: -1, title: 'Lector de huellas', sub: 'Integrado en la pantalla' },
   { a: 'selfie', t0: 13.6, t1: 15.4, dx: 150, dy: -60, len: 60, title: 'Cámara frontal', sub: '12 MP' },
   { a: 'hot', t0: 17.2, t1: 21.4, dx: 190, dy: -80, len: 60, title: 'Punto caliente', sub: 'Justo sobre el procesador' },
   { a: 'vapEdge', t0: 18.6, t1: 21.4, dx: 150, dy: 60, len: 60, title: 'El calor se dispersa', sub: 'y sale a través del chasis' },
@@ -703,7 +703,6 @@ function revealLine(e, t, t0, t1, dist = 60) {
 }
 
 // ---------- seek ----------
-let grainR = rng(11);
 function seek(tIn) {
   const t = clamp(tIn, 0, DUR - 1e-4);
 
@@ -863,8 +862,6 @@ function seek(tIn) {
       b.style.background = `rgba(92,184,255,${0.05 + 0.16 * on + 0.25 * hi})`; b.style.borderColor = `rgba(160,210,255,${0.25 + 0.55 * on})`; });
     U.cores.forEach((c, i) => { c.style.background = `rgba(120,200,255,${0.18 + 0.6 * env(t, 24.6 + i * 0.06, 29.6, 0.15, 0.4) * (0.7 + 0.3 * Math.sin(t * 9 + i))})`; });
   }
-  // grain
-  const fi = Math.floor(t * 24); const r = rng(fi + 1); document.getElementById('grain').style.backgroundPosition = `${Math.floor(r() * 256)}px ${Math.floor(r() * 256)}px`;
 }
 
 // ---------- audio ----------

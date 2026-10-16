@@ -35,7 +35,7 @@ npm install
 npm run build                                   # src/ -> galaxy-s25-por-dentro.html
 node render.mjs galaxy-s25-por-dentro.html check.png --stills 3,12,26,40   # fotogramas sueltos
 node render.mjs galaxy-s25-por-dentro.html draft.mp4 30 1 4                # borrador rápido
-node render.mjs galaxy-s25-por-dentro.html galaxy-s25-por-dentro.mp4 30 4 4   # final con desenfoque de movimiento
+node render.mjs galaxy-s25-por-dentro.html galaxy-s25-por-dentro.mp4 30 3 4   # final con desenfoque de movimiento
 ```
 
 Necesita ffmpeg y Chromium (Playwright). El render usa WebGL por software, así que el final tarda bastante en una máquina sin GPU.
