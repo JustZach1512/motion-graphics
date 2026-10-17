@@ -1,0 +1,1164 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La diabetes explicada</title>
+<style>
+@font-face { font-family: 'Fredoka'; src: url(data:font/woff2;base64,FONT_BASE64) format('woff2'); font-weight: 300 700; font-display: block; }
+:root { --ink: #1F2A44; }
+html, body { margin: 0; height: 100%; background: #0E1320; overflow: hidden; font-family: 'Fredoka', system-ui, sans-serif; }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; color: var(--ink); transform-origin: 0 0; background: #DCF1FF; }
+.layer, .scene { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.scene { display: none; }
+.a { position: absolute; left: 0; top: 0; white-space: nowrap; transform-origin: 50% 50%; visibility: hidden; }
+.a svg { display: block; overflow: visible; }
+.tx { font-weight: 700; line-height: 1.05; letter-spacing: -0.01em; text-align: center; }
+.pill { display: inline-block; padding: 14px 38px 17px; border-radius: 999px; font-weight: 600; line-height: 1; box-shadow: 0 6px 0 rgba(31,42,68,.13); }
+.card { background: #fff; border-radius: 46px; box-shadow: 0 10px 0 rgba(31,42,68,.08); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; box-sizing: border-box; }
+.ct { font-size: 44px; font-weight: 600; text-align: center; white-space: normal; line-height: 1.1; padding: 0 24px; }
+.bub { background: #fff; border-radius: 48px; padding: 22px 46px 26px; font-weight: 700; position: relative; box-shadow: 0 8px 0 rgba(31,42,68,.1); }
+.bub::after { content: ''; position: absolute; left: 50px; bottom: -30px; border-style: solid; border-width: 32px 30px 0 0; border-color: #fff transparent transparent transparent; }
+.lab { font-size: 40px; font-weight: 600; }
+.qm { width: 76px; height: 76px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 56px; font-weight: 700; color: #7B61FF; box-shadow: 0 5px 0 rgba(31,42,68,.12); }
+.num { width: 92px; height: 92px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 60px; font-weight: 700; color: #fff; }
+.step { display: flex; align-items: center; gap: 22px; background: #fff; border-radius: 999px; padding: 10px 40px 10px 10px; font-size: 50px; font-weight: 600; box-shadow: 0 6px 0 rgba(31,42,68,.1); }
+.disc { width: 2300px; height: 2300px; border-radius: 50%; }
+#sub { position: absolute; left: 960px; top: 1004px; transform: translate(-50%, -50%); max-width: 1660px; width: max-content; box-sizing: border-box; background: rgba(255,255,255,.95); color: var(--ink); font-size: 40px; font-weight: 500; line-height: 1.22; padding: 11px 34px 14px; border-radius: 26px; text-align: center; box-shadow: 0 6px 0 rgba(31,42,68,.1); }
+#fx { position: absolute; left: 0; top: 0; }
+#ui { position: fixed; left: 0; right: 0; bottom: 0; height: 56px; display: flex; align-items: center; gap: 14px; padding: 0 16px; background: #161C2C; color: #E9ECF5; font: 15px system-ui, sans-serif; }
+#ui button { width: 44px; height: 36px; border: 0; border-radius: 10px; background: #2F8CFF; color: #fff; font-size: 18px; cursor: pointer; }
+#ui input { flex: 1; }
+.render #ui { display: none; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <radialGradient id="gSugar" cx=".36" cy=".3" r=".75"><stop offset="0" stop-color="#FFF3B0"/><stop offset=".45" stop-color="#FFD43B"/><stop offset="1" stop-color="#FFA800"/></radialGradient>
+    <linearGradient id="gKey" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE985"/><stop offset=".5" stop-color="#FFC61A"/><stop offset="1" stop-color="#F0A500"/></linearGradient>
+    <radialGradient id="gGlow"><stop offset=".55" stop-color="#FFE066" stop-opacity=".9"/><stop offset="1" stop-color="#FFE066" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gBlood" cx=".4" cy=".55" r=".7"><stop offset="0" stop-color="#FF8A8A"/><stop offset="1" stop-color="#E03131"/></radialGradient>
+  </defs>
+</svg>
+<div id="stage">
+  <div class="layer" id="bg"></div>
+  <div class="layer" id="scenes"></div>
+  <canvas id="fx" width="1920" height="1080"></canvas>
+  <div class="layer" id="over"></div>
+  <div id="sub"></div>
+</div>
+<div id="ui"><button id="pp">▶</button><input id="scrub" type="range" min="0" max="10000" value="0"><span id="tm">0:00</span></div>
+<audio id="au" src="diabetes_audio.m4a" preload="auto"></audio>
+<script>
+/* Beat sheet: the whole timeline comes from the voiceover (build.py -> TL).
+   Each chapter: colour iris + numbered title card (whoosh, pop) -> scene whose elements
+   pop in on the words that name them (pop), with dings on "success" moments, ticks on
+   counting, a click on the key turning, a soft impact on the factory breaking.
+   intro   hello cell, title, three questions
+   1 energia   kid -> zoom into cells; cell needs energy; food -> glucose; glucose rides the blood road
+   2 llave     closed door; insulin = key; made in the pancreas factory; key opens door, cell fills up
+   3 diabetes  factory stops; confused defenders break it; sugar jam; thirst/pee/tired; not your fault
+   4 insulina  pen & pump; slow vs fast; 5 steps (wash, dial, site, pinch+press, count to 10)
+   5 medir     drop of blood; finger prick vs sensor; low / green zone / high
+   6 hipohiper hipo = low, hiper = high; causes, signs, what to do, rescue kit
+   7 comida    carbs vs not; counting; the plate; water vs sweets; sport
+   8 final     still you; you can do everything; not alone; key superhero; end card */
+const TL = /*TIMELINE*/null, EMO = /*EMOJI*/null;
+const RENDER = location.search.includes('render');
+if (RENDER) document.documentElement.classList.add('render');
+window.VIDEO = { w: 1920, h: 1080, duration: TL.duration };
+const INK = '#1F2A44', SKIN = '#F4C29E', SKIN_D = '#D99A74', HAIR = '#5B3A29';
+
+// ---------------------------------------------------------------- helpers
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const easeIn = x => Math.pow(clamp(x), 3);
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const kf = keys => t => { if (t <= keys[0][0]) return keys[0][1]; for (let i = 1; i < keys.length; i++) { const [a, va] = keys[i - 1], [b, vb, e = ease] = keys[i]; if (t <= b) return lerp(va, vb, e((t - a) / (b - a))); } return keys[keys.length - 1][1]; };
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mixColor = (a, b, k) => { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(lerp(v, B[i], clamp(k)))).join(',')})`; };
+const wave = (t, f = 1, ph = 0) => Math.sin((t * f + ph) * Math.PI * 2);
+
+// ---------------------------------------------------------------- timeline
+const L = id => { const l = TL.lines[id]; if (!l) throw new Error('no line ' + id); return l; };
+function Wc(id, c) {
+  const l = L(id), sg = l.seg;
+  for (let i = 1; i < sg.length; i++) if (c <= sg[i][0]) { const [c0, t0] = sg[i - 1], [c1, t1] = sg[i]; return l.s + t0 + (t1 - t0) * (c1 > c0 ? (c - c0) / (c1 - c0) : 0); }
+  return l.e;
+}
+// time at which the narration reaches `sub` inside line `id`
+function W(id, sub, off = 0) {
+  let c = L(id).text.indexOf(sub);
+  if (c < 0) { console.warn(`W: "${sub}" not in ${id}`); c = 0; }
+  return Wc(id, c) + off;
+}
+const CUES = []; window.CUES = CUES;
+const cue = (t, cat, gain = 1) => { if (t >= 0 && t < TL.duration) CUES.push({ t: +t.toFixed(3), cat, gain }); };
+
+// ---------------------------------------------------------------- DOM
+const stage = document.getElementById('stage');
+function A(parent, html, ax = -50) { const d = document.createElement('div'); d.className = 'a'; d.innerHTML = html; d._ax = ax; parent.appendChild(d); return d; }
+function set(el, x, y, s = 1, r = 0, o = 1, sx = 1, sy = 1) {
+  if (!(o > 0.002 && Math.abs(s) > 0.002)) { if (el._v !== 0) { el.style.visibility = 'hidden'; el._v = 0; } return; }
+  if (el._v !== 1) { el.style.visibility = 'visible'; el._v = 1; }
+  el.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(${el._ax}%,-50%) scale(${(s * sx).toFixed(4)},${(s * sy).toFixed(4)}) rotate(${r.toFixed(2)}deg)`;
+  el.style.opacity = o >= 0.999 ? '' : o.toFixed(3);
+}
+const EM = (n, size = 120) => `<svg width="${size}" height="${size}" viewBox="0 0 32 32">${EMO[n]}</svg>`;
+const T = (txt, size = 64, color = INK, weight = 700, extra = '') => `<div class="tx" style="font-size:${size}px;color:${color};font-weight:${weight};${extra}">${txt}</div>`;
+const PILL = (txt, bg, fg = '#fff', size = 46) => `<div class="pill" style="background:${bg};color:${fg};font-size:${size}px">${txt}</div>`;
+const CARD = (inner, w, h, bg = '#fff') => `<div class="card" style="width:${w}px;height:${h}px;background:${bg}">${inner}</div>`;
+const BUB = (txt, size = 56) => `<div class="bub" style="font-size:${size}px">${txt}</div>`;
+const ICOL = (icon, label, size = 40, color = INK) => `<div style="display:flex;flex-direction:column;align-items:center;gap:10px">${icon}<div class="lab" style="font-size:${size}px;color:${color}">${label}</div></div>`;
+const STEP = (n, txt, col) => `<div class="step"><div class="num" style="background:${col}">${n}</div>${txt}</div>`;
+const QM = '<div class="qm">?</div>';
+
+// pop-in with a bouncy spring at tin, shrink away at tout
+function life(t, tin, tout = 1e9, o = {}) {
+  if (t < tin) return 0;
+  const od = o.outDur ?? 0.3;
+  if (t > tout + od) return 0;
+  let k = o.fade ? easeOut(seg(t, tin, tin + 0.45)) : spring(t - tin, o.w ?? 15, o.z ?? 0.55);
+  if (t > tout) k *= 1 - easeIn(seg(t, tout, tout + od));
+  return Math.max(0, k);
+}
+// a list of simple elements that pop in and out; returns add(), upd(t)
+function popper(parent) {
+  const list = [];
+  const add = (html, x, y, tin, tout = 1e9, s = 1, opt = {}) => {
+    const el = A(parent, html, opt.ax ?? -50);
+    const it = { el, x, y, tin, tout, s, opt };
+    list.push(it);
+    if (opt.sfx !== false) cue(tin, opt.sfx || 'pop', opt.gain ?? 0.55);
+    return it;
+  };
+  const upd = t => {
+    for (const it of list) {
+      const o = it.opt, k = life(t, it.tin, it.tout, o);
+      if (k <= 0.002) { set(it.el, 0, 0, 0); continue; }
+      let x = it.x, y = it.y, r = o.r || 0, s = it.s;
+      if (o.move) [x, y] = o.move(t);
+      if (o.bob) y += wave(t, 0.45, it.x * 0.0013) * o.bob;
+      if (o.wig) r += wave(t, 0.6, it.y * 0.002) * o.wig;
+      if (o.pulse) s *= 1 + Math.max(0, wave(t, 1.1)) * o.pulse;
+      if (o.shake) x += Math.sin(t * 55) * o.shake;
+      set(it.el, x, y, s * k, r, o.fade ? k : 1);
+    }
+  };
+  return { add, upd, list };
+}
+// re-uses n elements to emit one every `period` seconds between t0 and t1
+function emitter(parent, html, n, period, t0, t1, lifeT, path) {
+  const els = Array.from({ length: n }, () => A(parent, html));
+  return (t, ox = 0, oy = 0, sc = 1) => {
+    for (let k = 0; k < n; k++) {
+      const el = els[k];
+      if (t < t0) { set(el, 0, 0, 0); continue; }
+      let j = Math.floor((t - t0) / period);
+      j -= ((j - k) % n + n) % n;
+      const te = t0 + j * period, age = t - te;
+      if (j < 0 || te > t1 || age > lifeT) { set(el, 0, 0, 0); continue; }
+      const p = path(age, j);
+      set(el, ox + p.x * sc, oy + p.y * sc, (p.s ?? 1) * sc, p.r || 0, p.o ?? 1);
+    }
+  };
+}
+
+// ---------------------------------------------------------------- effects canvas
+const fx = document.getElementById('fx').getContext('2d');
+const BURSTS = [], PALETTE = ['#FF6B6B', '#FFD43B', '#51CF66', '#339AF0', '#CC5DE8', '#FF922B', '#20C997'];
+function burst(t, x, y, kind = 'sparkle', n = 12, spread = 1) { BURSTS.push({ t, x, y, kind, n, spread, seed: 9973 * (BURSTS.length + 1) }); }
+function star(x, y, r, col) {
+  if (r <= 0.5) return;
+  fx.beginPath();
+  for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 - Math.PI / 2, rr = i % 2 ? r * 0.38 : r; fx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+  fx.closePath(); fx.fillStyle = col; fx.fill();
+}
+function drawFx(t) {
+  fx.clearRect(0, 0, 1920, 1080);
+  for (const b of BURSTS) {
+    const age = t - b.t, lifeT = b.kind === 'confetti' ? 3 : 1;
+    if (age < 0 || age > lifeT) continue;
+    const R = rng(b.seed);
+    for (let i = 0; i < b.n; i++) {
+      const a = R() * Math.PI * 2, v = R(), col = PALETTE[Math.floor(R() * PALETTE.length)], sp = (R() - .5) * 14, sz = R();
+      if (b.kind === 'confetti') {
+        const vx = Math.cos(a) * (300 + v * 700) * b.spread, vy = -500 - v * 900 + Math.sin(a) * 200;
+        const k = (1 - Math.exp(-2.2 * age)) / 2.2;
+        const x = b.x + vx * k, y = b.y + vy * k + 330 * age * age, s = 12 + sz * 12;
+        fx.save(); fx.translate(x, y); fx.rotate(sp * age); fx.scale(1, Math.cos(age * (5 + i % 4)));
+        fx.globalAlpha = 1 - seg(age, 2.3, 3); fx.fillStyle = col; fx.fillRect(-s / 2, -s / 4, s, s / 2); fx.restore();
+      } else {
+        const d = (90 + v * 170) * b.spread * easeOut(age / 0.7);
+        star(b.x + Math.cos(a) * d, b.y + Math.sin(a) * d, Math.sin(Math.PI * clamp(age / lifeT)) * (12 + sz * 16), col);
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------- characters
+function blobPath(R, wob, seed) {
+  const N = 8, r = rng(seed), p = [];
+  for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2, rr = R + (r() - .5) * wob; p.push([Math.cos(a) * rr, Math.sin(a) * rr]); }
+  let d = `M${p[0][0].toFixed(1)},${p[0][1].toFixed(1)}`;
+  for (let i = 0; i < N; i++) {
+    const p0 = p[(i - 1 + N) % N], p1 = p[i], p2 = p[(i + 1) % N], p3 = p[(i + 2) % N];
+    d += `C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d + 'Z';
+}
+const MOUTH = {
+  happy: '<path d="M-12 26 Q22 62 56 26" fill="none" stroke="#7A1F3D" stroke-width="9" stroke-linecap="round"/>',
+  big: '<path d="M-18 20 Q22 94 62 20 Z" fill="#7A1F3D" stroke="#7A1F3D" stroke-width="6" stroke-linejoin="round"/><path d="M4 54 Q22 72 40 54 Q22 46 4 54Z" fill="#FF6B8A"/>',
+  sad: '<path d="M-6 56 Q22 28 50 56" fill="none" stroke="#7A1F3D" stroke-width="9" stroke-linecap="round"/>',
+  worried: '<path d="M-8 46 Q7 34 22 46 Q37 58 52 46" fill="none" stroke="#7A1F3D" stroke-width="8" stroke-linecap="round"/>',
+  o: '<ellipse cx="22" cy="42" rx="14" ry="17" fill="#7A1F3D"/>',
+  tired: '<path d="M2 46 L42 46" fill="none" stroke="#7A1F3D" stroke-width="9" stroke-linecap="round"/>',
+};
+const BROW_SAD = '<path d="M-40 -70 L2 -82" stroke="#7A1F3D" stroke-width="8" stroke-linecap="round"/><path d="M42 -82 L84 -70" stroke="#7A1F3D" stroke-width="8" stroke-linecap="round"/>';
+function cellSVG(seed) {
+  return `<svg width="360" height="360" viewBox="-180 -180 360 360">
+  <circle class="glow" r="182" fill="url(#gGlow)" opacity="0"/>
+  <path class="body" d="${blobPath(150, 16, seed)}" fill="#FF9EB5" stroke="#E0567A" stroke-width="8"/>
+  <ellipse cx="44" cy="-96" rx="46" ry="19" fill="#fff" opacity=".35" transform="rotate(18 44 -96)"/>
+  <g transform="translate(-136,36)">
+    <rect x="-34" y="-56" width="68" height="112" rx="32" fill="#5A2D12"/>
+    <g class="panel"><rect x="-34" y="-56" width="68" height="112" rx="32" fill="#E08E45" stroke="#8A4B1F" stroke-width="6"/><circle cx="17" cy="6" r="6" fill="#FFD43B"/><circle cx="-6" cy="-8" r="8" fill="#3B2412"/><path d="M-11 -4 L-1 -4 L-3 15 L-9 15Z" fill="#3B2412"/></g>
+  </g>
+  <g class="eye" transform="translate(-12,-28)"><ellipse rx="24" ry="28" fill="#fff"/><circle cx="3" cy="4" r="13" fill="${INK}"/><circle cx="8" cy="-2" r="5" fill="#fff"/></g>
+  <g class="eye" transform="translate(56,-28)"><ellipse rx="24" ry="28" fill="#fff"/><circle cx="3" cy="4" r="13" fill="${INK}"/><circle cx="8" cy="-2" r="5" fill="#fff"/></g>
+  <g class="brows"></g>
+  <ellipse cx="-46" cy="18" rx="20" ry="12" fill="#FF5C8A" opacity=".45"/><ellipse cx="92" cy="18" rx="20" ry="12" fill="#FF5C8A" opacity=".45"/>
+  <g class="mouth"></g>
+  </svg>`;
+}
+// keyhole of a cell drawn at (x, y) with scale s
+const keyholeOf = (x, y, s) => [x - 142 * s, y + 30 * s];
+function makeCell(parent, seed = 3) {
+  const el = A(parent, cellSVG(seed)), q = c => el.querySelector(c);
+  const body = q('.body'), glow = q('.glow'), panel = q('.panel'), eyes = el.querySelectorAll('.eye'), mouth = q('.mouth'), brows = q('.brows');
+  let lm = '', lb = '';
+  return { el, upd(t, p) {
+    const { x, y, s = 1, mood = 'happy', energy = 1, door = 0, r = 0, o = 1, squash = 0 } = p;
+    if (s <= 0.002 || o <= 0.002) { set(el, 0, 0, 0); return; }
+    if (mood !== lm) { mouth.innerHTML = MOUTH[mood]; lm = mood; }
+    const b = ['sad', 'worried', 'tired'].includes(mood) ? BROW_SAD : '';
+    if (b !== lb) { brows.innerHTML = b; lb = b; }
+    body.setAttribute('fill', mixColor('#E2C7CF', '#FF9EB5', energy));
+    glow.setAttribute('opacity', (clamp((energy - .8) * 5) * (0.75 + 0.25 * wave(t, 1.2))).toFixed(3));
+    panel.setAttribute('transform', `translate(-34 0) scale(${(1 - 1.3 * door).toFixed(3)} 1) translate(34 0)`);
+    const blink = (t * 0.8 + seed * 0.37) % 3.1 < 0.11 ? 0.1 : 1, lid = mood === 'tired' ? 0.4 : 1;
+    eyes.forEach((e, i) => e.setAttribute('transform', `translate(${i ? 56 : -12},-28) scale(1 ${(blink * lid).toFixed(2)})`));
+    const br = 1 + wave(t, 0.4, seed * .1) * 0.014;
+    set(el, x, y, s * br, r, o, 1 + squash * 0.1, 1 - squash * 0.12);
+  } };
+}
+const SUGAR = `<svg width="64" height="64" viewBox="-32 -32 64 64"><g class="wh"><circle cx="-13" cy="26" r="8" fill="#343A40"/><circle cx="13" cy="26" r="8" fill="#343A40"/><circle cx="-13" cy="26" r="3" fill="#ADB5BD"/><circle cx="13" cy="26" r="3" fill="#ADB5BD"/></g><circle r="26" fill="url(#gSugar)" stroke="#E8A200" stroke-width="3"/><ellipse cx="-9" cy="-12" rx="8" ry="5" fill="#fff" opacity=".75"/><circle cx="-8" cy="-1" r="3.4" fill="#6B4500"/><circle cx="8" cy="-1" r="3.4" fill="#6B4500"/><path class="sm" d="M-7 8 Q0 14 7 8" stroke="#6B4500" stroke-width="2.8" fill="none" stroke-linecap="round"/><path class="sd" d="M-7 12 Q0 6 7 12" stroke="#6B4500" stroke-width="2.8" fill="none" stroke-linecap="round" style="display:none"/></svg>`;
+function makeSugar(parent) {
+  const el = A(parent, SUGAR), wh = el.querySelector('.wh'), sm = el.querySelector('.sm'), sd = el.querySelector('.sd');
+  let lw = -1, ls = -1;
+  return { el, upd(x, y, s = 1, { wheels = 0, sad = 0, r = 0, o = 1 } = {}) {
+    const w = +wheels.toFixed(2);
+    if (w !== lw) { wh.setAttribute('transform', `translate(0 18) scale(${w}) translate(0 -18)`); wh.style.display = w > 0.01 ? '' : 'none'; lw = w; }
+    if (sad !== ls) { sm.style.display = sad ? 'none' : ''; sd.style.display = sad ? '' : 'none'; ls = sad; }
+    set(el, x, y, s, r, o);
+  } };
+}
+const SUGAR_ICON = (w = 64) => SUGAR.replace('width="64" height="64"', `width="${w}" height="${w}"`).replace('class="wh"', 'class="wh" style="display:none"');
+// key: tip is 81*s to the right of its centre, shaft 4*s above it
+const KEY = (w = 170) => `<svg width="${w}" height="${w * 90 / 170}" viewBox="-10 -45 170 90"><g fill="url(#gKey)" stroke="#C98A00" stroke-width="5" stroke-linejoin="round"><path d="M56 -12 H150 Q156 -12 156 -6 V0 Q156 4 150 4 H146 V18 H132 V4 H122 V14 H108 V4 H56 Z"/><path fill-rule="evenodd" d="M2 -4 a30 30 0 1 0 60 0 a30 30 0 1 0 -60 0 Z M21 -4 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 Z"/></g><path d="M14 -22 Q24 -32 38 -31" stroke="#FFF6C8" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`;
+const PANC_D = 'M30 170 C20 140 50 120 95 122 C150 125 185 100 230 92 C290 80 360 90 395 135 C420 170 395 220 345 218 C300 216 270 200 230 196 C180 192 130 205 85 205 C55 205 37 190 30 170 Z';
+const FMOUTH = { happy: '<path d="M-16 14 Q0 32 16 14" stroke="#7A2E1A" stroke-width="6" fill="none" stroke-linecap="round"/>', sad: '<path d="M-15 28 Q0 13 15 28" stroke="#7A2E1A" stroke-width="6" fill="none" stroke-linecap="round"/>', o: '<ellipse cx="0" cy="22" rx="9" ry="11" fill="#7A2E1A"/>' };
+function makeFactory(parent) {
+  const eye = x => `<g class="fe" transform="translate(${x} -12)"><ellipse rx="15" ry="18" fill="#fff"/><circle cx="2" cy="3" r="8" fill="${INK}"/><circle cx="5" cy="-2" r="3" fill="#fff"/></g>`;
+  const el = A(parent, `<svg width="440" height="280" viewBox="0 0 440 280">
+    <g class="chim"><rect x="182" y="34" width="46" height="80" rx="6" fill="#A5B1BE" stroke="#6B7785" stroke-width="6"/><rect x="175" y="24" width="60" height="18" rx="6" fill="#C3CCD5" stroke="#6B7785" stroke-width="6"/></g>
+    <path class="pb" d="${PANC_D}" fill="#F7A072" stroke="#D9734A" stroke-width="8"/>
+    <g fill="#FBC4A3" opacity=".85"><circle cx="105" cy="165" r="12"/><circle cx="155" cy="150" r="10"/><circle cx="212" cy="140" r="13"/><circle cx="250" cy="176" r="9"/></g>
+    <g class="cracks" stroke="#7A3E2A" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0"><path d="M232 96 l-14 26 l16 14 l-12 26"/><path d="M118 124 l10 22 l-12 18"/><path d="M380 122 l-18 16 l10 16"/></g>
+    <g transform="translate(330 152)">${eye(-26)}${eye(26)}<g class="fb"></g><ellipse cx="-44" cy="14" rx="12" ry="7" fill="#FF6B6B" opacity=".4"/><ellipse cx="44" cy="14" rx="12" ry="7" fill="#FF6B6B" opacity=".4"/><g class="fm"></g></g>
+  </svg>`);
+  const q = c => el.querySelector(c), pb = q('.pb'), cracks = q('.cracks'), chim = q('.chim'), fm = q('.fm'), fb = q('.fb'), fe = el.querySelectorAll('.fe');
+  let lm = '';
+  return { el, upd(t, { x, y, s = 1, mood = 'happy', broken = 0, grey = 0, shake = 0, o = 1 }) {
+    if (s <= 0.002) { set(el, 0, 0, 0); return; }
+    if (mood !== lm) { fm.innerHTML = FMOUTH[mood]; fb.innerHTML = mood === 'sad' ? '<path d="M-42 -40 L-14 -48 M14 -48 L42 -40" stroke="#7A2E1A" stroke-width="6" stroke-linecap="round"/>' : ''; lm = mood; }
+    pb.setAttribute('fill', mixColor('#F7A072', '#CDBDB5', grey));
+    cracks.setAttribute('opacity', broken.toFixed(2));
+    chim.setAttribute('transform', `rotate(${(-14 * broken).toFixed(1)} 205 112)`);
+    const blink = (t * 0.7) % 2.9 < 0.1 ? 0.1 : 1;
+    fe.forEach((e, i) => e.setAttribute('transform', `translate(${i ? 26 : -26} -12) scale(1 ${blink})`));
+    set(el, x + Math.sin(t * 60) * shake * 12, y, s, Math.sin(t * 47) * shake * 3, o);
+  } };
+}
+// chimney top of a factory drawn at (x,y) scale s
+const chimneyOf = (x, y, s) => [x - 15 * s, y - 116 * s];
+const DEF = `<svg width="130" height="130" viewBox="-65 -65 130 130"><circle r="50" fill="#74C0FC" stroke="#1C7ED6" stroke-width="7"/><path d="M-50 -4 A50 50 0 0 1 50 -4 Z" fill="#1971C2"/><rect x="-56" y="-12" width="112" height="13" rx="6.5" fill="#1864AB"/><circle cx="0" cy="-30" r="8" fill="#FFD43B"/><g transform="translate(0,16)"><ellipse cx="-17" cy="0" rx="11" ry="13" fill="#fff"/><ellipse cx="17" cy="0" rx="11" ry="13" fill="#fff"/><circle cx="-15" cy="2" r="6" fill="${INK}"/><circle cx="19" cy="2" r="6" fill="${INK}"/><path d="M-10 25 Q0 31 10 25" stroke="${INK}" stroke-width="4" fill="none" stroke-linecap="round"/></g></svg>`;
+const KMOUTH = { happy: '<path d="M-24 -166 Q0 -144 24 -166" stroke="#8A3B2A" stroke-width="7" fill="none" stroke-linecap="round"/>', big: '<path d="M-28 -170 Q0 -126 28 -170 Z" fill="#8A3B2A" stroke="#8A3B2A" stroke-width="5" stroke-linejoin="round"/>', o: '<ellipse cx="0" cy="-158" rx="11" ry="13" fill="#8A3B2A"/>' };
+function kidSVG(back) {
+  const zone = (c, x, y, rx, ry) => `<ellipse class="${c}" cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="#20C997" stroke="#fff" stroke-width="5" stroke-dasharray="12 8" opacity="0"/>`;
+  const arm = (side) => { const m = side < 0 ? '' : 'transform="scale(-1 1)"'; return `<g ${m}><g class="${side < 0 ? 'armL' : 'armR'}"><rect x="-118" y="-124" width="46" height="172" rx="23" fill="#4DABF7"/><rect x="-118" y="-26" width="46" height="74" rx="23" fill="${SKIN}"/><circle cx="-95" cy="52" r="24" fill="${SKIN}"/></g></g>`; };
+  return `<svg width="320" height="600" viewBox="-160 -300 320 600">
+  <g class="cape" style="display:none"><path d="M-70 -124 Q-166 100 -132 240 Q0 270 132 240 Q166 100 70 -124 Z" fill="#E03131" stroke="#A61E1E" stroke-width="6" stroke-linejoin="round"/></g>
+  <rect x="-56" y="70" width="46" height="170" rx="23" fill="${SKIN}"/><rect x="10" y="70" width="46" height="170" rx="23" fill="${SKIN}"/>
+  <ellipse cx="-36" cy="244" rx="40" ry="20" fill="#4C6EF5"/><ellipse cx="36" cy="244" rx="40" ry="20" fill="#4C6EF5"/>
+  <rect x="-72" y="18" width="144" height="94" rx="24" fill="#364FC7"/>
+  <rect x="-78" y="-136" width="156" height="200" rx="56" fill="#4DABF7"/>
+  ${arm(-1)}${arm(1)}
+  <rect x="-18" y="-150" width="36" height="30" fill="${SKIN}"/>
+  <circle cx="-78" cy="-196" r="17" fill="${SKIN}"/><circle cx="78" cy="-196" r="17" fill="${SKIN}"/>
+  <circle cx="0" cy="-200" r="80" fill="${SKIN}"/>
+  ${back ? `<path d="M-82 -196 C-90 -270 -30 -292 0 -290 C40 -292 92 -262 82 -196 C80 -160 60 -130 0 -126 C-60 -130 -80 -160 -82 -196 Z" fill="${HAIR}"/>`
+         : `<path d="M-82 -200 C-88 -268 -24 -296 18 -288 C72 -278 96 -244 82 -198 C64 -226 36 -238 6 -236 C-28 -240 -58 -226 -82 -200 Z" fill="${HAIR}"/>
+  <g class="keyes"><ellipse cx="-28" cy="-194" rx="10" ry="13" fill="${INK}"/><ellipse cx="28" cy="-194" rx="10" ry="13" fill="${INK}"/><circle cx="-24" cy="-199" r="3.5" fill="#fff"/><circle cx="32" cy="-199" r="3.5" fill="#fff"/></g>
+  <ellipse cx="-48" cy="-168" rx="15" ry="9" fill="#FF8787" opacity=".5"/><ellipse cx="48" cy="-168" rx="15" ry="9" fill="#FF8787" opacity=".5"/>
+  <g class="km"></g>
+  <g class="badge" style="display:none" transform="translate(0,-56)"><circle r="38" fill="#FFD43B" stroke="#E8A200" stroke-width="6"/><g transform="translate(-27,2) scale(.34)"><path d="M56 -12 H150 V4 H146 V18 H132 V4 H122 V14 H108 V4 H56 Z M2 -4 a30 30 0 1 0 60 0 a30 30 0 1 0 -60 0 Z" fill="#fff" stroke="#E8A200" stroke-width="8" stroke-linejoin="round"/></g></g>
+  <g class="panc" opacity="0" transform="translate(4,-52) scale(-0.3,0.3) translate(-220,-152)"><path d="${PANC_D}" fill="#F7A072" stroke="#B5532D" stroke-width="14"/></g>`}
+  ${back ? zone('zarL', -95, -68, 22, 40) + zone('zarR', 95, -68, 22, 40) + zone('zbuL', -34, 64, 30, 30) + zone('zbuR', 34, 64, 30, 30)
+         : zone('zbel', 0, -8, 52, 40) + zone('zthL', -33, 138, 21, 46) + zone('zthR', 33, 138, 21, 46) + zone('zarL', -95, -68, 22, 40) + zone('zarR', 95, -68, 22, 40)}
+  </svg>`;
+}
+function makeKid(parent, back = false) {
+  const el = A(parent, kidSVG(back)), q = c => el.querySelector(c);
+  const km = q('.km'), cape = q('.cape'), badge = q('.badge'), panc = q('.panc'), keyes = q('.keyes'), armR = q('.armR');
+  const zones = {}; el.querySelectorAll('ellipse[class^="z"]').forEach(z => zones[z.getAttribute('class')] = z);
+  let lm = '';
+  return { el, zones, upd(t, { x, y, s = 1, mood = 'happy', cape: c = 0, badge: b = 0, panc: p = 0, zone = {}, wave: wv = 0, r = 0, o = 1 }) {
+    if (s <= 0.002) { set(el, 0, 0, 0); return; }
+    if (km && mood !== lm) { km.innerHTML = KMOUTH[mood]; lm = mood; }
+    cape.style.display = c > 0.01 ? '' : 'none';
+    if (c > 0.01) cape.setAttribute('transform', `translate(0 -124) scale(${(0.6 + 0.4 * c).toFixed(3)} ${c.toFixed(3)}) translate(0 124)`);
+    if (badge) { badge.style.display = b > 0.01 ? '' : 'none'; badge.setAttribute('transform', `translate(0,-56) scale(${b.toFixed(3)})`); }
+    if (panc) panc.setAttribute('opacity', p.toFixed(2));
+    if (keyes) { const bl = (t * 0.75) % 3.3 < 0.1 ? 0.1 : 1; keyes.setAttribute('transform', `translate(0 -194) scale(1 ${bl}) translate(0 194)`); }
+    armR.setAttribute('transform', `rotate(${(wv * (140 + 16 * wave(t, 1.6))).toFixed(1)} -95 -110)`);
+    for (const k in zones) zones[k].setAttribute('opacity', (zone[k] || 0).toFixed(2));
+    set(el, x, y, s, r, o);
+  } };
+}
+// zone centre (kid SVG coords) -> stage
+const kidPt = (x, y, s, px, py) => [x + px * s, y + py * s];
+function penSVG(col, dark, w = 700) {
+  return `<svg width="${w}" height="${w * 120 / 700}" viewBox="0 0 700 120">
+  <line class="ndl" x1="2" y1="60" x2="72" y2="60" stroke="#868E96" stroke-width="4" stroke-linecap="round"/>
+  <path d="M70 47 L102 40 L102 80 L70 73 Z" fill="#E9ECEF" stroke="#ADB5BD" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="98" y="28" width="206" height="64" rx="16" fill="#E7F5FF" stroke="#A5D8FF" stroke-width="4"/>
+  <rect x="112" y="40" width="160" height="40" rx="10" fill="#C5E5FF"/>
+  <rect x="290" y="20" width="304" height="80" rx="26" fill="${col}" stroke="${dark}" stroke-width="5"/>
+  <rect x="316" y="32" width="22" height="56" rx="9" fill="#fff" opacity=".35"/>
+  <rect x="462" y="36" width="86" height="48" rx="12" fill="#fff" stroke="${dark}" stroke-width="4"/>
+  <text class="dose" x="505" y="73" font-size="36" text-anchor="middle" font-family="Fredoka" font-weight="700" fill="${INK}">0</text>
+  <rect x="592" y="24" width="62" height="72" rx="14" fill="${dark}"/><g class="rid" stroke="#fff" stroke-opacity=".4" stroke-width="4"></g>
+  <rect class="btn" x="652" y="38" width="42" height="44" rx="13" fill="${col}" stroke="${dark}" stroke-width="5"/>
+  </svg>`;
+}
+const ORANGE = ['#FF8A3D', '#C2551A'], PURPLE = ['#8C7BFF', '#5641D6'];
+function makePen(parent, [col, dark] = ORANGE) {
+  const el = A(parent, penSVG(col, dark)), q = c => el.querySelector(c);
+  const dose = q('.dose'), rid = q('.rid'), btn = q('.btn');
+  const rl = Array.from({ length: 8 }, () => { const l = document.createElementNS('http://www.w3.org/2000/svg', 'line'); l.setAttribute('y1', 30); l.setAttribute('y2', 90); rid.appendChild(l); return l; });
+  let ld = null;
+  return { el, upd(t, { x, y, s = 1, r = 0, o = 1, d = 0, spin = 0, press = 0 }) {
+    if (s <= 0.002) { set(el, 0, 0, 0); return; }
+    if (d !== ld) { dose.textContent = d; ld = d; }
+    rl.forEach((l, i) => { const xx = (596 + (((i * 7.4 + spin) % 59) + 59) % 59).toFixed(1); l.setAttribute('x1', xx); l.setAttribute('x2', xx); });
+    btn.setAttribute('transform', `translate(${(-14 * press).toFixed(1)} 0)`);
+    set(el, x, y, s, r, o);
+  } };
+}
+const PUMP = `<svg width="300" height="220" viewBox="0 0 300 220"><path d="M200 110 C260 110 270 190 230 196 C190 202 170 170 120 190" fill="none" stroke="#ADB5BD" stroke-width="7" stroke-linecap="round"/><circle cx="110" cy="192" r="22" fill="#fff" stroke="#CED4DA" stroke-width="6"/><rect x="10" y="20" width="200" height="140" rx="34" fill="#5C7CFA" stroke="#3B5BDB" stroke-width="6"/><rect x="32" y="40" width="110" height="70" rx="14" fill="#E7F5FF"/><path d="M44 92 L64 72 L84 84 L104 60 L128 70" fill="none" stroke="#51CF66" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="176" cy="60" r="16" fill="#91A7FF"/><circle cx="176" cy="110" r="16" fill="#91A7FF"/><rect x="40" y="126" width="94" height="14" rx="7" fill="#91A7FF"/></svg>`;
+const METER = (w = 220) => `<svg width="${w}" height="${w * 1.5}" viewBox="0 0 220 330"><rect x="88" y="0" width="44" height="70" rx="6" fill="#fff" stroke="#ADB5BD" stroke-width="4"/><rect x="96" y="6" width="28" height="16" rx="3" fill="#FFA94D"/><rect x="10" y="50" width="200" height="270" rx="44" fill="#4DABF7" stroke="#1C7ED6" stroke-width="6"/><rect x="34" y="78" width="152" height="112" rx="18" fill="#F1F8FF" stroke="#1C7ED6" stroke-width="4"/><g class="scr"><circle cx="110" cy="134" r="34" fill="#51CF66"/><path d="M93 135 L105 147 L128 122" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></g><circle cx="110" cy="252" r="30" fill="#1C7ED6"/><circle cx="110" cy="252" r="18" fill="#74C0FC"/></svg>`;
+const TABLETS = `<svg width="150" height="90" viewBox="0 0 150 90"><g fill="#fff" stroke="#ADB5BD" stroke-width="4"><circle cx="38" cy="52" r="28"/><circle cx="112" cy="52" r="28"/><circle cx="75" cy="38" r="28"/></g><g stroke="#DEE2E6" stroke-width="4" stroke-linecap="round"><path d="M24 52 H52 M98 52 H126 M61 38 H89"/></g></svg>`;
+const DROP = `<svg width="380" height="480" viewBox="0 0 380 480"><path d="M190 10 C250 120 350 220 350 310 C350 400 278 465 190 465 C102 465 30 400 30 310 C30 220 130 120 190 10 Z" fill="url(#gBlood)" stroke="#C92A2A" stroke-width="8"/><ellipse cx="116" cy="300" rx="24" ry="62" fill="#fff" opacity=".3" transform="rotate(20 116 300)"/></svg>`;
+const ARROW = (col, up, w = 150) => `<svg width="${w}" height="${w * 200 / 160}" viewBox="0 0 160 200"><path d="${up ? 'M80 8 L152 92 L106 92 L106 192 L54 192 L54 92 L8 92 Z' : 'M80 192 L152 108 L106 108 L106 8 L54 8 L54 108 L8 108 Z'}" fill="${col}" stroke="${INK}" stroke-width="7" stroke-linejoin="round"/></svg>`;
+const NO = `<svg width="200" height="200" viewBox="0 0 200 200"><circle cx="100" cy="100" r="86" fill="none" stroke="#FA5252" stroke-width="18"/><path d="M40 40 L160 160" stroke="#FA5252" stroke-width="18" stroke-linecap="round"/></svg>`;
+const CHECK = (w = 90) => `<svg width="${w}" height="${w}" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#40C057"/><path d="M28 52 L44 68 L74 36" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+let gid = 0;
+const FINGER = `<svg width="120" height="360" viewBox="0 0 120 360"><rect x="10" y="0" width="100" height="360" rx="50" fill="${SKIN}" stroke="${SKIN_D}" stroke-width="6"/><rect x="28" y="250" width="64" height="84" rx="30" fill="#FBE3D3" stroke="${SKIN_D}" stroke-width="4"/></svg>`;
+function makeGauge(parent) {
+  const id = 'gc' + (gid++);
+  const el = A(parent, `<svg width="160" height="640" viewBox="0 0 160 640"><defs><clipPath id="${id}"><rect x="20" y="20" width="120" height="600" rx="60"/></clipPath></defs><g clip-path="url(#${id})"><rect class="z2" x="20" y="20" width="120" height="200" fill="#FFA94D"/><rect class="z1" x="20" y="220" width="120" height="200" fill="#69DB7C"/><rect class="z0" x="20" y="420" width="120" height="200" fill="#FF8787"/></g><rect x="20" y="20" width="120" height="600" rx="60" fill="none" stroke="${INK}" stroke-width="8"/></svg>`);
+  const z = [0, 1, 2].map(i => el.querySelector('.z' + i));
+  const mk = makeSugar(parent);
+  return { el, upd(t, x, y, s, level, hi = -1, o = 1) {
+    if (s <= 0.002) { set(el, 0, 0, 0); mk.upd(0, 0, 0); return; }
+    z.forEach((r, i) => r.setAttribute('opacity', hi < 0 || hi === i ? (hi === i ? 0.75 + 0.25 * wave(t, 1.5) : 1) : 0.35));
+    set(el, x, y, s, 0, o);
+    mk.upd(x - 130 * s, y + (0.5 - level) * 400 * s, 1.5 * s, { sad: hi === 0 || hi === 2 ? 1 : 0 });
+  } };
+}
+function makeBattery(parent) {
+  const el = A(parent, `<svg width="170" height="84" viewBox="0 0 170 84"><rect x="5" y="5" width="146" height="74" rx="18" fill="#fff" stroke="${INK}" stroke-width="7"/><rect x="153" y="28" width="12" height="28" rx="4" fill="${INK}"/><rect class="lv" x="16" y="16" width="124" height="52" rx="10" fill="#51CF66"/><path class="bolt" d="M86 10 L60 46 L80 46 L70 76 L102 36 L82 36 Z" fill="#FFD43B" stroke="${INK}" stroke-width="4" stroke-linejoin="round" opacity="0"/></svg>`);
+  const lv = el.querySelector('.lv'), bolt = el.querySelector('.bolt');
+  return { el, upd(t, x, y, s, level, { blink = 0, charging = 0 } = {}) {
+    if (s <= 0.002) { set(el, 0, 0, 0); return; }
+    lv.setAttribute('width', Math.max(6, 124 * clamp(level)).toFixed(1));
+    lv.setAttribute('fill', level < .3 ? '#FF6B6B' : level < .65 ? '#FFD43B' : '#51CF66');
+    bolt.setAttribute('opacity', charging.toFixed(2));
+    set(el, x, y, s, 0, blink && wave(t, 1.6) < 0 ? 0.4 : 1);
+  } };
+}
+function vessel(parent, x0, x1, y, h = 170) {
+  const el = A(parent, `<div style="width:${x1 - x0}px;height:${h}px;border-radius:${h / 2}px;background:linear-gradient(#FF8787,#F03E3E);box-shadow:inset 0 14px 0 rgba(255,255,255,.25), inset 0 -10px 0 rgba(0,0,0,.08)"></div>`);
+  return { el, x: (x0 + x1) / 2, y };
+}
+
+// ---------------------------------------------------------------- scenes
+const META = {
+  intro: { bg: '#DCF1FF', col: '#2F8CFF' },
+  energia: { bg: '#FFF3D1', col: '#F59F00', n: '1' },
+  llave: { bg: '#FFE8D9', col: '#FF7A45', n: '2' },
+  diabetes: { bg: '#ECE8FF', col: '#7B61FF', n: '3' },
+  insulina: { bg: '#DDF6EC', col: '#12B886', n: '4' },
+  medir: { bg: '#E3F0FF', col: '#228BE6', n: '5' },
+  hipohiper: { bg: '#FFE6EE', col: '#F0507E', n: '6', sub: 'bajadas y subidas' },
+  comida: { bg: '#EAF7DA', col: '#40A02B', n: '7' },
+  final: { bg: '#FFF0DB', col: '#FF8A00', n: '★' },
+};
+const SCENES = [], scenesEl = document.getElementById('scenes');
+function scene(name, build) {
+  const i = TL.scenes.findIndex(s => s.name === name), info = TL.scenes[i];
+  const root = document.createElement('div'); root.className = 'scene'; scenesEl.appendChild(root);
+  const vs = i === 0 ? -1 : info.s - 0.3, ve = i + 1 < TL.scenes.length ? TL.scenes[i + 1].s - 0.3 : TL.duration + 1;
+  SCENES.push({ name, root, vs, ve, info, meta: META[name], upd: build(root, info), on: false });
+}
+
+// ---------- intro
+scene('intro', root => {
+  const P = popper(root), i1 = L('i1'), i2 = L('i2'), i3 = L('i3');
+  P.add(T('La diabetes explicada', 108), 960, 175, 0.3, i3.s - 0.15, 1, { sfx: 'whoosh' });
+  P.add(PILL('para superhéroes', '#FF8A00', '#fff', 50), 960, 290, 0.8, i3.s - 0.15, 1, { r: -3 });
+  const cell = makeCell(root, 5);
+  P.add(BUB('¡Hola!', 70), 1200, 450, i1.s + 0.05, i2.s - 0.25);
+  P.add(CARD(KEY(240) + '<div class="ct">¿Qué es la diabetes?</div>', 430, 400), 480, 640, W('i2', 'qué es') - 0.1, i3.s - 0.1, 1, { bob: 6 });
+  P.add(CARD(`<div style="transform:rotate(-24deg);margin:40px 0 30px">${penSVG(...ORANGE, 300)}</div><div class="ct">¿Por qué pincharse?</div>`, 430, 400), 960, 640, W('i2', 'por qué') - 0.1, i3.s - 0.1, 1, { bob: 6 });
+  P.add(CARD(EM('fork-and-knife-with-plate', 170) + '<div class="ct">¿Qué puedo comer?</div>', 430, 400), 1440, 640, W('i2', 'qué puedes') - 0.1, i3.s - 0.1, 1, { bob: 6 });
+  P.add(T('¿Preparado?', 150), 960, 430, i3.s + 0.05, 1e9);
+  P.add(T('¡Vamos allá!', 120, '#FF8A00'), 960, 640, W('i3', '¡Vamos'), 1e9, 1, { sfx: 'ding' });
+  const rocket = A(root, EM('rocket', 200));
+  burst(W('i3', '¡Vamos') + 0.1, 960, 640, 'sparkle', 16, 1.6);
+  const cellX = kf([[i1.s + 1.5, 960], [i1.s + 2.2, 840]]);
+  return t => {
+    P.upd(t);
+    const k = life(t, 0.5, i2.s - 0.3);
+    cell.upd(t, { x: cellX(t), y: 620 + wave(t, 0.8) * 10, s: 1.1 * k, mood: t > i1.s && t < i1.s + 1.2 ? 'big' : 'happy', r: wave(t, 0.6) * 4 });
+    const rk = seg(t, W('i3', '¡Vamos') - 0.1, i3.e + 1.0);
+    set(rocket, 1560, lerp(1200, -250, easeIn(rk)), rk > 0 && rk < 1 ? 1 : 0, -45);
+  };
+});
+
+// ---------- 1. energía
+scene('energia', root => {
+  const P = popper(root), a1 = L('a1'), a2 = L('a2'), a3 = L('a3'), a4 = L('a4'), a5 = L('a5');
+  const v = vessel(root, -60, 1330, 545);
+  // a1: kid and a zoom bubble full of tiny cells
+  const kid = makeKid(root);
+  const lens = A(root, '<div style="width:90px;height:90px;border-radius:50%;border:10px solid #1F2A44;background:rgba(255,255,255,.35)"></div>');
+  const cone = A(root, '<svg width="1920" height="1080"><polygon class="cn" fill="#fff" opacity=".55"/></svg>');
+  const minis = [];
+  for (let r = -2; r <= 2; r++) for (let c = -2; c <= 2; c++) { const x = c * 96 + (r & 1) * 48, y = r * 84; if (Math.hypot(x, y) < 215) minis.push([x, y]); }
+  const miniCell = (x, y, i) => `<g transform="translate(${x} ${y}) rotate(${(i * 37) % 30 - 15})"><path d="${blobPath(40, 8, i + 2)}" fill="#FF9EB5" stroke="#E0567A" stroke-width="5"/><circle cx="-12" cy="-6" r="6" fill="${INK}"/><circle cx="12" cy="-6" r="6" fill="${INK}"/><path d="M-10 10 Q0 18 10 10" stroke="#7A1F3D" stroke-width="4" fill="none" stroke-linecap="round"/></g>`;
+  const zoom = A(root, `<div style="width:540px;height:540px;border-radius:50%;background:#FFFDF5;border:14px solid #1F2A44;overflow:hidden;box-sizing:border-box"><svg width="512" height="512" viewBox="-256 -256 512 512"><g class="mg">${minis.map(([x, y], i) => miniCell(x, y, i)).join('')}</g></svg></div>`);
+  const mg = zoom.querySelector('.mg'), cn = cone.querySelector('.cn');
+  const tZoom = W('a1', 'pedacitos') - 0.2;
+  cue(tZoom, 'whoosh', 0.5);
+  P.add(PILL('CÉLULAS', '#E0567A', '#fff', 54), 1240, 790, W('a1', 'células'), a2.s - 0.1);
+  // a2: one cell = a little house that needs energy
+  const cell = makeCell(root, 3), bat = makeBattery(root);
+  P.add(ICOL(EM('person-running', 150), 'correr'), 430, 330, W('a2', 'correr'), a3.s - 0.2, 1, { bob: 6 });
+  P.add(ICOL(EM('soccer-ball', 150), 'jugar'), 430, 680, W('a2', 'jugar'), a3.s - 0.2, 1, { bob: 6 });
+  P.add(ICOL(EM('seedling', 150), 'crecer'), 1490, 330, W('a2', 'crecer'), a3.s - 0.2, 1, { bob: 6 });
+  P.add(PILL('ENERGÍA', '#F59F00', '#fff', 50), 1490, 760, W('a2', 'energía'), a3.s - 0.2);
+  cue(W('a2', 'energía'), 'pop', 0.4);
+  // a3: food
+  P.add(QM, 1600, 250, a3.s + 0.1, W('a3', '¡De la comida') + 0.4);
+  const foods = [[EM('red-apple', 170), 360, 380], [EM('bread', 170), 640, 320], [EM('banana', 170), 400, 640], [EM('spaghetti', 170), 690, 620]];
+  const tConv = W('a4', 'se convierte') - 0.1;
+  foods.forEach(([h, x, y], i) => P.add(h, x, y, W('a3', '¡De la comida') + i * 0.12, tConv + i * 0.1, 1, { wig: 5 }));
+  // a4: food becomes glucose
+  const sug = [], R = rng(7);
+  foods.forEach(([, fx0, fy0], i) => { for (let j = 0; j < 3; j++) { const a = j / 3 * Math.PI * 2 + i, tx = fx0 + Math.cos(a) * 85, ty = fy0 + Math.sin(a) * 70; sug.push({ o: makeSugar(root), fx: fx0, fy: fy0, tx, ty, t0: tConv + i * 0.1 + 0.15 + j * 0.05 }); } });
+  foods.forEach((f, i) => { burst(tConv + i * 0.1 + 0.12, f[1], f[2], 'sparkle', 10); });
+  P.add(`<div style="display:flex;align-items:center;gap:20px">${SUGAR_ICON(90)}${PILL('AZÚCAR = GLUCOSA', '#FFC300', INK, 52)}</div>`, 600, 150, W('a4', 'glucosa') - 0.1, 1e9, 1, { sfx: 'ding', gain: 0.5 });
+  // a5: the blood road
+  const tRoad = a5.s - 0.15, tWheels = W('a5', 'coches');
+  cue(tRoad, 'whoosh', 0.5);
+  P.add(PILL('SANGRE', '#E03131', '#fff', 50), 300, 400, W('a5', 'sangre'), 1e9);
+  const order = sug.map((s, i) => i).sort((a, b) => sug[b].tx - sug[a].tx);
+  order.forEach((idx, k) => { const lane = k % 3, col = Math.floor(k / 3); sug[idx].qx = 1250 - col * 74 - lane * 22; sug[idx].ly = 545 + (lane - 1) * 46; sug[idx].td = tRoad + 0.2 + k * 0.03; });
+  return t => {
+    P.upd(t);
+    // a1
+    const kk = life(t, a1.s, a2.s - 0.15), zk = life(t, tZoom, a2.s - 0.15);
+    kid.upd(t, { x: 520, y: 500, s: 0.95 * kk });
+    const [lx, ly] = kidPt(520, 500, 0.95, -95, -50);
+    set(lens, lx, ly, zk, 0);
+    set(zoom, 1240, 450, zk, 0);
+    mg.setAttribute('transform', `rotate(${(wave(t, 0.1) * 6).toFixed(2)})`);
+    if (zk > 0.01) { cn.setAttribute('points', `${lx},${ly - 45 * zk} ${1240 - 30},${450 - 270 * zk} ${1240 - 30},${450 + 270 * zk} ${lx},${ly + 45 * zk}`); set(cone, 960, 540, 1, 0, clamp(zk)); } else set(cone, 0, 0, 0);
+    // a2-a5 cell
+    const ck = life(t, a2.s + 0.05, 1e9);
+    const cx = kf([[a3.s - 0.1, 960], [a3.s + 0.5, 1490]])(t), cs = kf([[a3.s - 0.1, 1.2], [a3.s + 0.5, 0.95]])(t);
+    const cy = kf([[a3.s - 0.1, 470], [a3.s + 0.5, 545]])(t);
+    const mood = t < a3.s ? 'o' : t < W('a3', '¡De la comida') ? 'worried' : 'happy';
+    cell.upd(t, { x: cx, y: cy, s: cs * ck, mood, energy: 0.25, r: t > W('a2', 'casitas') && t < W('a2', 'casitas') + 0.8 ? wave(t, 3) * 4 : 0 });
+    const bk = life(t, W('a2', 'energía') - 0.05, 1e9);
+    bat.upd(t, kf([[a3.s - 0.1, 1490], [a3.s + 0.5, 1490]])(t), kf([[a3.s - 0.1, 620], [a3.s + 0.5, 280]])(t), bk, 0.18, { blink: 1 });
+    // sugar
+    const wk = clamp(spring(t - tWheels, 14, .6));
+    for (const s of sug) {
+      if (t < s.t0) { s.o.upd(0, 0, 0); continue; }
+      let x, y;
+      const k = spring(t - s.t0, 13, .6);
+      if (t < s.td) { x = lerp(s.fx, s.tx, k); y = lerp(s.fy, s.ty, k) + wave(t, 0.7, s.tx * .01) * 6; }
+      else if (t < s.td + 0.4) { const e = ease(seg(t, s.td, s.td + 0.4)); x = s.tx; y = lerp(s.ty, s.ly, e) - Math.sin(e * Math.PI) * 60; }
+      else { x = Math.min(s.qx, s.tx + 520 * (t - s.td - 0.4)); y = s.ly + (x < s.qx ? Math.abs(wave(t, 2.2, s.tx * .01)) * -8 : 0); }
+      s.o.upd(x, y, 1.15 * clamp(k * 1.2), { wheels: wk });
+    }
+    set(v.el, v.x, v.y, 1, 0, easeOut(seg(t, tRoad, tRoad + 0.4)));
+  };
+});
+
+// ---------- 2. la llave
+scene('llave', root => {
+  const P = popper(root), b1 = L('b1'), b2 = L('b2'), b3 = L('b3'), b4 = L('b4');
+  const t0 = b1.s - 0.45, tOut = b3.s - 0.1, tBack = b4.s - 0.95;
+  // b1-b2: closed door, sugar waiting
+  const v1 = vessel(root, -60, 1200, 545);
+  const cell = makeCell(root, 3), bat = makeBattery(root);
+  const queue = Array.from({ length: 12 }, (_, k) => ({ o: makeSugar(root), lane: k % 3, col: Math.floor(k / 3) }));
+  const tShut = W('b1', 'cerradas');
+  P.add(PILL('¡CERRADA!', '#FA5252', '#fff', 46), 1150, 320, tShut, tOut, 1, { r: -6, sfx: 'pop' });
+  const key = A(root, KEY(170));
+  const tKey = W('b2', 'una llave') - 0.15;
+  cue(tKey, 'whoosh', 0.6); burst(tKey + 0.6, 560, 230, 'sparkle', 14, 1.2);
+  P.add(PILL('INSULINA = LLAVE', '#FF7A45', '#fff', 52), 560, 370, W('b2', 'insulina') - 0.05, tOut, 1, { sfx: 'ding', gain: 0.5 });
+  // b3: kid with pancreas + the factory
+  const kid = makeKid(root);
+  const ring = A(root, '<div style="width:170px;height:120px;border-radius:50%;border:8px dashed #FF7A45"></div>');
+  const tP = W('b3', 'páncreas') - 0.1, tF = W('b3', 'fábrica') - 0.1, tHere = W('b3', 'aquí');
+  P.add(PILL('PÁNCREAS', '#FF7A45', '#fff', 50), 790, 330, tP, tBack + 0.1);
+  const fac = makeFactory(root);
+  const keysOut = emitter(root, KEY(110), 4, 0.55, tF + 0.4, tBack, 2.0, (a, j) => ({ x: 40 + a * 150 + (j % 2) * 40, y: -30 - a * 190 + a * a * 40, s: Math.min(1, a * 4) * (1 - seg(a, 1.6, 2.0)), r: -20 + a * 40 }));
+  const smoke = emitter(root, '<div style="width:60px;height:60px;border-radius:50%;background:#fff;opacity:.85"></div>', 5, 0.35, tF + 0.2, tBack, 1.6, (a, j) => ({ x: Math.sin(a * 3 + j) * 18 - a * 30, y: -a * 120, s: 0.5 + a * 0.7, o: 1 - a / 1.6 }));
+  // b4: key opens the door
+  const v2 = vessel(root, -60, 990, 545);
+  const cell2 = makeCell(root, 3), bat2 = makeBattery(root);
+  const C2 = [1150, 520, 1.3], KH = keyholeOf(...C2);
+  const q2 = Array.from({ length: 10 }, (_, k) => ({ o: makeSugar(root), lane: k % 3, col: Math.floor(k / 3) }));
+  const key2 = A(root, KEY(170));
+  const tFly = b4.s - 0.75, tIn = b4.s + 0.15, tTurn = Math.max(W('b4', 'abre'), tIn + 0.35), tOpen = tTurn + 0.45;
+  const tEnter = Math.max(W('b4', 'el azúcar entra'), tOpen + 0.2), tJoy = W('b4', '¡y la célula');
+  cue(tFly, 'whoosh', 0.6); cue(tTurn, 'click', 0.9); cue(tOpen, 'pop', 0.5);
+  q2.forEach((q, k) => { q.te = tEnter + k * 0.17; if (k % 3 === 0) cue(q.te + 0.2, 'tick', 0.25); });
+  burst(tJoy, C2[0], C2[1], 'sparkle', 22, 2.2); cue(tJoy, 'ding', 0.8);
+  P.add(PILL('¡LLENA DE ENERGÍA!', '#40C057', '#fff', 50), 1520, 200, tJoy + 0.1, 1e9, 1, { sfx: false });
+  return t => {
+    P.upd(t);
+    const k1 = life(t, t0, tOut, { outDur: 0.35 });
+    set(v1.el, v1.x, v1.y, 1, 0, k1 > 0 ? clamp(k1) : 0);
+    cell.upd(t, { x: 1360, y: 520, s: 1.15 * k1, mood: t < tShut ? 'happy' : 'worried', energy: 0.25, r: t > tShut && t < tShut + 0.6 ? Math.sin(t * 40) * 3 : 0 });
+    bat.upd(t, 1360, 230, k1, 0.18, { blink: 1 });
+    for (const q of queue) { const x = 1140 - q.col * 74 - q.lane * 22 - Math.abs(wave(t, 1.3, q.col * .3 + q.lane * .2)) * 10, y = 545 + (q.lane - 1) * 46; q.o.upd(x, y, 1.15 * life(t, t0 + 0.1 + q.col * 0.05, tOut), { sad: t > tShut ? 1 : 0 }); }
+    // key arrives
+    const kk = life(t, tKey, tOut), ka = easeOut(seg(t, tKey, tKey + 0.7));
+    set(key, lerp(1900, 560, ka), lerp(-80, 230, ka) + wave(t, 0.6) * 8, 1.4 * clamp(kk * 2), lerp(-540, 0, ka));
+    // b3
+    const kd = life(t, b3.s + 0.05, tBack);
+    const pk = clamp(spring(t - tP, 10, .7)) * (t < tBack ? 1 : 0);
+    kid.upd(t, { x: 480, y: 520, s: 0.95 * kd, panc: pk });
+    const [px, py] = kidPt(480, 520, 0.95, 4, -52);
+    const pulse = 1 + 0.08 * Math.max(0, wave(t, 1.4)) + (t > tHere && t < tHere + 0.8 ? 0.25 * Math.sin((t - tHere) / 0.8 * Math.PI) : 0);
+    set(ring, px, py, pk * pulse * kd, 0);
+    const fk = life(t, tF, tBack);
+    fac.upd(t, { x: 1340, y: 520, s: 1.3 * fk, mood: 'happy' });
+    const [chx, chy] = chimneyOf(1340, 520, 1.3);
+    if (fk > 0.01) { keysOut(t, chx, chy, 1); smoke(t, chx, chy - 10, 1); } else { keysOut(-1); smoke(-1); }
+    // b4
+    const k4 = life(t, tBack + 0.1, 1e9);
+    set(v2.el, v2.x, v2.y, 1, 0, clamp(k4));
+    const open = clamp(spring(t - tOpen, 12, .75));
+    const entered = q2.filter(q => t > q.te + 0.35).length;
+    const energy = 0.25 + 0.75 * clamp(entered / q2.length + (t > tJoy ? 1 : 0));
+    cell2.upd(t, { x: C2[0], y: C2[1], s: C2[2] * k4, mood: t > tJoy ? 'big' : t > tEnter ? 'happy' : 'worried', energy, door: open });
+    bat2.upd(t, C2[0], 200, k4, energy - 0.1, { charging: t > tEnter ? 1 : 0 });
+    for (const q of q2) {
+      const bx = KH[0] - 210 - q.col * 74 - q.lane * 22, by = 545 + (q.lane - 1) * 46;
+      let x = bx, y = by, s = 1.15 * life(t, tBack + 0.2 + q.col * 0.05, 1e9);
+      if (t > q.te) { const e = ease(seg(t, q.te, q.te + 0.45)); x = lerp(bx, KH[0] + 20, e); y = lerp(by, KH[1], e) - Math.sin(e * Math.PI) * 60; s *= 1 - easeIn(e); }
+      else x -= Math.abs(wave(t, 1.3, q.col * .3)) * 8;
+      q.o.upd(x, y, s);
+    }
+    // key into the keyhole, turn, vanish
+    const fly = ease(seg(t, tFly, tIn)), turn = ease(seg(t, tTurn, tTurn + 0.4)), gone = seg(t, tOpen + 0.15, tOpen + 0.5);
+    const kx = lerp(560, KH[0] - 81, fly), ky = lerp(120, KH[1] + 4, fly) - Math.sin(fly * Math.PI) * 120;
+    set(key2, kx, ky, t > tFly ? 1.0 * (1 - gone) : 0, lerp(-200, 0, fly), 1, 1, 1 - 0.6 * Math.sin(turn * Math.PI / 2));
+  };
+});
+
+// ---------- 3. diabetes
+scene('diabetes', root => {
+  const P = popper(root), c1 = L('c1'), c2 = L('c2'), c3 = L('c3'), c4 = L('c4'), c5 = L('c5'), c6 = L('c6');
+  const t0 = c1.s - 0.45, tStop = W('c1', 'deja de') + 0.2;
+  P.add(PILL('DIABETES TIPO 1', '#7B61FF', '#fff', 56), 960, 140, W('c1', 'diabetes') - 0.1, c2.s - 0.1);
+  const fac = makeFactory(root), FC = [960, 600, 1.4], CH = chimneyOf(...FC);
+  const keysOut = emitter(root, KEY(110), 4, 0.5, t0, tStop, 2.0, (a, j) => ({ x: 40 + a * 240 + (j % 2) * 50, y: -30 - a * 130 + a * a * 30, s: Math.min(1, a * 4) * (1 - seg(a, 1.6, 2.0)), r: -20 + a * 40 }));
+  const smoke = emitter(root, '<div style="width:60px;height:60px;border-radius:50%;background:#fff;opacity:.85"></div>', 5, 0.35, t0, tStop, 1.6, (a, j) => ({ x: Math.sin(a * 3 + j) * 18 - a * 30, y: -a * 120, s: 0.5 + a * 0.7, o: 1 - a / 1.6 }));
+  P.add(QM, 1260, 300, tStop + 0.1, c2.s + 0.3);
+  // defenders
+  const defs = [0, 1, 2].map(() => A(root, DEF)), qms = [0, 1, 2].map(() => A(root, QM));
+  const microbe = A(root, EM('microbe', 130));
+  const tD = c2.s, tChase = W('c2', 'luchan') - 0.2, tConf = W('c2', 'se confunden'), tHit = W('c2', 'rompen'), tShrug = W('c2', 'Nadie sabe');
+  P.add(PILL('DEFENSAS', '#1C7ED6', '#fff', 44), 330, 380, tD + 0.2, tChase + 0.6);
+  const tBang = tHit + 0.35;
+  cue(tBang, 'impact', 0.9); burst(tBang, 960, 400, 'sparkle', 20, 1.8);
+  P.add(T('¡PUM!', 110, '#FA5252', 700, '-webkit-text-stroke:6px #fff;paint-order:stroke'), 1250, 260, tBang, tBang + 1.0, 1, { r: 10, sfx: false });
+  P.add(ICOL(EM('person-shrugging', 170), '¿Por qué? Nadie lo sabe', 40), 1560, 250, tShrug, c3.s - 0.15);
+  const gx = kf([[tD, 360], [tChase, 360], [tChase + 1.2, 1550], [tConf, 1450], [tHit, 1450], [tBang, 960], [tShrug, 960], [tShrug + 0.5, 520]]);
+  const gy = kf([[tD, 250], [tConf, 250], [tHit, 250], [tBang, 330], [tShrug, 330], [tShrug + 0.5, 220]]);
+  const offs = [[-120, 20], [0, -20], [120, 20]];
+  // c3: sugar traffic jam
+  const v = vessel(root, -60, 1330, 545);
+  const cell = makeCell(root, 3), bat = makeBattery(root);
+  const jam = Array.from({ length: 33 }, (_, k) => ({ o: makeSugar(root), lane: k % 3, col: Math.floor(k / 3), ta: c3.s - 0.2 + k * 0.045 }));
+  P.add(PILL('¡ATASCO DE AZÚCAR!', '#F08C00', '#fff', 50), 660, 360, W('c3', 'atascado') - 0.1, c4.s - 0.15);
+  const tTired = W('c3', 'sin energía');
+  // c4: signs
+  const signs = [[EM('droplet', 200), 'mucha sed', 'sed'], [EM('toilet', 200), 'mucho pis', 'pis'], [EM('tired-face', 200), 'cansancio', 'cansado']];
+  signs.forEach(([h, lab, w], i) => P.add(CARD(h + `<div class="ct">${lab}</div>`, 400, 400), 480 + i * 480, 500, W('c4', w) - 0.1, c5.s - 0.15, 1, { bob: 5 }));
+  // c5: not your fault
+  P.add(T('Escucha bien:', 80, '#7B61FF'), 960, 150, c5.s, c6.s - 0.1);
+  const row = (icon, txt) => `<div style="width:1080px;height:150px;background:#fff;border-radius:75px;display:flex;align-items:center;gap:36px;padding:0 50px;box-sizing:border-box;box-shadow:0 8px 0 rgba(31,42,68,.08)">${icon}<div style="font-size:64px;font-weight:600">${txt}</div></div>`;
+  P.add(row(EM('red-heart', 110), 'No es culpa tuya'), 960, 340, W('c5', 'no es culpa'), c6.s - 0.1, 1, { sfx: 'ding', gain: 0.45 });
+  P.add(row(`<div style="position:relative;width:110px;height:110px">${EM('candy', 110)}<div style="position:absolute;left:-10px;top:-10px">${NO.replace('width="200" height="200"', 'width="130" height="130"')}</div></div>`, 'No pasa por comer dulces'), 960, 530, W('c5', 'No pasa por'), c6.s - 0.1, 1, { sfx: 'ding', gain: 0.45 });
+  P.add(row(EM('handshake', 110), 'No se contagia'), 960, 720, W('c5', 'Y no se contagia'), c6.s - 0.1, 1, { sfx: 'ding', gain: 0.45 });
+  // c6: keys from outside
+  P.add(EM('thinking-face', 260), 960, 470, c6.s + 0.05, W('c6', '¡Poniendo') - 0.1, 1, { wig: 6 });
+  const pen = makePen(root), tPen = W('c6', '¡Poniendo') - 0.1;
+  cue(tPen, 'whoosh', 0.6);
+  const burstKeys = Array.from({ length: 8 }, (_, i) => ({ el: A(root, KEY(110)), a: -Math.PI / 2 + (i - 3.5) * 0.36 }));
+  burst(tPen + 0.6, 960, 400, 'sparkle', 20, 2);
+  P.add(PILL('¡LLAVES DESDE FUERA!', '#7B61FF', '#fff', 56), 960, 140, tPen + 0.5, 1e9, 1, { sfx: 'ding', gain: 0.6 });
+  return t => {
+    P.upd(t);
+    const stopped = t > tStop;
+    const hit = clamp(spring(t - tBang, 12, .5)) * (t > tBang ? 1 : 0);
+    const fk = life(t, t0, c3.s - 0.15);
+    fac.upd(t, { x: FC[0], y: FC[1], s: FC[2] * fk, mood: t > tBang && t < tBang + 0.7 ? 'o' : stopped ? 'sad' : 'happy', broken: t > tBang ? 1 : 0, grey: stopped ? clamp((t - tStop) * 2) * 0.6 : 0, shake: t > tBang && t < tBang + 0.5 ? 1 - (t - tBang) * 2 : 0 });
+    if (fk > 0.01) { keysOut(t, CH[0], CH[1], 1); smoke(t, CH[0], CH[1] - 10, 1); } else { keysOut(-1); smoke(-1); }
+    // defenders
+    const dk = life(t, tD, c3.s - 0.2);
+    defs.forEach((d, i) => {
+      const x = gx(t) + offs[i][0] * (t > tHit && t < tShrug ? 1.6 : 1), y = gy(t) + offs[i][1] + Math.abs(wave(t, 2.2, i * .3)) * -14;
+      const flip = t > tConf && t < tHit ? -1 : 1;
+      set(d, x, y, dk, t > tConf && t < tHit ? wave(t, 1.5, i * .3) * 12 : 0, 1, flip, 1);
+      const qk = life(t, tConf + i * 0.12, tHit);
+      set(qms[i], x + 10, y - 100, qk, 0);
+    });
+    const mx = kf([[tChase - 0.2, 900], [tChase + 1.2, 2150]])(t);
+    set(microbe, mx, 230 + wave(t, 1.5) * 20, life(t, tChase - 0.3, tChase + 1.2), wave(t, 1) * 15);
+    // c3
+    const k3 = life(t, c3.s - 0.3, c4.s - 0.15);
+    set(v.el, v.x, v.y, 1, 0, clamp(k3));
+    const tired = t > tTired;
+    cell.upd(t, { x: 1490, y: 545, s: 0.95 * k3, mood: tired ? 'tired' : 'sad', energy: 0.12, squash: tired ? 0.5 + 0.5 * Math.max(0, wave(t, 0.5)) : 0 });
+    bat.upd(t, 1490, 280, k3, 0.08, { blink: 1 });
+    for (const q of jam) {
+      const qx = 1250 - q.col * 74 - q.lane * 22, y = 545 + (q.lane - 1) * 46;
+      const x = Math.min(qx, -60 + 1500 * (t - q.ta)) + Math.sin(t * 9 + q.col) * 2.5;
+      q.o.upd(x, y + Math.sin(t * 11 + q.lane * 2 + q.col) * 2, t > q.ta ? 1.15 * k3 : 0, { sad: 1 });
+    }
+    // c6 pen and keys
+    const pk = life(t, tPen, 1e9), pa = ease(seg(t, tPen, tPen + 0.5));
+    pen.upd(t, { x: lerp(-400, 1010, pa), y: 560, s: 1.1 * clamp(pk * 3), r: -8 });
+    const ex = 1010 - 350 * 1.1 * Math.cos(8 * Math.PI / 180), ey = 560 + 350 * 1.1 * Math.sin(8 * Math.PI / 180);
+    burstKeys.forEach((b, i) => {
+      const a = seg(t, tPen + 0.5 + i * 0.04, tPen + 1.3 + i * 0.04);
+      if (a <= 0) { set(b.el, 0, 0, 0); return; }
+      const d = easeOut(a) * (300 + (i % 3) * 60);
+      set(b.el, ex + Math.cos(b.a) * d * 1.6 + 400 * easeOut(a), ey + Math.sin(b.a) * d * 0.9, 0.9 * spring(a * 0.8, 14, .6), b.a * 57 + 90 + wave(t, 0.5, i * .2) * 10);
+    });
+  };
+});
+
+// ---------- 4. insulina
+scene('insulina', root => {
+  const P = popper(root), d1 = L('d1'), d2 = L('d2'), d3 = L('d3'), d4 = L('d4'), d5 = L('d5'), d6 = L('d6'), d7 = L('d7'), d7b = L('d7b'), d8 = L('d8');
+  const col = '#12B886';
+  // d1: pen and pump
+  const pen = makePen(root), tAlg = W('d1', 'Algunos') - 0.1;
+  const penX = kf([[tAlg, 960], [tAlg + 0.6, 700]]), penY = kf([[tAlg, 470], [tAlg + 0.6, 360]]), penS = kf([[tAlg, 1.3], [tAlg + 0.6, 0.95]]);
+  P.add(PILL('BOLI DE INSULINA', '#FF8A3D', '#fff', 52), 960, 290, W('d1', 'boli') - 0.1, d2.s - 0.15, 1, { move: t => [penX(t), penY(t) - 115 * penS(t) - 40] });
+  P.add(`<div style="display:flex;flex-direction:column;align-items:center"><div style="width:0;height:0;border-left:22px solid transparent;border-right:22px solid transparent;border-bottom:26px solid #fff"></div>${CARD('<div class="ct" style="font-size:42px">aguja muy finita</div>', 380, 100)}</div>`, 545, 610, W('d1', 'aguja') - 0.1, tAlg);
+  burst(W('d1', 'aguja') + 0.1, 960 - 345 * 1.3, 470, 'sparkle', 10, 0.8);
+  P.add(PUMP, 1360, 640, tAlg + 0.2, d2.s - 0.15, 1.15, { bob: 6 });
+  P.add(PILL('BOMBA DE INSULINA', '#5C7CFA', '#fff', 44), 1360, 420, tAlg + 0.35, d2.s - 0.15);
+  // d2: slow and fast
+  const slow = makePen(root, PURPLE), fast = makePen(root, ORANGE);
+  const tSlow = W('d2', 'una lenta') - 0.1, tFast = W('d2', 'otra rápida') - 0.1;
+  P.add(PILL('LENTA', '#7B61FF', '#fff', 56), 330, 330, tSlow, d3.s - 0.15);
+  P.add(PILL('RÁPIDA', '#FF8A3D', '#fff', 56), 330, 650, tFast, d3.s - 0.15);
+  P.add(EM('sun', 150), 1600, 320, W('d2', 'todo el día') - 0.05, d3.s - 0.15, 1, { wig: 8 });
+  P.add(EM('crescent-moon', 140), 1770, 320, W('d2', 'toda la noche') - 0.05, d3.s - 0.15, 1, { wig: 8 });
+  P.add(EM('fork-and-knife-with-plate', 160), 1680, 650, W('d2', 'para las comidas') - 0.05, d3.s - 0.15, 1, { wig: 6 });
+  cue(tSlow + 0.05, 'whoosh', 0.4); cue(tFast + 0.05, 'whoosh', 0.4);
+  // step headers
+  const steps = [[d3, 'Lávate bien las manos'], [d4, 'Prepara el boli'], [d5, 'Elige el sitio'], [d6, 'Pellizco, pincha y aprieta'], [d7, 'Cuenta hasta 10']];
+  steps.forEach(([l, txt], i) => P.add(STEP(i + 1, txt, col), 70, 120, l.s - 0.1, i < 4 ? steps[i + 1][0].s - 0.25 : d7b.s - 0.1, 1, { ax: 0, sfx: 'whoosh', gain: 0.35 }));
+  // d3: wash hands
+  const tWash = W('d3', 'lávate') - 0.15;
+  P.add(EM('soap', 170), 560, 600, tWash, d4.s - 0.2, 1, { wig: 10 });
+  P.add(EM('potable-water', 190), 1360, 330, tWash + 0.15, d4.s - 0.2);
+  const hands = A(root, EM('clapping-hands', 330));
+  const bubbles = emitter(root, '<div style="width:56px;height:56px;border-radius:50%;border:5px solid #fff;background:rgba(165,216,255,.45);box-sizing:border-box"></div>', 8, 0.22, tWash + 0.2, d4.s - 0.4, 1.6, (a, j) => { const r = rng(j * 31 + 5); const dx = (r() - .5) * 360; return { x: dx + Math.sin(a * 4 + j) * 20, y: -40 - a * 200 - r() * 60, s: (0.5 + r() * 0.8) * Math.min(1, a * 5), o: 1 - seg(a, 1.2, 1.6) }; });
+  const drops = emitter(root, EM('droplet', 50), 5, 0.3, tWash + 0.3, d4.s - 0.4, 0.8, (a, j) => ({ x: ((j * 37) % 60) - 30, y: a * 260, s: 1, o: 1 - seg(a, 0.6, 0.8) }));
+  // d4: dial the dose (big pen)
+  const big = makePen(root), tPrep = W('d4', 'prepara') - 0.1, tGira = W('d4', 'gira'), tNum = W('d4', 'el número');
+  const DOSE = 4;
+  for (let i = 1; i <= DOSE; i++) cue(tGira + i * 0.32, 'tick', 0.5);
+  const winX = 960 + (505 - 350) * 1.5, winY = 480;
+  const zoomWin = A(root, `<div style="width:230px;height:230px;border-radius:50%;background:#fff;border:12px solid #1F2A44;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:130px;font-weight:700"><span class="zn">0</span></div>`);
+  const zn = zoomWin.querySelector('.zn');
+  const zcone = A(root, '<svg width="1920" height="1080"><polygon class="cn" fill="#fff" opacity=".6"/></svg>'), zc = zcone.querySelector('.cn');
+  P.add(PILL('el número que te digan', '#12B886', '#fff', 44), winX, 650, tNum, d5.s - 0.2, 1, { sfx: 'ding', gain: 0.4 });
+  P.add(ICOL(EM('woman-health-worker', 150), 'médicos', 36), 560, 740, W('d4', 'médicos') - 0.1, d5.s - 0.2);
+  P.add(ICOL(EM('people-hugging', 150), 'familia', 36), 800, 740, W('d4', 'familia') - 0.1, d5.s - 0.2);
+  // d5: injection sites
+  const front = makeKid(root), backK = makeKid(root, true);
+  const FK = [700, 545, 0.9], BK = [1220, 545, 0.9];
+  const tSite = d5.s - 0.1, tTr = W('d5', 'La tripa'), tMu = W('d5', 'los muslos'), tBr = W('d5', 'los brazos'), tCu = W('d5', 'el culete'), tRot = W('d5', 'Y cambia');
+  P.add(PILL('tripa', '#12B886', '#fff', 44), 410, 520, tTr, d6.s - 0.2);
+  P.add(PILL('muslos', '#12B886', '#fff', 44), 410, 700, tMu, d6.s - 0.2);
+  P.add(PILL('brazos', '#12B886', '#fff', 44), 1520, 420, tBr, d6.s - 0.2);
+  P.add(PILL('culete', '#12B886', '#fff', 44), 1520, 600, tCu, d6.s - 0.2);
+  P.add(EM('counterclockwise-arrows-button', 120), 960, 540, tRot - 0.1, d6.s - 0.2, 1, { wig: 10 });
+  const dot = A(root, '<div style="width:46px;height:46px;border-radius:50%;background:#FF8A3D;border:7px solid #fff;box-shadow:0 0 0 5px #FF8A3D"></div>');
+  const hops = [[...FK, 'zbel', -22, -8], [...BK, 'zarR', 95, -68], [...FK, 'zthL', -33, 138], [...BK, 'zbuL', -34, 64], [...FK, 'zbel', 22, -8], [...BK, 'zbuR', 34, 64], [...FK, 'zthR', 33, 138], [...BK, 'zarL', -95, -68]];
+  for (let i = 0; i < 8; i++) cue(tRot + i * 0.5, 'tick', 0.3);
+  // d6-d7b: pinch, inject, count
+  const grp = A(root, '<div style="width:1920px;height:1080px;position:relative"></div>');
+  grp.style.transformOrigin = '960px 650px'; grp._ax = 0;
+  const skin = makeSkin(grp), fL = A(grp, FINGER), fR = A(grp, FINGER), ipen = makePen(grp), thumb = A(grp, `<div style="width:120px;height:150px;border-radius:60px;background:${SKIN};border:6px solid ${SKIN_D};box-sizing:border-box"></div>`);
+  const ikeys = Array.from({ length: 6 }, (_, i) => ({ el: A(grp, KEY(80)), a: Math.PI * (0.15 + i * 0.14) }));
+  const tPinch = W('d6', 'pellizco') - 0.1, tStab = W('d6', 'pincha') - 0.05, tPress = W('d6', 'aprieta');
+  cue(tStab + 0.35, 'click', 0.5); cue(tPress + 0.3, 'click', 0.7);
+  const tCount = d7.e + 0.15, tOut = d7b.s + 0.05, tDone = W('d7b', '¡Ya está');
+  for (let i = 0; i < 10; i++) cue(tCount + i * 0.5, 'tick', 0.55);
+  cue(tOut + 0.1, 'whoosh', 0.4); cue(tDone, 'ding', 0.9);
+  burst(tDone, 1380, 470, 'confetti', 70, 1); burst(tDone, 1380, 470, 'sparkle', 16, 2);
+  const ringEl = A(root, `<svg width="520" height="520" viewBox="-260 -260 520 520"><circle r="210" fill="#fff" stroke="#E6FCF5" stroke-width="40"/><circle class="pr" r="210" fill="none" stroke="${col}" stroke-width="40" stroke-linecap="round" transform="rotate(-90)" stroke-dasharray="0 2000"/><text class="rn" y="78" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="230" fill="${INK}">1</text></svg>`);
+  const pr = ringEl.querySelector('.pr'), rn = ringEl.querySelector('.rn');
+  P.add(T('¡Ya está!', 150, col), 1380, 470, tDone - 0.05, d8.s - 0.2, 1, { sfx: false });
+  P.add(EM('party-popper', 170), 1700, 330, tDone, d8.s - 0.2, 1, { sfx: false, r: -10 });
+  // d8: it stings a little, it gets easier
+  const kid = makeKid(root), tPica = W('d8', 'Pica'), tPasa = W('d8', 'se pasa'), tBetter = W('d8', '¡Y cada vez');
+  P.add(EM('collision', 110), 1110, 470, tPica, tPasa, 1, { sfx: false });
+  [0, 1, 2].forEach(i => P.add(EM('glowing-star', 130), 800 + i * 160, 200 - (i === 1 ? 40 : 0), tBetter + i * 0.25, 1e9, 1, { sfx: 'ding', gain: 0.35, wig: 8 }));
+  P.add(EM('flexed-biceps', 170), 1260, 470, tBetter + 0.8, 1e9, 1, { wig: 8 });
+  return t => {
+    P.upd(t);
+    // d1
+    const pk = life(t, d1.s - 0.2, d2.s - 0.15);
+    pen.upd(t, { x: penX(t), y: penY(t) + wave(t, 0.4) * 6, s: penS(t) * pk });
+    // d2
+    slow.upd(t, { x: 1030, y: 330, s: 0.95 * life(t, tSlow, d3.s - 0.15) });
+    fast.upd(t, { x: 1030, y: 650, s: 0.95 * life(t, tFast, d3.s - 0.15) });
+    // d3
+    const hk = life(t, tWash, d4.s - 0.2);
+    set(hands, 960 + Math.sin(t * 14) * 14 * clamp(hk), 520, hk, Math.sin(t * 14) * 9);
+    if (hk > 0.01) { bubbles(t, 960, 470); drops(t, 1330, 410); } else { bubbles(-1); drops(-1); }
+    // d4
+    const bk = life(t, tPrep, d5.s - 0.2), dose = Math.min(DOSE, Math.max(0, Math.floor((t - tGira) / 0.32)));
+    big.upd(t, { x: 960, y: winY, s: 1.5 * bk, d: dose, spin: t > tGira ? Math.min(DOSE * 0.32, t - tGira) * 90 : 0 });
+    const zk = life(t, tGira - 0.3, d5.s - 0.2);
+    if (+zn.textContent !== dose) zn.textContent = dose;
+    set(zoomWin, winX, 230, zk * (1 + (t > tNum && t < tNum + 0.6 ? 0.12 * Math.sin((t - tNum) / 0.6 * Math.PI) : 0)), 0);
+    if (zk > 0.01) { zc.setAttribute('points', `${winX - 60},${winY - 34} ${winX - 100 * zk},${230 + 60} ${winX + 100 * zk},${230 + 60} ${winX + 60},${winY - 34}`); set(zcone, 960, 540, 1, 0, clamp(zk)); } else set(zcone, 0, 0, 0);
+    // d5
+    const sk = life(t, tSite, d6.s - 0.2), zon = (tt, k) => clamp((t - tt) * 3) * (0.55 + 0.25 * Math.max(0, wave(t - tt, 0.9))) * k;
+    const zf = { zbel: zon(tTr, 1), zthL: zon(tMu, 1), zthR: zon(tMu, 1), zarL: zon(tBr, 1), zarR: zon(tBr, 1) };
+    const zb = { zarL: zon(tBr, 1), zarR: zon(tBr, 1), zbuL: zon(tCu, 1), zbuR: zon(tCu, 1) };
+    front.upd(t, { x: FK[0], y: FK[1], s: FK[2] * sk, zone: zf });
+    backK.upd(t, { x: BK[0], y: BK[1], s: BK[2] * sk, zone: zb });
+    const hi = Math.floor((t - tRot) / 0.5);
+    if (t > tRot && sk > 0.01) {
+      const h0 = hops[clamp(hi, 0, 7) % 8], h1 = hops[clamp(hi + 1, 0, 7) % 8], e = hi >= 7 ? 0 : ease(seg((t - tRot) % 0.5, 0.25, 0.5));
+      const p0 = kidPt(h0[0], h0[1], h0[2], h0[4], h0[5]), p1 = kidPt(h1[0], h1[1], h1[2], h1[4], h1[5]);
+      set(dot, lerp(p0[0], p1[0], e), lerp(p0[1], p1[1], e) - Math.sin(e * Math.PI) * 120, sk * spring(t - tRot, 14, .6), 0);
+    } else set(dot, 0, 0, 0);
+    // d6 group: skin, fingers, pen
+    const gk = life(t, d6.s - 0.15, d8.s - 0.25, { fade: true });
+    if (gk > 0.002) {
+      const gs = kf([[d7.s - 0.2, 1], [d7.s + 0.4, 0.62]])(t), gxx = kf([[d7.s - 0.2, 0], [d7.s + 0.4, -390]])(t), gyy = kf([[d7.s - 0.2, 0], [d7.s + 0.4, -10]])(t);
+      grp.style.transform = `translate(${gxx}px,${gyy}px) scale(${gs})`; grp.style.visibility = 'visible'; grp.style.display = ''; grp.style.opacity = gk.toFixed(3);
+      const pinch = clamp(spring(t - tPinch, 9, .8)) * (t > tPinch ? 1 : 0) * (1 - ease(seg(t, tOut + 0.5, tOut + 0.9)));
+      skin.upd(960, 650, pinch);
+      const fin = (side) => {
+        const tipx = 960 + side * lerp(260, 165, pinch), tipy = lerp(470, 560, clamp(pinch * 1.3)) - (t < tPinch ? 300 * (1 - clamp(spring(t - tPinch + 0.4, 9, .9))) : 0);
+        const th = side * 35 * Math.PI / 180;
+        return [tipx + 180 * Math.sin(th), tipy - 180 * Math.cos(th), side * -35];
+      };
+      const vis = t > tPinch - 0.4 && t < tOut + 0.9 ? 1 : 0;
+      const [lx, ly, lr] = fin(-1), [rx, ry, rr] = fin(1);
+      set(fL, lx, ly, vis, -lr, 1); set(fR, rx, ry, vis, -rr, 1);
+      const s = 0.62, tipY = 610, down = ease(seg(t, tStab, tStab + 0.4)), up = ease(seg(t, tOut + 0.1, tOut + 0.6));
+      const cy = tipY - 350 * s - (1 - down) * 520 - up * 700;
+      const press = clamp(spring(t - tPress, 12, .8)) * (t > tPress ? 1 : 0) * (1 - up);
+      ipen.upd(t, { x: 960, y: cy, s: t > tStab - 0.05 ? s : 0, r: -90, press, d: 0 });
+      const btnTop = cy - (694 - 350) * s + press * 14 * s;
+      set(thumb, 960, btnTop - 70 + (t < tPress - 0.4 ? -300 : -300 * (1 - ease(seg(t, tPress - 0.4, tPress)))), t > tPress - 0.4 && t < tOut + 0.3 ? 1 : 0, 0);
+      ikeys.forEach((k, i) => {
+        const a = seg(t, tPress + 0.25 + i * 0.06, tPress + 1.4 + i * 0.06);
+        if (a <= 0 || a >= 1 || up > 0) { set(k.el, 0, 0, 0); return; }
+        const d = easeOut(a) * 190;
+        set(k.el, 960 + Math.cos(k.a) * d * 1.4 * (i % 2 ? 1 : -1) * 0.8, tipY + 40 + Math.sin(k.a) * d * 0.35, Math.sin(a * Math.PI) * 0.9, (i % 2 ? 1 : -1) * 20);
+      });
+    } else { grp.style.display = 'none'; }
+    // d7 counter
+    const ck = life(t, d7.s + 0.2, tOut);
+    const n = clamp(Math.floor((t - tCount) / 0.5) + 1, 0, 10);
+    if (ck > 0.002) {
+      pr.setAttribute('stroke-dasharray', `${(2 * Math.PI * 210 * n / 10).toFixed(1)} 2000`); pr.setAttribute('opacity', n ? 1 : 0);
+      rn.textContent = n || '';
+      const pop = n > 0 ? 1 + 0.18 * Math.exp(-((t - tCount) % 0.5) * 9) : 1;
+      set(ringEl, 1380, 470, ck * pop, 0);
+    } else set(ringEl, 0, 0, 0);
+    // d8
+    const kk = life(t, d8.s - 0.1, 1e9);
+    kid.upd(t, { x: 960, y: 560, s: 0.95 * kk, mood: t > tPica && t < tPasa ? 'o' : t > tBetter ? 'big' : 'happy', wave: t > tBetter + 0.6 ? clamp((t - tBetter - 0.6) * 4) : 0 });
+  };
+});
+function makeSkin(parent) {
+  const id = 'sk' + (gid++);
+  const el = A(parent, `<svg width="1240" height="440" viewBox="0 0 1240 440"><defs><clipPath id="${id}"><rect x="0" y="0" width="1240" height="440" rx="50"/></clipPath></defs><g clip-path="url(#${id})"><rect width="1240" height="440" fill="#E8908A"/><g stroke="#D9706A" stroke-width="5" opacity=".7">${Array.from({ length: 14 }, (_, i) => `<path d="M${i * 92 - 20} 360 q46 -22 92 0"/>`).join('')}</g><path class="fat" fill="#FFE8A3"/><g class="glob" fill="#FFF3C4"></g><path class="skn" fill="#F4B183" stroke="#D9906A" stroke-width="5"/></g></svg>`);
+  const fat = el.querySelector('.fat'), skn = el.querySelector('.skn'), glob = el.querySelector('.glob');
+  glob.innerHTML = Array.from({ length: 16 }, (_, i) => `<circle cx="${40 + i * 77}" cy="${255 + (i % 3) * 22}" r="${18 + (i % 4) * 4}"/>`).join('');
+  return { upd(x, y, b) {
+    const top = X => 130 - b * 95 * Math.exp(-(((X - 620) / 165) ** 2));
+    let up = '', dn = '', fb = '';
+    for (let X = 0; X <= 1240; X += 20) { up += `${X},${top(X).toFixed(1)} `; }
+    for (let X = 1240; X >= 0; X -= 20) { dn += `${X},${(top(X) + 44).toFixed(1)} `; fb += `${X},${(320 - b * 30 * Math.exp(-(((X - 620) / 200) ** 2))).toFixed(1)} `; }
+    skn.setAttribute('d', `M${up}L${dn}Z`);
+    fat.setAttribute('d', `M${dn.trim().split(' ').reverse().join(' ')} L${fb}Z`);
+    set(el, x, y, 1, 0, 1);
+  } };
+}
+
+// ---------- 5. medir
+scene('medir', root => {
+  const P = popper(root), e1 = L('e1'), e2 = L('e2'), e3 = L('e3');
+  const t0 = e1.s - 0.45;
+  P.add(DROP, 700, 500, t0, e2.s - 0.2, 1, { bob: 6 });
+  const inDrop = Array.from({ length: 6 }, (_, i) => makeSugar(root));
+  const glass = A(root, EM('magnifying-glass-tilted-left', 240));
+  P.add(BUB('¿Cuánto azúcar hay?', 60), 1360, 380, W('e1', 'medir') - 0.1, e2.s - 0.2);
+  // e2: two ways
+  const tF = W('e2', 'pinchacito') - 0.15, tS = W('e2', 'un sensor') - 0.15, tSend = W('e2', 'lo envía');
+  P.add(CARD('', 800, 680), 520, 500, tF, e3.s - 0.15, 1, { sfx: false });
+  P.add(T('Pinchacito en el dedo', 52), 520, 230, tF + 0.1, e3.s - 0.15);
+  const meter = A(root, METER(220)), scr = meter.querySelector('.scr');
+  const finger = A(root, FINGER.replace('width="120" height="360"', 'width="96" height="288"'));
+  const bdrop = A(root, '<svg width="46" height="60" viewBox="0 0 46 60"><path d="M23 2 C30 18 44 30 44 40 C44 52 34 58 23 58 C12 58 2 52 2 40 C2 30 16 18 23 2Z" fill="#E03131"/></svg>');
+  const tTouch = tF + 1.0, tOk = tTouch + 0.8;
+  cue(tTouch, 'click', 0.4); cue(tOk, 'ding', 0.5);
+  P.add(CARD('', 800, 680), 1400, 500, tS, e3.s - 0.15, 1, { sfx: false });
+  P.add(T('Sensor en el brazo', 52), 1400, 230, tS + 0.1, e3.s - 0.15);
+  const arm = A(root, `<svg width="520" height="170" viewBox="0 0 520 170"><rect x="0" y="20" width="520" height="130" rx="65" fill="${SKIN}"/><rect x="0" y="20" width="170" height="130" rx="20" fill="#4DABF7"/><circle cx="330" cy="85" r="52" fill="#fff" stroke="#CED4DA" stroke-width="7"/><circle cx="330" cy="85" r="20" fill="#DEE2E6"/></svg>`);
+  const phone = A(root, `<svg width="200" height="360" viewBox="0 0 200 360"><rect x="6" y="6" width="188" height="348" rx="34" fill="#343A40"/><rect x="20" y="30" width="160" height="300" rx="20" fill="#fff"/><rect x="20" y="140" width="160" height="70" fill="#D3F9D8"/><polyline class="gr" fill="none" stroke="#2F9E44" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><rect x="76" y="14" width="48" height="8" rx="4" fill="#495057"/></svg>`);
+  const gr = phone.querySelector('.gr');
+  const arcs = [0, 1, 2].map(() => A(root, '<div style="width:80px;height:80px;border-radius:50%;border:8px solid #228BE6;border-left-color:transparent;border-bottom-color:transparent;box-sizing:border-box"></div>'));
+  // e3: gauge
+  const g = makeGauge(root), tLow = W('e3', 'bajo'), tHigh = W('e3', 'alto'), tGreen = W('e3', 'zona verde'), tTeam = W('e3', 'Tu equipo');
+  P.add(PILL('ALTO', '#F08C00', '#fff', 50), 1010, 300, tHigh - 0.05, 1e9);
+  P.add(PILL('ZONA VERDE', '#2F9E44', '#fff', 50), 1060, 500, tGreen - 0.05, 1e9, 1, { sfx: 'ding', gain: 0.6, pulse: 0.05 });
+  P.add(PILL('BAJO', '#E03131', '#fff', 50), 1010, 700, tLow - 0.05, 1e9);
+  P.add(EM('woman-health-worker', 240), 1560, 600, tTeam - 0.1, 1e9);
+  P.add(BUB('¡Esta es tu zona verde!', 46), 1580, 330, tTeam + 0.3, 1e9);
+  const lvl = kf([[tLow - 0.4, 0.5], [tLow, 0.02], [tHigh - 0.2, 0.02], [tHigh + 0.2, 0.98], [tGreen - 0.3, 0.98], [tGreen + 0.1, 0.5]]);
+  [tLow, tHigh, tGreen].forEach(tt => cue(tt - 0.1, 'whoosh', 0.3));
+  return t => {
+    P.upd(t);
+    const dk = life(t, t0, e2.s - 0.2);
+    inDrop.forEach((s, i) => s.upd(700 + Math.cos(i * 1.1 + t * 0.6) * 90, 560 + Math.sin(i * 1.7 + t * 0.8) * 70, 1.1 * dk));
+    const mk = life(t, W('e1', 'medir') - 0.4, e2.s - 0.2);
+    set(glass, 880 + wave(t, 0.3) * 40, 440 + wave(t, 0.4, .2) * 30, mk, 0);
+    // e2 finger prick
+    const fk = life(t, tF + 0.2, e3.s - 0.15);
+    set(meter, 430, 640, fk, 0);
+    const fa = ease(seg(t, tF + 0.4, tTouch)), fcx = lerp(720, 548, fa), fcy = lerp(300, 395, fa);
+    set(finger, fcx, fcy, fk, 55);
+    set(bdrop, fcx - 118 + 2, fcy + 83 + 10, t > tF + 0.6 && t < tTouch + 0.25 ? fk * (1 - seg(t, tTouch, tTouch + 0.25)) : 0, 0);
+    scr.style.display = t > tOk ? '' : 'none';
+    // sensor
+    const sk = life(t, tS + 0.2, e3.s - 0.15);
+    set(arm, 1330, 640, 0.95 * sk, 0); set(phone, 1640, 470, 0.85 * sk, 0);
+    arcs.forEach((a, i) => { const p = ((t - tSend) * 0.9 + i / 3) % 1; set(a, lerp(1440, 1560, p), lerp(560, 470, p), t > tSend ? sk * (0.8 + p * 0.6) : 0, -45, 1 - p); });
+    const gp = clamp((t - tSend) / 3); let pts = '';
+    for (let i = 0; i <= 20 * gp; i++) { const X = 30 + i * 7, Y = 175 + Math.sin(i * 0.7) * 24 + Math.sin(i * 0.23) * 12; pts += `${X},${Y.toFixed(1)} `; }
+    gr.setAttribute('points', pts);
+    // e3
+    const gk = life(t, e3.s - 0.1, 1e9), lv = lvl(t);
+    g.upd(t, 760, 500, 0.95 * gk, lv, t < tLow - 0.2 ? -1 : lv < 0.2 ? 0 : lv > 0.8 ? 2 : t > tGreen ? 1 : -1);
+  };
+});
+
+// ---------- 6. hipo e hiper
+scene('hipohiper', root => {
+  const P = popper(root), f1 = L('f1'), f2 = L('f2'), f3 = L('f3'), f4 = L('f4'), f5 = L('f5'), f6 = L('f6'), f7 = L('f7');
+  const RED = '#E03131', ORG = '#F08C00';
+  // f1
+  const tHipo = W('f1', 'hipo e') - 0.1, tHiper = W('f1', 'hiper.') - 0.15, tB = W('f1', 'Hipo quiere'), tA = W('f1', 'Hiper quiere');
+  P.add(T('HIPO', 170, RED), 560, 330, tHipo, f2.s - 0.15);
+  P.add(T('HIPER', 170, ORG), 1360, 330, tHiper, f2.s - 0.15);
+  const arD = A(root, ARROW('#FF8787', false, 150)), arU = A(root, ARROW('#FFA94D', true, 150));
+  P.add(PILL('= BAJO', RED, '#fff', 64), 560, 760, tB, f2.s - 0.15);
+  P.add(PILL('= ALTO', ORG, '#fff', 64), 1360, 760, tA, f2.s - 0.15);
+  // f2: what causes a hipo
+  const g1 = makeGauge(root), tLowF = W('f2', 'baja demasiado');
+  P.add(PILL('HIPO', RED, '#fff', 56), 330, 150, f2.s - 0.1, f4.s - 0.15);
+  const causes = [[EM('person-running', 170), 'mucho deporte', 'mucho deporte'], [EM('bowl-with-spoon', 170), 'comer poco', 'comes poco'], [`<div style="display:flex;flex-direction:column;align-items:center;gap:6px">${penSVG(...ORANGE, 260)}<div style="display:flex;gap:4px">${KEY(70)}${KEY(70)}${KEY(70)}</div></div>`, 'mucha insulina', 'demasiada insulina']];
+  causes.forEach(([h, lab, w], i) => P.add(CARD(h + `<div class="ct" style="font-size:40px">${lab}</div>`, 350, 380), 860 + i * 380, 520, W('f2', w) - 0.1, f3.s - 0.15, 1, { bob: 5 }));
+  // f3: signs
+  P.add(T('Puedes notar…', 64, RED), 960, 150, f3.s, f4.s - 0.15);
+  const signs = [[EM('shaking-face', 170), 'temblores', 'temblores', { shake: 4 }], [EM('anxious-face-with-sweat', 170), 'sudor', 'sudor', {}], [EM('face-with-spiral-eyes', 170), 'mareo', 'mareo', { wig: 14 }], [EM('face-savoring-food', 170), 'mucha hambre', 'mucha hambre', {}], [EM('woozy-face', 170), 'sentirte raro', 'raro', { wig: 8 }]];
+  signs.forEach(([h, lab, w, o], i) => P.add(ICOL(h, lab, 40, RED), 450 + i * 255, 470 + (i % 2) * 120, W('f3', w) - 0.1, f4.s - 0.15, 1, o));
+  // f4: what to do
+  P.add(T('¿Qué hago?', 72, RED), 960, 150, f4.s - 0.05, f5.s - 0.15);
+  const stepCard = (n, inner, txt) => CARD(`<div class="num" style="background:${RED}">${n}</div>${inner}<div class="ct" style="font-size:42px">${txt}</div>`, 470, 560);
+  P.add(stepCard(1, EM('raised-hand', 190), '¡Para!'), 400, 550, W('f4', 'para lo') - 0.1, f5.s - 0.15);
+  P.add(stepCard(2, `<div style="display:flex;align-items:flex-end">${EM('woman', 170)}${EM('speech-balloon', 100)}</div>`, 'Avisa a un adulto'), 960, 550, W('f4', 'avisa') - 0.1, f5.s - 0.15);
+  P.add(stepCard(3, '<div style="height:190px;width:300px"></div>', 'Azúcar rápido'), 1520, 550, W('f4', 'Toma azúcar') - 0.1, f5.s - 0.15);
+  P.add(EM('beverage-box', 170), 1440, 520, W('f4', 'zumo') - 0.1, f5.s - 0.15, 1, { wig: 6 });
+  P.add(TABLETS, 1620, 560, W('f4', 'pastillas') - 0.1, f5.s - 0.15, 1.1);
+  // f5: rescue kit
+  const tKit = W('f5', 'lleva siempre') - 0.1, tRescue = W('f5', '¡Es tu kit');
+  P.add(EM('backpack', 340), 960, 540, f5.s - 0.1, f6.s - 0.15, 1, { pulse: 0.03 });
+  const into = [[EM('beverage-box', 130), 420, 300], [TABLETS, 1500, 300], [METER(110), 1560, 700]].map(([h, x, y], i) => ({ el: A(root, h), x, y, t: tKit + i * 0.3 }));
+  into.forEach(o => cue(o.t + 0.5, 'pop', 0.4));
+  P.add(PILL('KIT DE RESCATE', '#FA5252', '#fff', 64), 960, 170, tRescue - 0.05, f6.s - 0.15, 1, { sfx: 'ding', gain: 0.7 });
+  burst(tRescue, 960, 470, 'sparkle', 20, 2);
+  // f6: hiper
+  const g2 = makeGauge(root), tHighF = W('f6', 'demasiado');
+  P.add(PILL('HIPER', ORG, '#fff', 56), 330, 150, f6.s - 0.1, f7.s - 0.15);
+  const hs = [[EM('droplet', 170), 'mucha sed', 'sed'], [EM('toilet', 170), 'mucho pis', 'pis'], [EM('tired-face', 170), 'cansancio', 'cansancio']];
+  hs.forEach(([h, lab, w], i) => P.add(CARD(h + `<div class="ct" style="font-size:42px">${lab}</div>`, 350, 380), 860 + i * 380, 520, W('f6', w) - 0.1, f7.s - 0.15, 1, { bob: 5 }));
+  // f7
+  P.add(T('¿Qué hago?', 72, ORG), 960, 150, f7.s - 0.05, 1e9);
+  const acts = [[EM('woman', 160), 'Avisa a un adulto', 'Avisa'], [METER(110), 'Mídete', 'mídete'], [EM('droplet', 160), 'Bebe agua', 'bebe agua'], [penSVG(...ORANGE, 250), 'A lo mejor, insulina', 'A lo mejor']];
+  acts.forEach(([h, lab, w], i) => P.add(CARD(`<div style="height:180px;display:flex;align-items:center">${h}</div><div class="ct" style="font-size:40px">${lab}</div>`, 380, 440), 330 + i * 420, 540, W('f7', w) - 0.1, 1e9));
+  return t => {
+    P.upd(t);
+    const ka = life(t, tB, f2.s - 0.15), kb = life(t, tA, f2.s - 0.15);
+    set(arD, 560, 555 + Math.abs(wave(t, 1.2)) * 30, ka, 0);
+    set(arU, 1360, 555 - Math.abs(wave(t, 1.2)) * 30, kb, 0);
+    const k1 = life(t, f2.s - 0.1, f3.s - 0.15);
+    g1.upd(t, 330, 560, 0.62 * k1, kf([[tLowF - 0.2, 0.5], [tLowF + 0.4, 0.04]])(t), t > tLowF ? 0 : -1);
+    into.forEach(o => { const a = ease(seg(t, o.t, o.t + 0.6)); set(o.el, lerp(o.x, 960, a), lerp(o.y, 520, a) - Math.sin(a * Math.PI) * 120, t > o.t && a < 1 ? spring(t - o.t, 14, .6) * (1 - a * 0.7) : 0, a * 30); });
+    const k2 = life(t, f6.s - 0.1, f7.s - 0.15);
+    g2.upd(t, 330, 560, 0.62 * k2, kf([[tHighF - 0.2, 0.5], [tHighF + 0.4, 0.96]])(t), t > tHighF ? 2 : -1);
+  };
+});
+
+// ---------- 7. comida
+scene('comida', root => {
+  const P = popper(root), g1 = L('g1'), g2 = L('g2'), g3 = L('g3'), g4 = L('g4'), g5 = L('g5'), g6 = L('g6'), g7 = L('g7');
+  const C = '#40A02B';
+  // g1: almost everything
+  P.add(T('¡Casi de todo!', 150, C), 960, 480, g1.s - 0.05, g2.s - 0.2, 1, { sfx: 'ding', gain: 0.6 });
+  const all = [EM('red-apple', 120), EM('bread', 120), EM('cheese-wedge', 120), EM('carrot', 120), EM('egg', 120), EM('fish', 120), EM('banana', 120), EM('spaghetti', 120), EM('broccoli', 120), EM('glass-of-milk', 120), EM('cooked-rice', 120), EM('poultry-leg', 120), EM('strawberry', 120), EM('potato', 120)];
+  all.forEach((h, i) => { const a = i / all.length * Math.PI * 2; P.add(h, 960 + Math.cos(a) * 640, 480 + Math.sin(a) * 330, g1.s + 0.1 + i * 0.03, g2.s - 0.2, 1, { bob: 10, wig: 8, sfx: i % 4 ? false : 'pop', gain: 0.3 }); });
+  // g2: carbs turn into sugar
+  P.add(PILL('HIDRATOS DE CARBONO', '#F08C00', '#fff', 56), 960, 150, W('g2', 'hidratos') - 0.1, g3.s - 0.15);
+  P.add(`<div style="display:flex;align-items:center;gap:18px">${PILL('se convierten en azúcar', '#FFC300', INK, 46)}${SUGAR_ICON(80)}</div>`, 960, 760, W('g2', 'se convierten') - 0.1, g3.s - 0.15);
+  const carbs = [[EM('bread', 170), 'pan', 'el pan'], [EM('spaghetti', 170), 'pasta', 'la pasta'], [EM('cooked-rice', 170), 'arroz', 'el arroz'], [EM('potato', 170), 'patatas', 'las patatas'], [`<div style="display:flex">${EM('red-apple', 120)}${EM('banana', 120)}</div>`, 'fruta', 'la fruta'], [EM('glass-of-milk', 170), 'leche', 'la leche']];
+  const up = [];
+  carbs.forEach(([h, lab, w], i) => { const tt = W('g2', w) - 0.1, x = 360 + i * 240; P.add(ICOL(h, lab, 40), x, 470, tt, g3.s - 0.15, 1, { bob: 5 }); up.push({ o: makeSugar(root), x, t: tt + 0.45 }); cue(tt + 0.45, 'tick', 0.25); });
+  // g3: hardly raise sugar
+  P.add(PILL('CASI NO SUBEN EL AZÚCAR', C, '#fff', 56), 960, 150, g3.s - 0.05, g4.s - 0.15);
+  const prot = [[EM('poultry-leg', 170), 'carne', 'la carne'], [EM('fish', 170), 'pescado', 'el pescado'], [EM('egg', 170), 'huevos', 'los huevos'], [EM('cheese-wedge', 170), 'queso', 'el queso'], [`<div style="display:flex">${EM('broccoli', 120)}${EM('carrot', 120)}</div>`, 'verduras', 'las verduras']];
+  prot.forEach(([h, lab, w], i) => P.add(ICOL(h, lab, 40), 400 + i * 280, 480, W('g3', w) - 0.1, g4.s - 0.15, 1, { bob: 5 }));
+  // g4: counting carbs
+  const tCount = W('g4', 'contará') - 0.1, tIns = W('g4', 'cuánta insulina') - 0.1, tSoon = W('g4', '¡Pronto') - 0.1;
+  P.add(PILL('contamos los hidratos', '#F08C00', '#fff', 46), 580, 200, tCount, g5.s - 0.15);
+  [[EM('bread', 160), 380], [EM('red-apple', 160), 580], [EM('glass-of-milk', 160), 780]].forEach(([h, x], i) => {
+    P.add(h, x, 440, g4.s + i * 0.1, g5.s - 0.15, 1, { sfx: i ? false : 'pop' });
+    P.add(`<div class="num" style="background:#F08C00;width:80px;height:80px;font-size:50px">${i + 1}</div>`, x + 60, 330, tCount + 0.3 + i * 0.4, g5.s - 0.15, 1, { sfx: 'tick', gain: 0.4 });
+  });
+  P.add(T('=', 140), 1000, 430, tIns - 0.2, g5.s - 0.15);
+  P.add(`<div style="display:flex;flex-direction:column;align-items:center;gap:10px">${penSVG(...ORANGE, 380)}<div style="display:flex;gap:8px">${KEY(90)}${KEY(90)}${KEY(90)}</div></div>`, 1400, 440, tIns, g5.s - 0.15);
+  P.add(`<div style="display:flex;align-items:center;gap:16px">${EM('light-bulb', 110)}${PILL('¡Pronto lo harás tú también!', C, '#fff', 48)}</div>`, 960, 730, tSoon, g5.s - 0.15, 1, { sfx: 'ding', gain: 0.5 });
+  // g5: the plate
+  const tHalf = W('g5', 'la mitad') - 0.1, tProt = W('g5', 'Un trozo') - 0.1, tCarb = W('g5', 'otro trozo') - 0.1;
+  const plate = A(root, `<svg width="640" height="640" viewBox="-320 -320 640 640"><circle r="310" fill="#fff" stroke="#DEE2E6" stroke-width="10"/><circle r="266" fill="none" stroke="#F1F3F5" stroke-width="8"/><path class="pv" d="M0 -250 A250 250 0 0 0 0 250 Z" fill="#B2F2BB" opacity="0"/><path class="pp" d="M8 -8 L8 -250 A242 242 0 0 1 250 -8 Z" fill="#FFC9C9" opacity="0"/><path class="pc" d="M8 8 L250 8 A242 242 0 0 1 8 250 Z" fill="#FFEC99" opacity="0"/></svg>`);
+  const pv = plate.querySelector('.pv'), pp = plate.querySelector('.pp'), pc = plate.querySelector('.pc');
+  const PX = 880, PY = 480, PS = 0.95;
+  const onPlate = (list, tt) => list.forEach(([h, dx, dy], i) => P.add(h, PX + dx * PS, PY + dy * PS, tt + 0.15 + i * 0.08, g6.s - 0.15, 1, { sfx: i ? false : 'pop' }));
+  onPlate([[EM('broccoli', 120), -150, -110], [EM('carrot', 110), -60, -170], [EM('leafy-green', 120), -180, 30], [EM('tomato', 100), -80, 120], [EM('cucumber', 110), -80, -30], [EM('broccoli', 100), -170, 150]], tHalf);
+  onPlate([[EM('poultry-leg', 110), 90, -150], [EM('fish', 100), 170, -70], [EM('egg', 90), 80, -60]], tProt);
+  onPlate([[EM('cooked-rice', 110), 90, 80], [EM('spaghetti', 100), 170, 150], [EM('bread', 90), 70, 175]], tCarb);
+  P.add(PILL('la mitad: verduras', C, '#fff', 44), 330, 480, tHalf, g6.s - 0.15, 1, { sfx: false });
+  P.add(PILL('un trozo: proteína', '#E8590C', '#fff', 44), 1480, 320, tProt, g6.s - 0.15, 1, { sfx: false });
+  P.add(PILL('otro trozo: hidratos', '#F08C00', '#fff', 44), 1480, 650, tCarb, g6.s - 0.15, 1, { sfx: false });
+  // g6: drinks and sweets
+  const tWater = W('g6', 'el agua') - 0.1, tFast = W('g6', 'muy rápido') - 0.1;
+  P.add(CARD(`${EM('droplet', 220)}<div class="ct" style="font-size:60px;color:#1C7ED6">¡Agua!</div>`, 460, 520), 420, 480, tWater, g7.s - 0.15);
+  P.add(CHECK(100), 600, 260, tWater + 0.3, g7.s - 0.15, 1, { sfx: 'ding', gain: 0.5 });
+  [[EM('cup-with-straw', 160), 'refrescos', 'refrescos'], [EM('beverage-box', 160), 'zumos', 'los zumos'], [EM('lollipop', 160), 'chuches', 'chuches']].forEach(([h, lab, w], i) => P.add(ICOL(h, lab, 40), 1060 + i * 260, 360, W('g6', w) - 0.1, g7.s - 0.15, 1, { bob: 5 }));
+  P.add(`<div style="display:flex;align-items:center;gap:14px">${EM('rocket', 100)}${PILL('¡suben muy rápido!', '#F08C00', '#fff', 46)}</div>`, 1320, 570, tFast, g7.s - 0.15);
+  P.add(`<div style="display:flex;align-items:center;gap:10px">${EM('backpack', 80)}${PILL('perfectos para una hipo', '#FA5252', '#fff', 40)}</div>`, 1320, 720, W('g6', 'perfectos') - 0.1, g7.s - 0.15);
+  P.add(PILL('si no, solo de vez en cuando', '#7B61FF', '#fff', 40), 1320, 825, W('g6', 'solo de vez') - 0.2, g7.s - 0.15);
+  // g7: move!
+  P.add(PILL('¡moverse es genial!', C, '#fff', 56), 960, 160, g7.s - 0.05, 1e9);
+  [EM('soccer-ball', 150), EM('bicycle', 160), EM('person-running', 160), EM('basketball', 150), EM('kite', 150)].forEach((h, i) => P.add(h, 360 + i * 300, 410, W('g7', 'jugar') - 0.2 + i * 0.12, 1e9, 1, { move: t => [360 + i * 300, 410 - Math.abs(wave(t, 0.9, i * .2)) * 50], sfx: i % 2 ? false : 'pop' }));
+  P.add(ICOL(METER(100), 'mídete', 40), 760, 720, W('g7', 'medirte') - 0.1, 1e9);
+  P.add(ICOL(EM('backpack', 150), 'kit de rescate', 40), 1160, 720, W('g7', 'kit de rescate') - 0.1, 1e9);
+  return t => {
+    P.upd(t);
+    up.forEach(u => { const a = seg(t, u.t, u.t + 1.2); u.o.upd(u.x + 70, lerp(380, 280, easeOut(a)), t > u.t && t < g3.s - 0.15 ? spring(t - u.t, 14, .6) : 0); });
+    const pk = life(t, g5.s - 0.15, g6.s - 0.15);
+    set(plate, PX, PY, PS * pk, 0);
+    pv.setAttribute('opacity', clamp((t - tHalf) * 3)); pp.setAttribute('opacity', clamp((t - tProt) * 3)); pc.setAttribute('opacity', clamp((t - tCarb) * 3));
+  };
+});
+
+// ---------- 8. final
+scene('final', root => {
+  const P = popper(root), h1 = L('h1'), h2 = L('h2'), h3 = L('h3'), h4 = L('h4');
+  const C = '#FF8A00', kid = makeKid(root);
+  const tBadge = W('h1', 'una parte de ti') - 0.1, tSame = W('h1', 'no cambia');
+  cue(tBadge + 0.1, 'pop', 0.5);
+  P.add(`<div style="display:flex;align-items:center;gap:14px">${BUB('¡Sigues siendo tú!', 60)}${EM('red-heart', 110)}</div>`, 1400, 300, tSame - 0.05, h2.s - 0.2);
+  const acts = [[EM('school', 170), 'el cole', 'cole', 420, 330], [EM('people-hugging', 170), 'amigos', 'amigos', 420, 700], [EM('birthday-cake', 170), 'cumpleaños', 'cumpleaños', 1500, 330], [EM('soccer-ball', 170), 'deporte', 'deporte', 1500, 700]];
+  acts.forEach(([h, lab, w, x, y]) => P.add(ICOL(h, lab, 42), x, y, W('h2', w) - 0.1, h3.s - 0.2, 1, { bob: 8 }));
+  P.add(ICOL(EM('glowing-star', 150), 'tus sueños', 42), 960, 150, W('h2', 'sueños') - 0.1, h3.s - 0.2, 1, { sfx: 'ding', gain: 0.5, wig: 8 });
+  burst(W('h2', 'sueños') + 0.1, 960, 130, 'sparkle', 14, 1.4);
+  P.add(ICOL(`<div style="display:flex;align-items:center">${EM('house', 140)}${EM('red-heart', 90)}</div>`, 'tu familia', 42), 430, 520, W('h3', 'familia') - 0.1, h4.s - 0.2, 1, { bob: 6 });
+  P.add(ICOL(EM('woman-health-worker', 170), 'tus médicos', 42), 1490, 520, W('h3', 'médicos') - 0.1, h4.s - 0.2, 1, { bob: 6 });
+  const tLove = W('h3', 'mucha gente') - 0.1;
+  const hearts = emitter(root, EM('red-heart', 70), 14, 0.16, tLove, h4.s - 0.6, 2.2, (a, j) => { const r = rng(j * 13 + 1); return { x: 160 + r() * 1600, y: 980 - a * 420 - r() * 80, s: (0.7 + r() * 0.7) * Math.min(1, a * 5), r: wave(a, 0.6, r()) * 15, o: 1 - seg(a, 1.6, 2.2) }; });
+  const tHero = W('h4', 'superhéroe') - 0.4, tEnd = h4.e + 1.6;
+  P.add(T('¡SUPERHÉROE DE LAS LLAVES!', 92, C, 700, '-webkit-text-stroke:5px #fff;paint-order:stroke'), 960, 140, tHero + 0.2, tEnd, 1, { sfx: 'ding', gain: 0.9 });
+  burst(tHero + 0.3, 520, 620, 'confetti', 80, 1); burst(tHero + 0.3, 1400, 620, 'confetti', 80, 1); burst(tHero + 0.45, 960, 400, 'sparkle', 24, 2.4);
+  cue(tHero, 'whoosh', 0.6);
+  const orbit = Array.from({ length: 6 }, () => A(root, KEY(110)));
+  // end card
+  P.add(T('¡Tú puedes!', 170, C), 960, 420, tEnd + 0.3, 1e9, 1, { sfx: 'ding', gain: 0.7 });
+  P.add(EM('red-heart', 120), 1490, 360, tEnd + 0.6, 1e9, 1, { pulse: 0.08 });
+  P.add(`<div class="tx" style="font-size:40px;font-weight:500;line-height:1.35">Este vídeo explica lo básico.<br>Tu equipo médico te dirá lo que necesitas tú.</div>`, 960, 650, tEnd + 1.0, 1e9, 1, { fade: true, sfx: false });
+  P.add(`<div class="tx" style="font-size:22px;font-weight:400;color:#8A8F9E">Iconos: Fluent Emoji (Microsoft, MIT) · Voz: Kokoro TTS</div>`, 960, 1035, tEnd + 1.4, 1e9, 1, { fade: true, sfx: false });
+  return t => {
+    P.upd(t);
+    const kk = life(t, h1.s - 0.25, tEnd), jump = t > tHero ? Math.abs(Math.sin((t - tHero) * 3.2)) * 40 * Math.exp(-(t - tHero) * 0.6) : 0;
+    kid.upd(t, { x: 960, y: 560 - jump, s: 0.95 * kk, mood: t > W('h2', 'cole') ? 'big' : 'happy', badge: clamp(spring(t - tBadge, 13, .55)) * (t > tBadge ? 1 : 0), cape: clamp(spring(t - tHero, 9, .7)) * (t > tHero ? 1 : 0), wave: t > tHero + 0.4 ? clamp((t - tHero - 0.4) * 3) : 0 });
+    if (t > tLove && t < h4.s) hearts(t); else hearts(-1);
+    orbit.forEach((o, i) => { const a = t * 1.3 + i / 6 * Math.PI * 2, k = life(t, tHero + 0.3 + i * 0.05, tEnd); set(o, 960 + Math.cos(a) * 360, 520 + Math.sin(a) * 300, 0.8 * k, Math.cos(a) * 20); });
+  };
+});
+
+// ---------------------------------------------------------------- title cards, subtitles, background
+const over = document.getElementById('over');
+const disc = A(over, '<div class="disc"></div>'), discIn = disc.firstChild;
+const cardNum = A(over, '<div style="width:190px;height:190px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:120px;font-weight:700"></div>'), cardNumIn = cardNum.firstChild;
+const cardTitle = A(over, '<div class="tx" style="font-size:112px;color:#fff;text-shadow:0 6px 0 rgba(0,0,0,.12)"></div>'), cardTitleIn = cardTitle.firstChild;
+const cardSub = A(over, '<div class="tx" style="font-size:60px;font-weight:500;color:#fff;opacity:.92"></div>'), cardSubIn = cardSub.firstChild;
+const tag = A(over, '<div class="pill" style="font-size:30px;padding:10px 26px 12px;background:#fff"></div>', -100), tagIn = tag.firstChild;
+SCENES.forEach(sc => {
+  if (!sc.meta.n) return;
+  const s = sc.info.s;
+  cue(s - 0.95, 'whoosh', 0.7); cue(s - 0.2, 'pop', 0.6);
+});
+let curCard = null;
+function updCard(t) {
+  let sc = null;
+  for (const s of SCENES) if (s.meta.n && t > s.info.s - 0.95 && t < L(s.info.first).e + 0.8) sc = s;
+  if (!sc) { [disc, cardNum, cardTitle, cardSub].forEach(e => set(e, 0, 0, 0)); return; }
+  if (curCard !== sc) { discIn.style.background = sc.meta.col; cardNumIn.textContent = sc.meta.n; cardNumIn.style.color = sc.meta.col; cardTitleIn.textContent = sc.info.title; cardSubIn.textContent = sc.meta.sub || ''; curCard = sc; }
+  const s = sc.info.s, tE = L(sc.info.first).e + 0.15;
+  const k = t < tE ? easeOut(seg(t, s - 0.95, s - 0.3)) : 1 - easeIn(seg(t, tE, tE + 0.55));
+  set(disc, 960, 540, k, 0);
+  set(cardNum, 960, 380, life(t, s - 0.25, tE - 0.1, { outDur: 0.25 }), 0);
+  set(cardTitle, 960, 590, life(t, s + 0.02, tE - 0.05, { outDur: 0.25 }), 0);
+  set(cardSub, 960, 700, life(t, s + 0.5, tE - 0.05, { outDur: 0.25 }), 0);
+}
+function updTag(t) {
+  const sc = SCENES.find(s => s.meta.n && t > L(s.info.first).e + 0.5 && t < s.ve - 0.6);
+  if (!sc) { set(tag, 0, 0, 0); return; }
+  const txt = (sc.meta.n === '★' ? '' : 'Parte ' + sc.meta.n + ' · ') + sc.info.title;
+  if (tagIn.textContent !== txt) { tagIn.textContent = txt; tagIn.style.color = sc.meta.col; }
+  set(tag, 1880, 56, life(t, L(sc.info.first).e + 0.5, sc.ve - 0.9, { fade: true }), 0, 1);
+}
+// subtitles: split each line into sentence-sized chunks timed by the voice
+const SUBS = [];
+for (const [id, l] of Object.entries(TL.lines)) {
+  if (/^t\d/.test(id)) continue;
+  const chunks = [];
+  for (const m of l.text.matchAll(/[^.!?…]+[.!?…]*\s*/g)) {
+    let s = m[0], c = m.index;
+    while (s.trim().length > 72) {
+      const cut = [...s.matchAll(/[,:]\s/g)].map(x => x.index + 1).filter(i => i > 18 && i < s.length - 12).sort((a, b) => Math.abs(a - s.length / 2) - Math.abs(b - s.length / 2))[0];
+      if (!cut) break;
+      chunks.push([c, s.slice(0, cut)]); c += cut; s = s.slice(cut);
+    }
+    if (s.trim()) chunks.push([c, s]);
+  }
+  chunks.forEach(([c, s], i) => SUBS.push({ t0: Wc(id, c) - 0.08, t1: i + 1 < chunks.length ? Wc(id, chunks[i + 1][0]) - 0.08 : l.e + 0.35, text: s.trim() }));
+}
+const subEl = document.getElementById('sub');
+let subCur = null;
+function updSub(t) {
+  const s = SUBS.find(x => t >= x.t0 && t < x.t1);
+  if (!s) { subEl.style.visibility = 'hidden'; return; }
+  if (s !== subCur) { subEl.textContent = s.text; subCur = s; }
+  subEl.style.visibility = 'visible';
+  subEl.style.opacity = Math.min(seg(t, s.t0, s.t0 + 0.12), 1 - seg(t, s.t1 - 0.12, s.t1)).toFixed(3);
+}
+const bgEl = document.getElementById('bg');
+const deco = Array.from({ length: 11 }, (_, i) => { const r = rng(i * 101 + 7); return { el: A(bgEl, `<div style="width:${180 + r() * 260}px;height:${180 + r() * 260}px;border-radius:50%;background:#fff;opacity:.38"></div>`), x: r() * 1920, y: r() * 1080, sp: 8 + r() * 14, ph: r() }; });
+
+// ---------------------------------------------------------------- seek
+let bgCur = '';
+function seek(t) {
+  t = clamp(t, 0, VIDEO.duration - 1e-3);
+  let active = SCENES[0];
+  for (const sc of SCENES) {
+    const on = t >= sc.vs && t < sc.ve;
+    if (on !== sc.on) { sc.root.style.display = on ? 'block' : 'none'; sc.on = on; }
+    if (on) { sc.upd(t); active = sc; }
+  }
+  if (active.meta.bg !== bgCur) { stage.style.background = active.meta.bg; bgCur = active.meta.bg; }
+  deco.forEach(d => set(d.el, (d.x + t * d.sp) % 2200 - 140, d.y + wave(t, 0.05, d.ph) * 40, 1, 0));
+  drawFx(t); updCard(t); updTag(t); updSub(t);
+}
+window.seek = seek;
+
+// ---------------------------------------------------------------- preview
+if (!RENDER) {
+  const fit = () => { const k = Math.min(innerWidth / 1920, (innerHeight - 56) / 1080); stage.style.transform = `translate(${(innerWidth - 1920 * k) / 2}px,${(innerHeight - 56 - 1080 * k) / 2}px) scale(${k})`; };
+  addEventListener('resize', fit); fit();
+  const au = document.getElementById('au'), pp = document.getElementById('pp'), scrub = document.getElementById('scrub'), tm = document.getElementById('tm');
+  let hasAudio = false, playing = false, offset = 0, start = 0;
+  au.addEventListener('canplay', () => hasAudio = true);
+  const now = () => hasAudio ? au.currentTime : playing ? offset + (performance.now() - start) / 1000 : offset;
+  pp.onclick = () => {
+    playing = !playing; pp.textContent = playing ? '❚❚' : '▶';
+    if (hasAudio) playing ? au.play() : au.pause(); else if (playing) start = performance.now(); else offset = now();
+  };
+  scrub.oninput = () => { const t = scrub.value / 10000 * VIDEO.duration; if (hasAudio) au.currentTime = t; offset = t; start = performance.now(); };
+  addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); pp.onclick(); } });
+  const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  (function loop() { let t = now(); if (t >= VIDEO.duration) { t = VIDEO.duration; if (playing) pp.onclick(); } seek(t); scrub.value = t / VIDEO.duration * 10000; tm.textContent = `${fmt(t)} / ${fmt(VIDEO.duration)}`; requestAnimationFrame(loop); })();
+} else seek(0);
+</script>
+</body>
+</html>

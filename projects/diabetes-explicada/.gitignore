@@ -1,0 +1,6 @@
+node_modules/
+out/
+checks/
+vo_track.wav
+*.pcm
+tts/models/

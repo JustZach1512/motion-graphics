@@ -1,0 +1,1234 @@
+{
+ "lines": {
+  "i1": {
+   "s": 1.2,
+   "e": 5.138,
+   "text": "¡Hola, hola! Hoy vamos a descubrir un secreto de tu cuerpo.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     6,
+     0.965
+    ],
+    [
+     12,
+     3.395
+    ],
+    [
+     59,
+     3.938
+    ]
+   ]
+  },
+  "i2": {
+   "s": 5.688,
+   "e": 9.965,
+   "text": "Vamos a ver qué es la diabetes, por qué hay que pincharse, y qué puedes comer.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     31,
+     1.76
+    ],
+    [
+     78,
+     4.277
+    ]
+   ]
+  },
+  "i3": {
+   "s": 10.515,
+   "e": 12.823,
+   "text": "¿Preparado? ¡Vamos allá!",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     11,
+     1.065
+    ],
+    [
+     24,
+     2.308
+    ]
+   ]
+  },
+  "t1": {
+   "s": 14.973,
+   "e": 17.794,
+   "text": "Parte uno. La energía de tu cuerpo.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     10,
+     1.075
+    ],
+    [
+     35,
+     2.821
+    ]
+   ]
+  },
+  "a1": {
+   "s": 18.344,
+   "e": 22.803,
+   "text": "Tu cuerpo está hecho de millones de pedacitos chiquititos, que se llaman células.",
+   "seg": [
+    [
+     0,
+     0
+    ],
+    [
+     81,
+     4.458958333333333
+    ]
+   ]
+  },
+  "a2": {
+   "s": 23.953,
+   "e": 29.606,
+   "text": "Las células son como casitas. Y para que puedas correr, jugar y crecer, necesitan energía.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     29,
+     2.05
+    ],
+    [
+     90,
+     5.653
+    ]
+   ]
+  },
+  "a3": {
+   "s": 30.656,
+   "e": 33.657,
+   "text": "¿Y de dónde sale la energía? ¡De la comida!",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     28,
+     1.925
+    ],
+    [
+     43,
+     3.001
+    ]
+   ]
+  },
+  "a4": {
+   "s": 34.806,
+   "e": 40.213,
+   "text": "Cuando comes, la comida se convierte en azúcar. Su nombre de científico es glucosa.",
+   "seg": [
+    [
+     0,
+     0
+    ],
+    [
+     83,
+     5.406958333333334
+    ]
+   ]
+  },
+  "a5": {
+   "s": 41.963,
+   "e": 47.074,
+   "text": "La glucosa viaja por la sangre, como coches por una carretera, hasta llegar a las células.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     31,
+     1.995
+    ],
+    [
+     62,
+     2.775
+    ],
+    [
+     90,
+     5.11
+    ]
+   ]
+  },
+  "t2": {
+   "s": 50.024,
+   "e": 52.571,
+   "text": "Parte dos. La llave mágica.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     10,
+     1.07
+    ],
+    [
+     27,
+     2.548
+    ]
+   ]
+  },
+  "b1": {
+   "s": 53.121,
+   "e": 56.698,
+   "text": "Pero hay un problema: las puertas de las células están cerradas.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     21,
+     1.45
+    ],
+    [
+     64,
+     3.577
+    ]
+   ]
+  },
+  "b2": {
+   "s": 57.848,
+   "e": 62.029,
+   "text": "Para abrirlas, hace falta una llave especial. Se llama insulina.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     14,
+     0.9
+    ],
+    [
+     45,
+     2.8
+    ],
+    [
+     64,
+     4.182
+    ]
+   ]
+  },
+  "b3": {
+   "s": 63.379,
+   "e": 68.491,
+   "text": "La insulina se fabrica en el páncreas, una pequeña fábrica que está aquí, detrás de la tripa.",
+   "seg": [
+    [
+     0,
+     0
+    ],
+    [
+     93,
+     5.111375
+    ]
+   ]
+  },
+  "b4": {
+   "s": 70.241,
+   "e": 74.401,
+   "text": "La llave abre la puerta, el azúcar entra... ¡y la célula se llena de energía!",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     24,
+     0.885
+    ],
+    [
+     43,
+     1.175
+    ],
+    [
+     77,
+     4.16
+    ]
+   ]
+  },
+  "t3": {
+   "s": 77.951,
+   "e": 80.313,
+   "text": "Parte tres. ¿Qué es la diabetes?",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     11,
+     1.005
+    ],
+    [
+     32,
+     2.362
+    ]
+   ]
+  },
+  "c1": {
+   "s": 80.863,
+   "e": 85.332,
+   "text": "Cuando alguien tiene diabetes tipo uno, su fábrica de llaves deja de funcionar.",
+   "seg": [
+    [
+     0,
+     0
+    ],
+    [
+     79,
+     4.46975
+    ]
+   ]
+  },
+  "c2": {
+   "s": 86.682,
+   "e": 94.026,
+   "text": "Las defensas del cuerpo, que luchan contra los microbios, se confunden y rompen la fábrica. Nadie sabe muy bien por qué.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     24,
+     0.89
+    ],
+    [
+     57,
+     1.175
+    ],
+    [
+     91,
+     5.365
+    ],
+    [
+     120,
+     7.344
+    ]
+   ]
+  },
+  "c3": {
+   "s": 95.976,
+   "e": 101.067,
+   "text": "Sin llaves, el azúcar se queda atascado en la sangre, y las células se quedan sin energía.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     11,
+     0.77
+    ],
+    [
+     53,
+     4.735
+    ],
+    [
+     90,
+     5.09
+    ]
+   ]
+  },
+  "c4": {
+   "s": 102.617,
+   "e": 108.22,
+   "text": "Por eso, sin insulina, el cuerpo tiene mucha sed, hace mucho pis, y se siente muy cansado.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     22,
+     1.425
+    ],
+    [
+     49,
+     3.04
+    ],
+    [
+     65,
+     4.14
+    ],
+    [
+     90,
+     5.604
+    ]
+   ]
+  },
+  "c5": {
+   "s": 109.77,
+   "e": 116.901,
+   "text": "Y escucha bien: no es culpa tuya. No pasa por comer dulces, ni por nada que hicieras. Y no se contagia.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     33,
+     2.275
+    ],
+    [
+     85,
+     5.58
+    ],
+    [
+     103,
+     7.13
+    ]
+   ]
+  },
+  "c6": {
+   "s": 119.051,
+   "e": 122.661,
+   "text": "¿Y cómo lo arreglamos? ¡Poniendo las llaves desde fuera!",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     22,
+     1.54
+    ],
+    [
+     56,
+     3.61
+    ]
+   ]
+  },
+  "t4": {
+   "s": 125.011,
+   "e": 128.176,
+   "text": "Parte cuatro. Las llaves que te pones tú.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     13,
+     1.25
+    ],
+    [
+     41,
+     3.165
+    ]
+   ]
+  },
+  "d1": {
+   "s": 128.726,
+   "e": 135.646,
+   "text": "La insulina se pone con un boli especial, que tiene una aguja muy finita. Algunos niños usan una bomba de insulina.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     41,
+     4.1
+    ],
+    [
+     73,
+     5.265
+    ],
+    [
+     115,
+     6.919
+    ]
+   ]
+  },
+  "d2": {
+   "s": 136.996,
+   "e": 143.368,
+   "text": "Suele haber dos insulinas: una lenta, que ayuda todo el día y toda la noche, y otra rápida, para las comidas.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     26,
+     1.645
+    ],
+    [
+     37,
+     2.505
+    ],
+    [
+     109,
+     6.372
+    ]
+   ]
+  },
+  "d3": {
+   "s": 144.918,
+   "e": 148.454,
+   "text": "Así se hace. Paso uno: lávate bien las manos.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     12,
+     1.14
+    ],
+    [
+     22,
+     2.015
+    ],
+    [
+     45,
+     3.536
+    ]
+   ]
+  },
+  "d4": {
+   "s": 150.604,
+   "e": 156.406,
+   "text": "Paso dos: prepara el boli, y gira la ruedita hasta el número que te digan tus médicos o tu familia.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     9,
+     0.675
+    ],
+    [
+     99,
+     5.802
+    ]
+   ]
+  },
+  "d5": {
+   "s": 158.356,
+   "e": 165.333,
+   "text": "Paso tres: elige el sitio. La tripa, los muslos, los brazos o el culete. Y cambia de sitio cada vez.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     26,
+     1.985
+    ],
+    [
+     48,
+     3.585
+    ],
+    [
+     100,
+     6.977
+    ]
+   ]
+  },
+  "d6": {
+   "s": 167.283,
+   "e": 171.773,
+   "text": "Paso cuatro: haz un pellizco suave, pincha, y aprieta el botón hasta el final.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     35,
+     2.085
+    ],
+    [
+     78,
+     4.49
+    ]
+   ]
+  },
+  "d7": {
+   "s": 173.923,
+   "e": 176.619,
+   "text": "Paso cinco: cuenta hasta diez, despacito.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     11,
+     0.87
+    ],
+    [
+     41,
+     2.696
+    ]
+   ]
+  },
+  "d7b": {
+   "s": 182.369,
+   "e": 184.258,
+   "text": "Y saca la aguja. ¡Ya está!",
+   "seg": [
+    [
+     0,
+     0
+    ],
+    [
+     26,
+     1.88825
+    ]
+   ]
+  },
+  "d8": {
+   "s": 186.208,
+   "e": 191.02,
+   "text": "Pica un poquito, pero se pasa enseguida. ¡Y cada vez te saldrá mejor!",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     16,
+     1.17
+    ],
+    [
+     40,
+     2.64
+    ],
+    [
+     69,
+     4.812
+    ]
+   ]
+  },
+  "t5": {
+   "s": 193.57,
+   "e": 196.268,
+   "text": "Parte cinco. Mide tu azúcar.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     12,
+     1.24
+    ],
+    [
+     28,
+     2.698
+    ]
+   ]
+  },
+  "e1": {
+   "s": 196.818,
+   "e": 201.105,
+   "text": "Para saber cuánta insulina necesitas, hay que medir el azúcar de la sangre.",
+   "seg": [
+    [
+     0,
+     0
+    ],
+    [
+     75,
+     4.287625
+    ]
+   ]
+  },
+  "e2": {
+   "s": 202.255,
+   "e": 208.726,
+   "text": "Se puede medir con un pinchacito en el dedo, o con un sensor en el brazo, que lo mide todo el rato y lo envía al móvil.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     44,
+     2.395
+    ],
+    [
+     119,
+     6.47
+    ]
+   ]
+  },
+  "e3": {
+   "s": 210.676,
+   "e": 218.436,
+   "text": "El azúcar puede estar bajo, alto, o en la zona verde, que es donde queremos que esté. Tu equipo médico te dirá cuál es tu zona verde.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     33,
+     6.205
+    ],
+    [
+     53,
+     3.155
+    ],
+    [
+     85,
+     4.615
+    ],
+    [
+     133,
+     7.761
+    ]
+   ]
+  },
+  "t6": {
+   "s": 221.386,
+   "e": 224.13,
+   "text": "Parte seis. Bajadas y subidas.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     11,
+     1.09
+    ],
+    [
+     30,
+     2.744
+    ]
+   ]
+  },
+  "f1": {
+   "s": 224.68,
+   "e": 230.875,
+   "text": "Vas a oír mucho dos palabras: hipo e hiper. Hipo quiere decir bajo. Hiper quiere decir alto.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     29,
+     1.905
+    ],
+    [
+     67,
+     4.465
+    ],
+    [
+     92,
+     6.196
+    ]
+   ]
+  },
+  "f2": {
+   "s": 232.425,
+   "e": 239.987,
+   "text": "Una hipo es cuando el azúcar baja demasiado. Puede pasar si haces mucho deporte, si comes poco, o si hay demasiada insulina.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     44,
+     2.8
+    ],
+    [
+     80,
+     4.985
+    ],
+    [
+     95,
+     5.545
+    ],
+    [
+     124,
+     7.562
+    ]
+   ]
+  },
+  "f3": {
+   "s": 241.337,
+   "e": 245.577,
+   "text": "Puedes notar temblores, sudor, mareo, mucha hambre, o sentirte raro.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     23,
+     1.385
+    ],
+    [
+     68,
+     4.24
+    ]
+   ]
+  },
+  "f4": {
+   "s": 247.127,
+   "e": 254.995,
+   "text": "Si te pasa, para lo que estés haciendo, y avisa enseguida a un adulto. Toma azúcar rápido, como un zumo o unas pastillas de glucosa.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     70,
+     4.035
+    ],
+    [
+     132,
+     7.868
+    ]
+   ]
+  },
+  "f5": {
+   "s": 256.745,
+   "e": 260.917,
+   "text": "Por eso, lleva siempre azúcar contigo. ¡Es tu kit de rescate!",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     38,
+     2.535
+    ],
+    [
+     61,
+     4.173
+    ]
+   ]
+  },
+  "f6": {
+   "s": 262.667,
+   "e": 268.794,
+   "text": "Una hiper es cuando hay demasiado azúcar. Notas mucha sed, muchas ganas de hacer pis, y cansancio.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     41,
+     0.395
+    ],
+    [
+     85,
+     5.01
+    ],
+    [
+     98,
+     6.127
+    ]
+   ]
+  },
+  "f7": {
+   "s": 270.344,
+   "e": 276.057,
+   "text": "Avisa a un adulto, mídete, y bebe agua. A lo mejor necesitas un poco más de insulina.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     26,
+     4.15
+    ],
+    [
+     39,
+     2.655
+    ],
+    [
+     85,
+     5.713
+    ]
+   ]
+  },
+  "t7": {
+   "s": 278.807,
+   "e": 281.324,
+   "text": "Parte siete. ¿Qué puedo comer?",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     12,
+     1.23
+    ],
+    [
+     30,
+     2.517
+    ]
+   ]
+  },
+  "g1": {
+   "s": 281.874,
+   "e": 283.016,
+   "text": "¡Casi de todo!",
+   "seg": [
+    [
+     0,
+     0
+    ],
+    [
+     14,
+     1.1416666666666666
+    ]
+   ]
+  },
+  "g2": {
+   "s": 284.166,
+   "e": 292.043,
+   "text": "Algunas comidas tienen hidratos de carbono, que se convierten en azúcar: el pan, la pasta, el arroz, las patatas, la fruta y la leche.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     72,
+     4.06
+    ],
+    [
+     80,
+     4.725
+    ],
+    [
+     100,
+     5.805
+    ],
+    [
+     134,
+     7.877
+    ]
+   ]
+  },
+  "g3": {
+   "s": 293.793,
+   "e": 299.275,
+   "text": "Otras casi no suben el azúcar: la carne, el pescado, los huevos, el queso y las verduras.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     30,
+     1.855
+    ],
+    [
+     40,
+     2.61
+    ],
+    [
+     64,
+     4.285
+    ],
+    [
+     89,
+     5.483
+    ]
+   ]
+  },
+  "g4": {
+   "s": 300.825,
+   "e": 307.796,
+   "text": "Tu familia contará los hidratos de cada comida, para saber cuánta insulina hace falta. ¡Pronto aprenderás tú también!",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     47,
+     3.375
+    ],
+    [
+     86,
+     5.09
+    ],
+    [
+     117,
+     6.971
+    ]
+   ]
+  },
+  "g5": {
+   "s": 309.546,
+   "e": 318.991,
+   "text": "Un plato genial es así: la mitad, verduras. Un trozo, proteína, como carne, pescado o huevo. Y otro trozo, hidratos, como arroz, pasta o pan.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     43,
+     2.95
+    ],
+    [
+     53,
+     3.81
+    ],
+    [
+     128,
+     8.635
+    ],
+    [
+     141,
+     9.445
+    ]
+   ]
+  },
+  "g6": {
+   "s": 321.141,
+   "e": 331.749,
+   "text": "Para beber, lo mejor es el agua. Los refrescos, los zumos y las chuches suben el azúcar muy rápido. Son perfectos para una hipo, pero el resto del tiempo, solo de vez en cuando.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     11,
+     0.685
+    ],
+    [
+     32,
+     3.145
+    ],
+    [
+     47,
+     4.055
+    ],
+    [
+     99,
+     4.645
+    ],
+    [
+     128,
+     7.03
+    ],
+    [
+     154,
+     9.265
+    ],
+    [
+     177,
+     10.608
+    ]
+   ]
+  },
+  "g7": {
+   "s": 333.499,
+   "e": 340.276,
+   "text": "Y moverse es genial: jugar y hacer deporte es muy bueno para ti. Solo recuerda medirte, y llevar tu kit de rescate.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     20,
+     1.22
+    ],
+    [
+     64,
+     4.825
+    ],
+    [
+     87,
+     5.13
+    ],
+    [
+     115,
+     6.777
+    ]
+   ]
+  },
+  "t8": {
+   "s": 343.026,
+   "e": 344.523,
+   "text": "Y lo más importante.",
+   "seg": [
+    [
+     0,
+     0
+    ],
+    [
+     20,
+     1.496625
+    ]
+   ]
+  },
+  "h1": {
+   "s": 345.473,
+   "e": 349.13,
+   "text": "La diabetes es una parte de ti, pero no cambia quién eres.",
+   "seg": [
+    [
+     0,
+     0.0
+    ],
+    [
+     31,
+     2.08
+    ],
+    [
+     58,
+     3.658
+    ]
+   ]
+  },
+  "h2": {
+   "s": 350.48,
+   "e": 356.316,
+   "text": "Puedes ir al cole, jugar con tus amigos, ir a cumpleaños, hacer deporte, y cumplir todos tus sueños.",
+   "seg": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     5.836
+    ]
+   ]
+  },
+  "h3": {
+   "s": 358.066,
+   "e": 364.003,
+   "text": "Y no estás solo: tu familia, tus médicos, y mucha gente que te quiere, están contigo en esta aventura.",
+   "seg": [
+    [
+     0,
+     0
+    ],
+    [
+     102,
+     5.937
+    ]
+   ]
+  },
+  "h4": {
+   "s": 365.753,
+   "e": 367.847,
+   "text": "¡Eres un superhéroe de las llaves!",
+   "seg": [
+    [
+     0,
+     0
+    ],
+    [
+     34,
+     2.093166666666667
+    ]
+   ]
+  }
+ },
+ "scenes": [
+  {
+   "name": "intro",
+   "title": "",
+   "first": "i1",
+   "s": 1.2,
+   "e": 14.973
+  },
+  {
+   "name": "energia",
+   "title": "La energía de tu cuerpo",
+   "first": "t1",
+   "s": 14.973,
+   "e": 50.024
+  },
+  {
+   "name": "llave",
+   "title": "La llave mágica",
+   "first": "t2",
+   "s": 50.024,
+   "e": 77.951
+  },
+  {
+   "name": "diabetes",
+   "title": "¿Qué es la diabetes?",
+   "first": "t3",
+   "s": 77.951,
+   "e": 125.011
+  },
+  {
+   "name": "insulina",
+   "title": "Las llaves que te pones tú",
+   "first": "t4",
+   "s": 125.011,
+   "e": 193.57
+  },
+  {
+   "name": "medir",
+   "title": "Mide tu azúcar",
+   "first": "t5",
+   "s": 193.57,
+   "e": 221.386
+  },
+  {
+   "name": "hipohiper",
+   "title": "Hipo e hiper",
+   "first": "t6",
+   "s": 221.386,
+   "e": 278.807
+  },
+  {
+   "name": "comida",
+   "title": "¿Qué puedo comer?",
+   "first": "t7",
+   "s": 278.807,
+   "e": 343.026
+  },
+  {
+   "name": "final",
+   "title": "Lo más importante",
+   "first": "t8",
+   "s": 343.026,
+   "e": 376.85
+  }
+ ],
+ "duration": 376.85
+}

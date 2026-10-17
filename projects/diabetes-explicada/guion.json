@@ -1,0 +1,67 @@
+[
+ {"scene": "intro", "lines": [
+  ["i1", "¡Hola, hola! Hoy vamos a descubrir un secreto de tu cuerpo."],
+  ["i2", "Vamos a ver qué es la diabetes, por qué hay que pincharse, y qué puedes comer."],
+  ["i3", "¿Preparado? ¡Vamos allá!"]]},
+ {"scene": "energia", "title": "La energía de tu cuerpo", "lines": [
+  ["t1", "Parte uno. La energía de tu cuerpo."],
+  ["a1", "Tu cuerpo está hecho de millones de pedacitos chiquititos, que se llaman células."],
+  ["a2", "Las células son como casitas. Y para que puedas correr, jugar y crecer, necesitan energía."],
+  ["a3", "¿Y de dónde sale la energía? ¡De la comida!"],
+  ["a4", "Cuando comes, la comida se convierte en azúcar. Su nombre de científico es glucosa."],
+  ["a5", "La glucosa viaja por la sangre, como coches por una carretera, hasta llegar a las células."]]},
+ {"scene": "llave", "title": "La llave mágica", "lines": [
+  ["t2", "Parte dos. La llave mágica."],
+  ["b1", "Pero hay un problema: las puertas de las células están cerradas."],
+  ["b2", "Para abrirlas, hace falta una llave especial. Se llama insulina."],
+  ["b3", "La insulina se fabrica en el páncreas, una pequeña fábrica que está aquí, detrás de la tripa."],
+  ["b4", "La llave abre la puerta, el azúcar entra... ¡y la célula se llena de energía!"]]},
+ {"scene": "diabetes", "title": "¿Qué es la diabetes?", "lines": [
+  ["t3", "Parte tres. ¿Qué es la diabetes?"],
+  ["c1", "Cuando alguien tiene diabetes tipo uno, su fábrica de llaves deja de funcionar."],
+  ["c2", "Las defensas del cuerpo, que luchan contra los microbios, se confunden y rompen la fábrica. Nadie sabe muy bien por qué."],
+  ["c3", "Sin llaves, el azúcar se queda atascado en la sangre, y las células se quedan sin energía."],
+  ["c4", "Por eso, sin insulina, el cuerpo tiene mucha sed, hace mucho pis, y se siente muy cansado."],
+  ["c5", "Y escucha bien: no es culpa tuya. No pasa por comer dulces, ni por nada que hicieras. Y no se contagia."],
+  ["c6", "¿Y cómo lo arreglamos? ¡Poniendo las llaves desde fuera!"]]},
+ {"scene": "insulina", "title": "Las llaves que te pones tú", "lines": [
+  ["t4", "Parte cuatro. Las llaves que te pones tú."],
+  ["d1", "La insulina se pone con un boli especial, que tiene una aguja muy finita. Algunos niños usan una bomba de insulina."],
+  ["d2", "Suele haber dos insulinas: una lenta, que ayuda todo el día y toda la noche, y otra rápida, para las comidas."],
+  ["d3", "Así se hace. Paso uno: lávate bien las manos."],
+  ["d4", "Paso dos: prepara el boli, y gira la ruedita hasta el número que te digan tus médicos o tu familia."],
+  ["d5", "Paso tres: elige el sitio. La tripa, los muslos, los brazos o el culete. Y cambia de sitio cada vez."],
+  ["d6", "Paso cuatro: haz un pellizco suave, pincha, y aprieta el botón hasta el final."],
+  ["d7", "Paso cinco: cuenta hasta diez, despacito."],
+  ["d7b", "Y saca la aguja. ¡Ya está!"],
+  ["d8", "Pica un poquito, pero se pasa enseguida. ¡Y cada vez te saldrá mejor!"]]},
+ {"scene": "medir", "title": "Mide tu azúcar", "lines": [
+  ["t5", "Parte cinco. Mide tu azúcar."],
+  ["e1", "Para saber cuánta insulina necesitas, hay que medir el azúcar de la sangre."],
+  ["e2", "Se puede medir con un pinchacito en el dedo, o con un sensor en el brazo, que lo mide todo el rato y lo envía al móvil."],
+  ["e3", "El azúcar puede estar bajo, alto, o en la zona verde, que es donde queremos que esté. Tu equipo médico te dirá cuál es tu zona verde."]]},
+ {"scene": "hipohiper", "title": "Hipo e hiper", "lines": [
+  ["t6", "Parte seis. Bajadas y subidas."],
+  ["f1", "Vas a oír mucho dos palabras: hipo e hiper. Hipo quiere decir bajo. Hiper quiere decir alto."],
+  ["f2", "Una hipo es cuando el azúcar baja demasiado. Puede pasar si haces mucho deporte, si comes poco, o si hay demasiada insulina."],
+  ["f3", "Puedes notar temblores, sudor, mareo, mucha hambre, o sentirte raro."],
+  ["f4", "Si te pasa, para lo que estés haciendo, y avisa enseguida a un adulto. Toma azúcar rápido, como un zumo o unas pastillas de glucosa."],
+  ["f5", "Por eso, lleva siempre azúcar contigo. ¡Es tu kit de rescate!"],
+  ["f6", "Una hiper es cuando hay demasiado azúcar. Notas mucha sed, muchas ganas de hacer pis, y cansancio."],
+  ["f7", "Avisa a un adulto, mídete, y bebe agua. A lo mejor necesitas un poco más de insulina."]]},
+ {"scene": "comida", "title": "¿Qué puedo comer?", "lines": [
+  ["t7", "Parte siete. ¿Qué puedo comer?"],
+  ["g1", "¡Casi de todo!"],
+  ["g2", "Algunas comidas tienen hidratos de carbono, que se convierten en azúcar: el pan, la pasta, el arroz, las patatas, la fruta y la leche."],
+  ["g3", "Otras casi no suben el azúcar: la carne, el pescado, los huevos, el queso y las verduras."],
+  ["g4", "Tu familia contará los hidratos de cada comida, para saber cuánta insulina hace falta. ¡Pronto aprenderás tú también!"],
+  ["g5", "Un plato genial es así: la mitad, verduras. Un trozo, proteína, como carne, pescado o huevo. Y otro trozo, hidratos, como arroz, pasta o pan."],
+  ["g6", "Para beber, lo mejor es el agua. Los refrescos, los zumos y las chuches suben el azúcar muy rápido. Son perfectos para una hipo, pero el resto del tiempo, solo de vez en cuando."],
+  ["g7", "Y moverse es genial: jugar y hacer deporte es muy bueno para ti. Solo recuerda medirte, y llevar tu kit de rescate."]]},
+ {"scene": "final", "title": "Lo más importante", "lines": [
+  ["t8", "Y lo más importante."],
+  ["h1", "La diabetes es una parte de ti, pero no cambia quién eres."],
+  ["h2", "Puedes ir al cole, jugar con tus amigos, ir a cumpleaños, hacer deporte, y cumplir todos tus sueños."],
+  ["h3", "Y no estás solo: tu familia, tus médicos, y mucha gente que te quiere, están contigo en esta aventura."],
+  ["h4", "¡Eres un superhéroe de las llaves!"]]}
+]

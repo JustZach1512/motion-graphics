@@ -1,0 +1,282 @@
+{
+ "i1": {
+  "dur": 3.938,
+  "wer": 0.0,
+  "asr": "Hola, hola. Hoy vamos a descubrir un secreto de tu cuerpo."
+ },
+ "i2": {
+  "dur": 4.277,
+  "wer": 0.125,
+  "asr": "Vamos a ver qué es la diabetes, porque hay que pincharse y que puedes comer."
+ },
+ "i3": {
+  "dur": 2.308,
+  "wer": 0.0,
+  "asr": "preparado vamos allá"
+ },
+ "t1": {
+  "dur": 2.821,
+  "wer": 0.143,
+  "asr": "Parte 1. La energía de tu cuerpo."
+ },
+ "a1": {
+  "dur": 4.459,
+  "wer": 0.0,
+  "asr": "Tu cuerpo está hecho de millones de pedacitos chiquititos que se llaman células."
+ },
+ "a2": {
+  "dur": 5.653,
+  "wer": 0.0,
+  "asr": "Las células son como casitas y para que puedas correr, jugar y crecer necesitan energía."
+ },
+ "a3": {
+  "dur": 3.001,
+  "wer": 0.0,
+  "asr": "y de dónde sale la energía de la comida."
+ },
+ "a4": {
+  "dur": 5.407,
+  "wer": 0.0,
+  "asr": "Cuando comes, la comida se convierte en azúcar. Su nombre de científico es Glucosa."
+ },
+ "a5": {
+  "dur": 5.11,
+  "wer": 0.0,
+  "asr": "La glucosa viaja por la sangre, como coches por una carretera, hasta llegar a las células."
+ },
+ "t2": {
+  "dur": 2.548,
+  "wer": 0.2,
+  "asr": "Parte 2. La llave mágica."
+ },
+ "b1": {
+  "dur": 3.577,
+  "wer": 0.0,
+  "asr": "Pero hay un problema, las puertas de las células están cerradas."
+ },
+ "b2": {
+  "dur": 4.182,
+  "wer": 0.0,
+  "asr": "Para abrirlas, hace falta una llave especial. Se llama insulina."
+ },
+ "b3": {
+  "dur": 5.111,
+  "wer": 0.0,
+  "asr": "La insulina se fabrica en el Páncreas, una pequeña fábrica que está aquí detrás de la tripa."
+ },
+ "b4": {
+  "dur": 4.16,
+  "wer": 0.0,
+  "asr": "La llave abre la puerta, el azúcar entra y la célula se llena de energía."
+ },
+ "t3": {
+  "dur": 2.362,
+  "wer": 0.167,
+  "asr": "Parte 3 ¿Qué es la diabetes?"
+ },
+ "c1": {
+  "dur": 4.47,
+  "wer": 0.077,
+  "asr": "Cuando alguien tiene diabetes tipo 1, su fábrica de llaves deja de funcionar."
+ },
+ "c2": {
+  "dur": 7.344,
+  "wer": 0.0,
+  "asr": "Las defensas del cuerpo que luchan contra los microbios se confunden y rompen la fábrica. Nadie sabe muy bien por qué."
+ },
+ "c3": {
+  "dur": 5.09,
+  "wer": 0.0,
+  "asr": "Sin llaves, el azúcar se queda atascado en la sangre y las células se quedan sin energía."
+ },
+ "c4": {
+  "dur": 5.604,
+  "wer": 0.0,
+  "asr": "Por eso, sin insulina, el cuerpo tiene mucha sed, hace mucho pis y se siente muy cansado."
+ },
+ "c5": {
+  "dur": 7.13,
+  "wer": 0.0,
+  "asr": "Y escucha bien, no es culpa tuya. No pasa por comer dulces, ni por nada que hicieras. Y no se contagia."
+ },
+ "c6": {
+  "dur": 3.61,
+  "wer": 0.0,
+  "asr": "y cómo lo arreglamos, poniendo las llaves desde fuera."
+ },
+ "t4": {
+  "dur": 3.165,
+  "wer": 0.125,
+  "asr": "Parte 4. Las llaves que te pones tú."
+ },
+ "d1": {
+  "dur": 6.919,
+  "wer": 0.0,
+  "asr": "La insulina se pone con un boli especial que tiene una aguja muy finita. Algunos niños usan una bomba de insulina."
+ },
+ "d2": {
+  "dur": 6.372,
+  "wer": 0.0,
+  "asr": "Suele haber dos insulinas, una lenta, que ayuda todo el día y toda la noche, y otra rápida para las comidas."
+ },
+ "d3": {
+  "dur": 3.536,
+  "wer": 0.0,
+  "asr": "Así se hace. Paso uno, lávate bien las manos."
+ },
+ "d4": {
+  "dur": 5.802,
+  "wer": 0.05,
+  "asr": "Paso 2, prepara el boli y gira la ruedita hasta el número que te digan tus médicos o tu familia."
+ },
+ "d5": {
+  "dur": 6.977,
+  "wer": 0.05,
+  "asr": "Paso 3. Elige el sitio. La tripa, los muslos, los brazos o el culete. Y cambia de sitio cada vez."
+ },
+ "d6": {
+  "dur": 4.49,
+  "wer": 0.071,
+  "asr": "Paso 4, haz un pellizco suave pincha y aprieta el botón hasta el final."
+ },
+ "d7": {
+  "dur": 2.696,
+  "wer": 0.333,
+  "asr": "Paso 5, cuenta hasta 10 despacito."
+ },
+ "d8": {
+  "dur": 4.812,
+  "wer": 0.0,
+  "asr": "pica un poquito pero se pasa enseguida y cada vez te saldrá mejor."
+ },
+ "t5": {
+  "dur": 2.698,
+  "wer": 0.0,
+  "asr": "Parte cinco. Mide tu azúcar."
+ },
+ "e1": {
+  "dur": 4.288,
+  "wer": 0.0,
+  "asr": "Para saber cuánta insulina necesitas, hay que medir el azúcar de la sangre."
+ },
+ "e2": {
+  "dur": 6.47,
+  "wer": 0.0,
+  "asr": "Se puede medir con un pinchacito en el dedo o con un sensor en el brazo que lo mide todo el rato y lo envía al móvil."
+ },
+ "e3": {
+  "dur": 7.761,
+  "wer": 0.0,
+  "asr": "El azúcar puede estar bajo, alto o en la zona verde, que es donde queremos que esté. Tu equipo médico te dirá cuál es tu zona verde."
+ },
+ "t6": {
+  "dur": 2.744,
+  "wer": 0.2,
+  "asr": "Parte 6. Bajadas y subidas."
+ },
+ "f1": {
+  "dur": 6.196,
+  "wer": 0.118,
+  "asr": "Vas a oír mucho dos palabras, Hippo e Hiper. Hippo quiere decir bajo. Hiper quiere decir alto."
+ },
+ "f2": {
+  "dur": 7.562,
+  "wer": 0.0,
+  "asr": "Una hipo es cuando el azúcar baja demasiado. Puede pasar si haces mucho deporte, si comes poco, o si hay demasiada insulina."
+ },
+ "f3": {
+  "dur": 4.24,
+  "wer": 0.0,
+  "asr": "Puedes notar temblores, sudor, mareo, mucha hambre o sentirte raro."
+ },
+ "f4": {
+  "dur": 7.868,
+  "wer": 0.04,
+  "asr": "Si te pasa para lo que estés haciendo y avisa enseguida a un adulto. Toma azúcar rápido como un sumo o unas pastillas de glucosa."
+ },
+ "f5": {
+  "dur": 4.173,
+  "wer": 0.0,
+  "asr": "Por eso, lleva siempre azúcar contigo. Es tu kit de rescate."
+ },
+ "f6": {
+  "dur": 6.127,
+  "wer": 0.059,
+  "asr": "Una hiper es cuando hay demasiado azúcar. Notas mucha sed, muchas ganas de hacer piz y cansancio."
+ },
+ "f7": {
+  "dur": 5.713,
+  "wer": 0.0,
+  "asr": "Avisa a un adulto, mídete y bebe agua. A lo mejor necesitas un poco más de insulina."
+ },
+ "t7": {
+  "dur": 2.517,
+  "wer": 0.2,
+  "asr": "Parte 7. ¿Qué puedo comer?"
+ },
+ "g1": {
+  "dur": 1.142,
+  "wer": 0.0,
+  "asr": "Casi de todo."
+ },
+ "g2": {
+  "dur": 7.877,
+  "wer": 0.0,
+  "asr": "Algunas comidas tienen hidratos de carbono, que se convierten en azúcar, el pan, la pasta, el arroz, las patatas, la fruta y la leche."
+ },
+ "g3": {
+  "dur": 5.483,
+  "wer": 0.0,
+  "asr": "Otras casi no suben el azúcar, la carne, el pescado, los huevos, el queso y las verduras."
+ },
+ "g4": {
+  "dur": 6.971,
+  "wer": 0.0,
+  "asr": "Tu familia contará los hidratos de cada comida para saber cuánta insulina hace falta. Pronto aprenderás tú también."
+ },
+ "g5": {
+  "dur": 9.445,
+  "wer": 0.0,
+  "asr": "Un plato genial es así la mitad verduras. Un trozo proteína como carne, pescado o huevo. Y otro trozo hidratos como arroz, pasta o pan."
+ },
+ "g6": {
+  "dur": 10.608,
+  "wer": 0.0,
+  "asr": "Para beber, lo mejor es el agua. Los refrescos, los zumos y las chuches suben el azúcar muy rápido. Son perfectos para una hipo, pero el resto del tiempo solo de vez en cuando."
+ },
+ "g7": {
+  "dur": 6.777,
+  "wer": 0.0,
+  "asr": "y moverse es genial jugar y hacer deporte es muy bueno para ti. Solo recuerda medirte y llevar tu kit de rescate."
+ },
+ "t8": {
+  "dur": 1.497,
+  "wer": 0.0,
+  "asr": "y lo más importante."
+ },
+ "h1": {
+  "dur": 3.658,
+  "wer": 0.0,
+  "asr": "La diabetes es una parte de ti, pero no cambia quién eres."
+ },
+ "h2": {
+  "dur": 5.836,
+  "wer": 0.0,
+  "asr": "Puedes ir al cole, jugar con tus amigos, ir a cumpleaños, hacer deporte y cumplir todos tus sueños."
+ },
+ "h3": {
+  "dur": 5.937,
+  "wer": 0.0,
+  "asr": "y no estás solo tu familia, tus médicos y mucha gente que te quiere, están contigo en esta aventura."
+ },
+ "h4": {
+  "dur": 2.093,
+  "wer": 0.333,
+  "asr": "Eres un super héroe de las llaves."
+ },
+ "d7b": {
+  "dur": 1.888,
+  "wer": 0.0,
+  "asr": "y saca la aguja, ya está."
+ }
+}

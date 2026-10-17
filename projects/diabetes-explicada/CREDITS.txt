@@ -1,0 +1,22 @@
+Créditos de "La diabetes explicada"
+
+Voz: generada con Kokoro-82M (Apache 2.0) vía sherpa-onnx, voz "ef_dora".
+Iconos: Fluent Emoji Flat, Microsoft (MIT) — https://github.com/microsoft/fluentui-emoji
+Tipografía: Fredoka (SIL Open Font License).
+Música: generada en código (cuerdas pulsadas Karplus-Strong), sin licencia de terceros.
+
+Efectos de sonido (todos CC0 1.0, del skill sound-effects de este repo):
+ - "POP SFX Neutral" by ethernel0 (https://freesound.org/people/ethernel0/sounds/776016/), CC0
+ - Kenney — https://kenney.nl/assets/interface-sounds, CC0
+ - Breviceps via Freesound — https://freesound.org/people/Breviceps/sounds/447910/, CC0
+ - Kenney — https://kenney.nl/assets/interface-sounds, CC0
+ - "Whoosh" by qubodup (https://freesound.org/people/qubodup/sounds/60013/), CC0
+ - Halgrimm via Freesound — https://freesound.org/people/Halgrimm/sounds/169867/, CC0
+ - florianreichelt via Freesound — https://freesound.org/people/florianreichelt/sounds/683101/, CC0
+ - "Click / Tick" by Squirrel_404 (https://freesound.org/people/Squirrel_404/sounds/683048/), CC0
+ - Jummit via Freesound — https://freesound.org/people/Jummit/sounds/528561/, CC0
+ - "Classic Click" by adh.dreaming (https://freesound.org/people/adh.dreaming/sounds/671105/), CC0
+ - Kenney — https://kenney.nl/assets/interface-sounds, CC0
+ - adh.dreaming via Freesound — https://freesound.org/people/adh.dreaming/sounds/634690/, CC0
+ - Kenney — https://kenney.nl/assets/interface-sounds, CC0
+ - "soft_impact3" by peoplearehappy (https://freesound.org/people/peoplearehappy/sounds/841274/), CC0
