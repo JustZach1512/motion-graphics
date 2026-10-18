@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Batería inflada · Redmi 13C</title>
+<style>
+@font-face { font-family: 'Geist'; src: url(data:font/woff2;base64,/*FONT*/) format('woff2'); font-weight: 100 900; }
+html, body { margin: 0; background: #0A0A0D; color: #F2F2F7; font-family: Geist, system-ui, sans-serif; overflow: hidden; }
+#c { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+#ui { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 12px; align-items: center; padding: 12px 16px; background: rgba(10,10,13,.85); }
+#ui button { font: 600 15px Geist, sans-serif; color: #0A0A0D; background: #F2F2F7; border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+#ui input { flex: 1; }
+#ui span { font: 500 14px Geist, sans-serif; min-width: 70px; text-align: right; color: #8E8E93; white-space: nowrap; }
+.render #ui { display: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui"><button id="pp">Play</button><input id="sc" type="range" min="0" max="60" step="0.01" value="0"><span id="tm">0.00 s</span></div>
+<script>
+/* BEAT SHEET (s)                                                   SOUND
+   0.0   Hook: Redmi 13C de espaldas, "¿Qué pasa si la batería…?"
+   1.8   La tapa empieza a hincharse                                  impact
+   5.0   Se abre la tapa: placa + batería 5000 mAh                    whoosh
+   7.2   Etiquetas                                                    pop
+  10.0   Zoom a la batería                                            whoosh
+  11.5   Corte transversal: cátodo / separador / ánodo / electrolito  ticks
+  15.0   Iones Li+ viajan (carga)
+  17.1   "El electrolito es inflamable"
+  19.5   ¿Por qué se infla? 4 causas (tarjetas)                       whoosh, 4× pop
+  26.0   El electrolito se descompone → burbujas de gas               whoosh, plops
+  29.0   La bolsa se infla como un globo
+  33.0   Vista lateral: la tapa se levanta, el móvil baila            whoosh, impact
+  38.5   ¿Cómo llega a explotar?                                      whoosh
+  40.1   Perforación → chispa / cortocircuito                         spark + impact
+  40.2   Riser hasta la ignición                                      riser
+  42.1   80 °C capa protectora · 43.3 130 °C separador
+  44.5   200 °C oxígeno · 45.6 +400 °C                                ticks
+  45.7   Ignición: la tapa sale volando, chorro de fuego              boom + hit + jet
+  47.1   "No es una bomba: es gas inflamable…"
+  49.5   Qué hacer (5 puntos)                                         whoosh, clicks
+  56.5   Cierre: "no se arregla: se cambia."                          whoosh, ding
+*/
+const W = 1080, H = 1920, D = 60;
+window.VIDEO = { w: W, h: H, duration: D };
+const RENDER = location.search.includes('render');
+if (RENDER) document.documentElement.classList.add('render');
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+cv.width = W; cv.height = H;
+
+// ---------- helpers ----------
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const kf = keys => t => { if (t <= keys[0][0]) return keys[0][1]; for (let i = 1; i < keys.length; i++) { const [a, va] = keys[i - 1], [b, vb, e = ease] = keys[i]; if (t <= b) return lerp(va, vb, e((t - a) / (b - a))); } return keys[keys.length - 1][1]; };
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const easeOut = x => (x = clamp(x), 1 - Math.pow(1 - x, 3));
+const easeIn2 = x => (x = clamp(x), x * x);
+const lin = x => clamp(x);
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const frac = x => x - Math.floor(x);
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, k) => { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(lerp(v, B[i], clamp(k)))).join(',')})`; };
+const mix3 = (a, b, c, k) => k < .5 ? mix(a, b, k * 2) : mix(b, c, k * 2 - 1);
+
+const C = { bg: '#0A0A0D', text: '#F2F2F7', sub: '#8E8E93', heat: '#FF8A1F', red: '#FF453A', ion: '#3AA0FF', ok: '#32D74B', card: '#16161B', line: '#2A2A31' };
+
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function A(a, fn) { if (a <= 0.001) return; ctx.save(); ctx.globalAlpha *= clamp(a); fn(); ctx.restore(); }
+function cam(s, fx = W / 2, fy = H / 2, dx = 0, dy = 0) { ctx.translate(W / 2 + dx, H / 2 + dy); ctx.scale(s, s); ctx.translate(-fx, -fy); }
+function mk(w, h, fn) { const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d'), w, h); return c; }
+
+// ---------- text ----------
+// "[palabra|heat]" = palabra resaltada con una caja de color
+function parse(line) { const out = [], re = /\[([^\]|]+)\|([^\]]+)\]|([^\s\[]+)/g; let m; while ((m = re.exec(line))) out.push({ ...(m[3] ? { s: m[3] } : { s: m[1], c: C[m[2]] || m[2] }), glue: m.index > 0 && !/\s/.test(line[m.index - 1]) }); return out; }
+function text(lines, cx, y, size, t0, t, o = {}) {
+  const wt = o.weight || 680, lh = size * (o.lh || 1.18), st = o.stagger ?? 0.055;
+  ctx.font = `${wt} ${size}px Geist`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  const sp = ctx.measureText(' ').width; let i = 0;
+  lines.forEach((ln, li) => {
+    const toks = parse(ln), ws = toks.map(k => ctx.measureText(k.s).width);
+    const lw = ws.reduce((a, b) => a + b, 0) + sp * toks.filter((k, j) => j > 0 && !k.glue).length;
+    let x = o.align === 'left' ? cx : cx - lw / 2; const yy = y + li * lh;
+    toks.forEach((k, ki) => {
+      if (k.glue) x -= sp;
+      const ti = t0 + i * st; i++;
+      const a = clamp((t - ti) / 0.3), ky = spring(t - ti, 12, 1);
+      A(a, () => {
+        const oy = (1 - ky) * size * 0.45;
+        if (k.c) {
+          const bw = (ws[ki] + size * 0.36) * ease(seg(t, ti + 0.15, ti + 0.55));
+          ctx.fillStyle = k.c; ctx.globalAlpha *= 0.2; rr(x - size * 0.18, yy - size * 0.86 + oy, bw, size * 1.12, size * 0.16); ctx.fill(); ctx.globalAlpha /= 0.2;
+        }
+        ctx.fillStyle = k.c || o.color || C.text; ctx.fillText(k.s, x, yy + oy);
+      });
+      x += ws[ki] + sp;
+    });
+  });
+}
+function label(s, x, y, size, a, o = {}) { A(a, () => { ctx.font = `${o.weight || 600} ${size}px Geist`; ctx.textAlign = o.align || 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = o.color || C.text; ctx.fillText(s, x, y); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; }); }
+
+// ---------- pre-rendered layers ----------
+const glow = col => mk(256, 256, (g, w) => { const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, w); });
+const G = {
+  heat: glow('rgba(255,120,30,1)'), red: glow('rgba(255,60,40,1)'), ion: glow('rgba(58,160,255,1)'),
+  fy: glow('rgba(255,195,105,1)'), fo: glow('rgba(255,105,20,1)'), fr: glow('rgba(220,50,20,1)'), smoke: glow('rgba(70,70,78,1)'), white: glow('rgba(255,255,255,1)'),
+};
+const BG = mk(W + 48, H + 48, (g, w, h) => {
+  g.fillStyle = C.bg; g.fillRect(0, 0, w, h); g.fillStyle = '#18181E';
+  for (let y = 0; y < h; y += 48) for (let x = 0; x < w; x += 48) { g.beginPath(); g.arc(x + 24, y + 24, 2, 0, 7); g.fill(); }
+});
+const VIG = mk(W, H, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, h * 0.25, w / 2, h / 2, h * 0.75); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.65)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+const STACK = mk(860, 438, (g, w) => { // capas de la celda, de arriba abajo
+  const r = rng(7);
+  g.fillStyle = '#C9CCD3'; g.fillRect(0, 0, w, 8);                       // colector de aluminio
+  g.fillStyle = '#6E3529'; g.fillRect(0, 8, w, 150);                     // cátodo
+  for (let i = 0; i < 900; i++) { g.fillStyle = r() < .5 ? '#8A4637' : '#5A2A21'; g.beginPath(); g.arc(r() * w, 8 + r() * 150, 3 + r() * 7, 0, 7); g.fill(); }
+  g.fillStyle = 'rgba(58,160,255,0.10)'; g.fillRect(0, 158, w, 55); g.fillRect(0, 225, w, 55);   // electrolito
+  g.fillStyle = '#E6E6EC'; g.fillRect(0, 213, w, 12);                    // separador
+  g.fillStyle = '#9A9AA4'; for (let x = 4; x < w; x += 14) g.fillRect(x, 216 + ((x / 14) % 2) * 3, 6, 3);
+  g.fillStyle = '#2E3138'; g.fillRect(0, 280, w, 150);                   // ánodo (grafito)
+  g.strokeStyle = '#474B55'; g.lineWidth = 3;
+  for (let i = 0; i < 260; i++) { const x = r() * w, y = 286 + r() * 138, l = 14 + r() * 26; g.beginPath(); g.moveTo(x, y); g.lineTo(x + l, y + (r() - .5) * 6); g.stroke(); }
+  g.fillStyle = '#C47A4C'; g.fillRect(0, 430, w, 8);                     // colector de cobre
+});
+
+function background(t) { const o = (t * 10) % 48; ctx.drawImage(BG, -o, -o); }
+function blit(img, x, y, r, a = 1) { A(a, () => ctx.drawImage(img, x - r, y - r, r * 2, r * 2)); }
+
+// ---------- Redmi 13C (vista trasera) ----------
+function bowRect(x, y, w, h, r, b) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.quadraticCurveTo(x + w / 2, y - b, x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.quadraticCurveTo(x + w + b, y + h / 2, x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.quadraticCurveTo(x + w / 2, y + h + b, x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.quadraticCurveTo(x - b, y + h / 2, x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath();
+}
+function lens(x, y, r) {
+  ctx.fillStyle = '#20242E'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#6A7284'; ctx.lineWidth = r * 0.09; ctx.stroke();
+  ctx.fillStyle = '#05060A'; ctx.beginPath(); ctx.arc(x, y, r * 0.64, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(70,90,200,0.55)'; ctx.beginPath(); ctx.arc(x, y, r * 0.36, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(x - r * 0.2, y - r * 0.22, r * 0.08, 0, 7); ctx.fill();
+}
+function cameraModule(x0, y0, w, h) {
+  const mx = x0 + w * 0.07, my = y0 + h * 0.03, mw = w * 0.40, mh = h * 0.235;
+  const gr = ctx.createLinearGradient(mx, my, mx + mw, my + mh); gr.addColorStop(0, '#151925'); gr.addColorStop(1, '#07080C');
+  ctx.fillStyle = gr; rr(mx, my, mw, mh, mw * 0.2); ctx.fill(); ctx.strokeStyle = '#3A4152'; ctx.lineWidth = 3; ctx.stroke();
+  lens(mx + mw * 0.38, my + mh * 0.27, mw * 0.29); lens(mx + mw * 0.38, my + mh * 0.71, mw * 0.29);
+  ctx.fillStyle = '#EDE6CC'; ctx.beginPath(); ctx.arc(mx + mw * 0.81, my + mh * 0.2, mw * 0.065, 0, 7); ctx.fill();
+  ctx.fillStyle = '#1B1F29'; ctx.beginPath(); ctx.arc(mx + mw * 0.81, my + mh * 0.4, mw * 0.06, 0, 7); ctx.fill(); ctx.strokeStyle = '#4A5160'; ctx.lineWidth = 2; ctx.stroke();
+}
+function phoneShadow(cx, cy, w, h) { A(0.8, () => ctx.drawImage(G.smoke, cx - w * 0.85, cy - h * 0.62 + 40, w * 1.7, h * 1.24)); }
+function phoneFrame(x0, y0, w, h, r) {
+  const gr = ctx.createLinearGradient(x0, y0, x0 + w, y0 + h); gr.addColorStop(0, '#4A4F5A'); gr.addColorStop(0.5, '#23262D'); gr.addColorStop(1, '#3A3E47');
+  ctx.fillStyle = gr; rr(x0, y0, w, h, r); ctx.fill();
+  ctx.fillStyle = '#3A3E47'; rr(x0 - 6, y0 + h * 0.24, 8, h * 0.11, 3); ctx.fill(); rr(x0 - 6, y0 + h * 0.38, 8, h * 0.06, 3); ctx.fill();
+}
+function backCover(x0, y0, w, h, r, sw) {
+  const b = sw * 16, i = 5;
+  const gr = ctx.createLinearGradient(x0, y0, x0 + w, y0 + h); gr.addColorStop(0, '#1E2638'); gr.addColorStop(1, '#0B0E16');
+  bowRect(x0 + i, y0 + i, w - 2 * i, h - 2 * i, r - i, b); ctx.fillStyle = gr; ctx.fill();
+  const cx = x0 + w / 2, cy = y0 + h / 2;
+  const hl = ctx.createRadialGradient(cx - w * 0.12, cy + h * 0.06, 0, cx - w * 0.12, cy + h * 0.06, w * 0.8);
+  hl.addColorStop(0, `rgba(150,175,255,${0.05 + 0.2 * sw})`); hl.addColorStop(1, 'rgba(150,175,255,0)'); ctx.fillStyle = hl; ctx.fill();
+  if (sw > 0) { ctx.strokeStyle = `rgba(0,0,0,${0.5 + 0.5 * sw})`; ctx.lineWidth = 2 + sw * 6; ctx.stroke(); }
+  cameraModule(x0, y0, w, h);
+}
+function internals(x0, y0, w, h, r) {
+  ctx.fillStyle = '#121419'; rr(x0 + 8, y0 + 8, w - 16, h - 16, r - 8); ctx.fill();
+  ctx.fillStyle = '#1D2027'; rr(x0 + 18, y0 + h * 0.025, w - 36, h * 0.31, 22); ctx.fill();               // placa base
+  const sh = ctx.createLinearGradient(0, y0, 0, y0 + h * 0.3); sh.addColorStop(0, '#7A808C'); sh.addColorStop(1, '#4C515B');
+  ctx.fillStyle = sh; rr(x0 + w * 0.52, y0 + h * 0.05, w * 0.38, h * 0.12, 8); ctx.fill(); rr(x0 + w * 0.52, y0 + h * 0.19, w * 0.38, h * 0.12, 8); ctx.fill();
+  ctx.fillStyle = '#0A0B0F'; rr(x0 + w * 0.09, y0 + h * 0.045, w * 0.36, h * 0.22, 18); ctx.fill();
+  lens(x0 + w * 0.24, y0 + h * 0.1, w * 0.1); lens(x0 + w * 0.24, y0 + h * 0.205, w * 0.1);
+  ctx.fillStyle = '#B07A3A'; rr(x0 + w * 0.42, y0 + h * 0.335, w * 0.16, h * 0.04, 4); ctx.fill();         // conector flex
+  const bx = x0 + w * 0.08, by = y0 + h * 0.37, bw = w * 0.84, bh = h * 0.55;
+  const pg = ctx.createLinearGradient(bx, by, bx + bw, by + bh); pg.addColorStop(0, '#D4D7DE'); pg.addColorStop(0.5, '#A9AEB8'); pg.addColorStop(1, '#C3C7CF');
+  ctx.fillStyle = pg; rr(bx, by, bw, bh, 20); ctx.fill();
+  ctx.fillStyle = '#121318'; rr(bx + bw * 0.12, by + bh * 0.3, bw * 0.76, bh * 0.38, 12); ctx.fill();
+  ctx.fillStyle = '#8E8E93'; ctx.font = `600 ${w * 0.05}px Geist`; ctx.textAlign = 'center'; ctx.fillText('Li-ion Polymer', bx + bw / 2, by + bh * 0.41);
+  ctx.fillStyle = '#F2F2F7'; ctx.font = `750 ${w * 0.11}px Geist`; ctx.fillText('5000 mAh', bx + bw / 2, by + bh * 0.54);
+  ctx.fillStyle = '#3A3A42'; for (let i = 0; i < 3; i++) { rr(bx + bw * 0.22, by + bh * (0.585 + i * 0.03), bw * (0.56 - i * 0.12), 6, 3); ctx.fill(); }
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#1D2027'; rr(x0 + 18, y0 + h * 0.93, w - 36, h * 0.05, 14); ctx.fill();
+  return { bx, by, bw, bh };
+}
+
+// ---------- vista lateral (móvil boca abajo sobre la mesa; grosor exagerado) ----------
+function sideGeom(oy, s) {
+  const bx0 = 150, bx1 = 850, base = 1100 + oy;
+  const bump = x => (x <= bx0 || x >= bx1) ? 0 : Math.pow(Math.sin(Math.PI * (x - bx0) / (bx1 - bx0)), 1.2);
+  const bump2 = x => (x <= 110 || x >= 970) ? 0 : Math.pow(Math.sin(Math.PI * (x - 110) / 860), 1.5);
+  const B = x => s * 110 * bump(x), Sb = x => s * 20 * bump2(x);
+  return { bx0, bx1, base, B, Sb, batTop: x => base - 116 - B(x), batBot: x => base - 46 + Sb(x) * 0.8, covBot: x => base - 116 - Math.max(B(x), s * 26) };
+}
+function band(x0, x1, top, bot, fill) {
+  ctx.beginPath(); ctx.moveTo(x0, top(x0));
+  for (let x = x0; x <= x1; x += 10) ctx.lineTo(x, top(x)); ctx.lineTo(x1, top(x1));
+  for (let x = x1; x >= x0; x -= 10) ctx.lineTo(x, bot(x)); ctx.lineTo(x0, bot(x0)); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+}
+function sideView(oy, s, u, o = {}) {
+  const g = sideGeom(oy, s), base = g.base, X0 = 90, X1 = 990;
+  ctx.save();
+  const th = (o.rock || 0) * Math.sin(u * 7.5) * 0.03;
+  ctx.translate(540, base); ctx.rotate(th); ctx.translate(-540, -base); ctx.translate(0, -s * 20);
+  ctx.fillStyle = '#0E0F13'; rr(X0, base - 116, X1 - X0, 116, 20); ctx.fill();                              // interior
+  band(X0 + 6, X1 - 6, x => base - 20 + g.Sb(x), x => base + g.Sb(x), '#1C2C44');                          // pantalla
+  band(X0 + 6, X1 - 6, x => base + g.Sb(x) - 3, x => base + g.Sb(x), '#5A7BA6');
+  band(X0 + 6, X1 - 6, x => base - 46 + g.Sb(x) * 0.9, x => base - 20 + g.Sb(x), '#3A3E47');                // marco medio
+  const hk = o.heat || 0;
+  band(g.bx0, g.bx1, g.batTop, g.batBot, hk > 0 ? mix3('#B4B8C1', '#FF6A1A', '#FFE7A0', hk) : '#B4B8C1');    // batería
+  band(g.bx0, g.bx1, g.batTop, x => g.batTop(x) + 5, 'rgba(255,255,255,0.35)');
+  if (hk > 0.05) A(hk, () => { ctx.globalCompositeOperation = 'lighter'; for (let x = 250; x <= 750; x += 125) blit(G.heat, x, g.batTop(x) + 30, 140 + hk * 60, 0.45); });
+  ctx.fillStyle = '#1F2229'; ctx.fillRect(870, base - 116, 90, 70); ctx.fillStyle = '#5B606B'; ctx.fillRect(880, base - 100, 34, 22); ctx.fillRect(922, base - 100, 28, 30);
+  ctx.fillStyle = '#353943'; rr(X0, base - 116, 40, 116, 18); ctx.fill(); rr(X1 - 40, base - 116, 40, 116, 18); ctx.fill();   // laterales del marco
+  if (o.inside) o.inside(g);
+  ctx.save();
+  if (o.coverT) o.coverT(g);
+  band(X0 + 4, X1 - 4, x => g.covBot(x) - 18, g.covBot, '#1A2131');                                           // tapa trasera
+  band(X0 + 4, X1 - 4, x => g.covBot(x) - 18, x => g.covBot(x) - 14, '#3A4560');
+  ctx.fillStyle = '#0B0D13'; ctx.fillRect(880, g.covBot(900) - 38, 66, 22); ctx.fillStyle = '#2B3140'; ctx.fillRect(880, g.covBot(900) - 40, 66, 4);
+  ctx.restore();
+  if (o.after) o.after(g);
+  ctx.restore();
+  return g;
+}
+function arrow(x, y0, y1, col, a) {
+  A(a, () => { ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke();
+    const d = Math.sign(y1 - y0); ctx.beginPath(); ctx.moveTo(x - 16, y1 - d * 18); ctx.lineTo(x, y1 + d * 4); ctx.lineTo(x + 16, y1 - d * 18); ctx.closePath(); ctx.fill(); });
+}
+
+// ---------- corte transversal de la celda ----------
+const BUB = (() => { const r = rng(42); return Array.from({ length: 48 }, (_, i) => ({ x: 60 + r() * 740, top: i % 2 === 0, j: r(), b: r() * 0.6, r: 9 + r() * 16, d: r() * 0.7 + 0.2, ph: r() * 6 })); })();
+const IONS = (() => { const r = rng(9); return Array.from({ length: 16 }, () => ({ x: 70 + r() * 720, ph: r(), ys: 40 + r() * 100, ye: 300 + r() * 110, w: r() * 6 })); })();
+function ion(x, y, r, a) {
+  A(a, () => { blit(G.ion, x, y, r * 2.6, 0.5); ctx.fillStyle = C.ion; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = r * 0.22; ctx.beginPath(); ctx.moveTo(x - r * .45, y); ctx.lineTo(x + r * .45, y); ctx.moveTo(x, y - r * .45); ctx.lineTo(x, y + r * .45); ctx.stroke(); });
+}
+function cell(u, o) {
+  const w = 860, x = 540 - w / 2, top = o.cy - 219, bot = top + 438, pb = (o.sw || 0) * 170;
+  const px = x - 26, pw = w + 52, py = top - 26, ph = 438 + 52, R = 26;
+  ctx.beginPath();
+  ctx.moveTo(px + R, py); ctx.quadraticCurveTo(px + pw / 2, py - 2 * pb, px + pw - R, py); ctx.arcTo(px + pw, py, px + pw, py + R, R);
+  ctx.lineTo(px + pw, py + ph - R); ctx.arcTo(px + pw, py + ph, px + pw - R, py + ph, R);
+  ctx.quadraticCurveTo(px + pw / 2, py + ph + 2 * pb, px + R, py + ph); ctx.arcTo(px, py + ph, px, py + ph - R, R);
+  ctx.lineTo(px, py + R); ctx.arcTo(px, py, px + R, py, R); ctx.closePath();
+  ctx.fillStyle = `rgba(255,150,70,${0.03 + 0.1 * (o.sw || 0)})`; ctx.fill();
+  const pg = ctx.createLinearGradient(px, 0, px + pw, 0); pg.addColorStop(0, '#9EA3AD'); pg.addColorStop(0.5, '#E2E4EA'); pg.addColorStop(1, '#9EA3AD');
+  ctx.strokeStyle = pg; ctx.lineWidth = 10; ctx.stroke();
+  ctx.drawImage(STACK, x, top);
+  // iones Li+ (cátodo -> ánodo al cargar)
+  const ia = o.ions ?? 0;
+  if (ia > 0) for (const p of IONS) {
+    const k = frac(u * 0.42 + p.ph), y = top + lerp(p.ys, p.ye, ease(k)), xx = x + p.x + Math.sin(k * 6.28 + p.w) * 14;
+    ion(xx, y, 13, ia * Math.min(1, k * 7, (1 - k) * 7));
+  }
+  // burbujas de gas
+  const bub = o.bub || 0;
+  if (bub > 0) for (const p of BUB) {
+    const g = clamp((bub - p.b) / 0.12); if (g <= 0) continue;
+    const k = ease(clamp((bub - p.b - 0.12) / 0.35)), tau = p.x / w, bow = 4 * tau * (1 - tau);
+    const y0 = top + (p.top ? 185 : 252) + (p.j - .5) * 30;
+    const y1 = p.top ? py - 8 - pb * bow * p.d : py + ph + 8 + pb * bow * p.d;
+    const yy = lerp(y0, y1, k), xx = x + p.x + Math.sin(u * 2 + p.ph) * 6, r = p.r * (0.35 + 0.65 * g) * (1 + 0.6 * k) * (pb > 20 || k < .1 ? 1 : 0.8);
+    ctx.fillStyle = 'rgba(255,220,190,0.10)'; ctx.strokeStyle = 'rgba(255,235,215,0.75)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(xx, yy, r, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(xx - r * .35, yy - r * .35, r * .18, 0, 7); ctx.fill();
+  }
+  if (o.gasA) {
+    const ga = o.gasA;
+    label('CO₂', 540 - 230, py - pb * 0.55, 50, ga, { weight: 750, color: C.heat, align: 'center' });
+    label('H₂', 540 + 210, py - pb * 0.5, 50, ga, { weight: 750, color: C.heat, align: 'center' });
+    label('CO', 540 - 30, py + ph + pb * 0.55, 50, ga, { weight: 750, color: C.heat, align: 'center' });
+    label('+ otros gases', 540 + 220, py + ph + pb * 0.5, 34, ga, { weight: 600, color: C.heat, align: 'center' });
+  }
+  const L = o.labels || [0, 0, 0, 0];
+  label('Cátodo · óxido metálico de litio', x + 24, top + 50, 34, L[0], { weight: 650 });
+  label('separador (plástico poroso) ↓', x + w - 24, top + 186, 28, L[1], { weight: 600, align: 'right', color: '#E6E6EC' });
+  label('electrolito (líquido)', x + 24, top + 254, 28, L[3], { weight: 600, color: '#8CC6FF' });
+  label('Ánodo · grafito', x + 24, top + 330, 34, L[2], { weight: 650 });
+  return { top, bot, py, ph, pb };
+}
+
+// ---------- iconos ----------
+function icon(kind, cx, cy, s, col) {
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (kind === 'temp') { rr(-10, -34, 20, 46, 10); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 22, 15, 0, 7); ctx.fill(); ctx.fillRect(-4, -12, 8, 30); for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(18, -26 + i * 12); ctx.lineTo(28, -26 + i * 12); ctx.stroke(); } }
+  if (kind === 'plug') { rr(-20, -14, 40, 30, 8); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-9, -14); ctx.lineTo(-9, -32); ctx.moveTo(9, -14); ctx.lineTo(9, -32); ctx.moveTo(0, 16); ctx.quadraticCurveTo(0, 36, -24, 36); ctx.stroke(); ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(4, 4); ctx.lineTo(8, 4); ctx.lineTo(0, 9); ctx.stroke(); }
+  if (kind === 'cycle') { ctx.beginPath(); ctx.arc(0, 0, 28, -1.2, 4.2); ctx.stroke(); const a = 4.2, ex = Math.cos(a) * 28, ey = Math.sin(a) * 28; ctx.beginPath(); ctx.moveTo(ex - 4, ey - 16); ctx.lineTo(ex + 3, ey + 2); ctx.lineTo(ex + 18, ey - 8); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 2); ctx.lineTo(10, 8); ctx.stroke(); }
+  if (kind === 'drop') { rr(-18, -32, 36, 64, 8); ctx.stroke(); ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-8, -18); ctx.lineTo(2, -6); ctx.lineTo(-6, 4); ctx.lineTo(6, 18); ctx.stroke(); ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(28, -22); ctx.lineTo(36, -30); ctx.moveTo(30, -6); ctx.lineTo(40, -6); ctx.stroke(); }
+  if (kind === 'x') { ctx.beginPath(); ctx.moveTo(-14, -14); ctx.lineTo(14, 14); ctx.moveTo(14, -14); ctx.lineTo(-14, 14); ctx.stroke(); }
+  if (kind === 'ok') { ctx.beginPath(); ctx.moveTo(-16, 1); ctx.lineTo(-5, 13); ctx.lineTo(17, -12); ctx.stroke(); }
+  ctx.restore();
+}
+
+// ---------- escenas ----------
+const S = { hook: [0, 5], inside: [5, 11.5], cell: [11.5, 19.5], causes: [19.5, 26], gas: [26, 33], side: [33, 38.5], boom: [38.5, 49.5], todo: [49.5, 56.5], end: [56.5, 60] };
+const sceneA = (t, [a, b], first, last) => (first ? 1 : seg(t, a - 0.15, a + 0.35)) * (last ? 1 : 1 - seg(t, b - 0.3, b + 0.15));
+
+function hook(u) {
+  ctx.save(); cam(1 + u * 0.012);
+  const h = 1080, w = h * 78 / 168, cx = 540, cy = 1170, x0 = cx - w / 2, y0 = cy - h / 2;
+  const sw = ease(seg(u, 1.8, 4.4)) * 0.95;
+  blit(G.heat, cx, cy, 700, sw * 0.35);
+  phoneShadow(cx, cy, w, h);
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.sin(u * 8) * sw * 0.006); ctx.translate(-cx, -cy);
+  phoneFrame(x0, y0, w, h, 64); backCover(x0, y0, w, h, 64, sw); ctx.restore();
+  text(['¿Qué pasa si la batería', 'de tu [Redmi 13C|ion]', 'se [infla|heat]?'], 540, 250, 84, 0.25, u);
+  ctx.restore();
+}
+
+function inside(u) {
+  const h = 1150, w = h * 78 / 168, k = ease(seg(u, 0.5, 1.7));
+  const cx = 540 - k * 95, cy = 1110, x0 = cx - w / 2, y0 = cy - h / 2;
+  const z = ease(seg(u, 5.0, 6.6)), bcy = y0 + h * 0.645;
+  ctx.save(); cam(lerp(1, 2.9, z), lerp(540, cx, z), lerp(H / 2, bcy, z));
+  phoneShadow(cx, cy, w, h);
+  phoneFrame(x0, y0, w, h, 66); internals(x0, y0, w, h, 66);
+  A(1 - k, () => { ctx.save(); ctx.translate(k * w * 1.15, -k * 40); ctx.translate(cx, cy); ctx.rotate(k * 0.1); ctx.translate(-cx, -cy); backCover(x0, y0, w, h, 66, 0); ctx.restore(); });
+  // etiquetas
+  const la = [seg(u, 2.1, 2.5), seg(u, 2.6, 3.0)].map(v => v * (1 - seg(u, 4.6, 5.0)));
+  [[y0 + h * 0.16, ['Placa base', 'y cámaras'], la[0]], [y0 + h * 0.645, ['Batería de', 'litio (Li-ion)'], la[1]]].forEach(([yy, ls, a]) => A(a, () => {
+    ctx.strokeStyle = '#5A5A64'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx + w * 0.3, yy); ctx.lineTo(cx + w / 2 + 50, yy); ctx.stroke();
+    ctx.fillStyle = C.text; ctx.beginPath(); ctx.arc(cx + w * 0.3, yy, 8, 0, 7); ctx.fill();
+    label(ls[0], cx + w / 2 + 66, yy - 22, 36, 1, { weight: 700 }); label(ls[1], cx + w / 2 + 66, yy + 22, 36, 1, { weight: 500, color: C.sub });
+  }));
+  ctx.restore();
+  A(1 - seg(u, 4.8, 5.4), () => text(['Dentro hay una batería', 'de [5000 mAh|heat] en un móvil', 'de solo [8 mm|heat] de grosor'], 540, 190, 66, 0.3, u));
+}
+
+function cellScene(u) {
+  ctx.save(); cam(lerp(1.25, 1, easeOut(seg(u, 0, 1.2))), 540, 1000);
+  cell(u, { cy: 1000, ions: seg(u, 3.2, 3.8), labels: [seg(u, 1.0, 1.3), seg(u, 1.6, 1.9), seg(u, 2.2, 2.5), seg(u, 2.8, 3.1)] });
+  ctx.restore();
+  text(['Dentro: [capas finísimas|ion]', 'empapadas en un líquido'], 540, 250, 70, 0.3, u);
+  A(1 - seg(u, 5.4, 5.7), () => text(['Al cargar, los iones de litio', 'cruzan de un lado al otro'], 540, 1450, 54, 3.4, u, { weight: 600 }));
+  A(seg(u, 3.4, 3.8) * (1 - seg(u, 5.4, 5.7)), () => { ion(400, 1620, 14, 1); label('= ion de litio (Li+)', 430, 1620, 34, 1, { color: C.sub, weight: 500 }); });
+  text(['Ese líquido (el electrolito)', 'es [inflamable|red]'], 540, 1450, 58, 5.6, u, { weight: 650 });
+}
+
+function causes(u) {
+  text(['¿Por qué se [infla|heat]?'], 540, 300, 96, 0.2, u, { weight: 750 });
+  const cards = [['temp', 'Calor', ['sol, coche, cargar', 'mientras juegas']], ['plug', 'Mala carga', ['cargadores baratos', 'o sin certificar']], ['cycle', 'Años de uso', ['cada ciclo de carga', 'la desgasta']], ['drop', 'Golpes', ['caídas que dañan', 'las capas internas']]];
+  cards.forEach(([ic, tt, sb], i) => {
+    const t0 = 0.8 + i * 0.7, a = seg(u, t0, t0 + 0.25), s = lerp(0.86, 1, spring(u - t0, 13, 0.75));
+    const x = i % 2 ? 555 : 75, y = i < 2 ? 470 : 940, cw = 450, ch = 420;
+    A(a, () => {
+      ctx.save(); ctx.translate(x + cw / 2, y + ch / 2); ctx.scale(s, s); ctx.translate(-x - cw / 2, -y - ch / 2);
+      ctx.fillStyle = C.card; rr(x, y, cw, ch, 36); ctx.fill(); ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,138,31,0.14)'; ctx.beginPath(); ctx.arc(x + 100, y + 110, 62, 0, 7); ctx.fill();
+      icon(ic, x + 100, y + 110, 1.15, C.heat);
+      label(tt, x + 44, y + 245, 54, 1, { weight: 750 });
+      label(sb[0], x + 44, y + 310, 34, 1, { weight: 500, color: C.sub }); label(sb[1], x + 44, y + 352, 34, 1, { weight: 500, color: C.sub });
+      ctx.restore();
+    });
+  });
+  text(['Todas dañan el [electrolito|heat]'], 540, 1560, 60, 4.0, u, { weight: 680 });
+}
+
+function gas(u) {
+  const sw = ease(seg(u, 1.4, 5.4)), bub = lin(seg(u, 0.5, 4.6));
+  ctx.save(); cam(lerp(1, 0.94, ease(seg(u, 1, 5))), 540, 1010);
+  cell(u, { cy: 1010, ions: 0.25, bub, sw, gasA: seg(u, 4.0, 4.6) });
+  ctx.restore();
+  text(['El electrolito se [descompone|heat]', 'y suelta [gases|heat]'], 540, 230, 66, 0.25, u);
+  text(['La bolsa se hincha', '[como un globo|heat]'], 540, 1640, 64, 4.6, u);
+}
+
+function side(u) {
+  const s = ease(seg(u, 0.6, 2.6));
+  text(['Y empuja todo lo que', 'tiene [alrededor|heat]'], 540, 260, 72, 0.2, u);
+  ctx.fillStyle = '#26262D'; ctx.fillRect(40, 1100, 1000, 4);
+  const tg = ctx.createLinearGradient(0, 1104, 0, 1300); tg.addColorStop(0, 'rgba(60,60,70,0.35)'); tg.addColorStop(1, 'rgba(60,60,70,0)'); ctx.fillStyle = tg; ctx.fillRect(40, 1104, 1000, 200);
+  sideView(0, s, u, { rock: seg(u, 1.8, 2.6) });
+  arrow(500, 900, 760, C.heat, seg(u, 2.0, 2.4)); label('la tapa se levanta', 540, 760, 36, seg(u, 2.0, 2.4), { weight: 650, color: C.heat });
+  label('pantalla presionada', 540, 1160, 32, seg(u, 2.4, 2.8), { weight: 600, color: '#8CC6FF', align: 'center' });
+  label('grosor exagerado para que se vea', 540, 1230, 26, seg(u, 1, 1.5) * 0.8, { weight: 500, color: C.sub, align: 'center' });
+  text(['Señal típica: el móvil', '[baila|heat] sobre la mesa'], 540, 1460, 60, 2.8, u);
+}
+
+const FL = (() => { const r = rng(77); return Array.from({ length: 230 }, () => ({ x: 170 + (r() + r() + r()) / 3 * 660, ph: r(), v: 650 + r() * 700, sx: (r() - .5) * 260, sz: 0.6 + r() * 0.9 })); })();
+const SM = (() => { const r = rng(5); return Array.from({ length: 40 }, () => ({ ph: r(), sx: (r() - .2) * 160, sz: 0.6 + r() * 0.8, side: r() < .6 })); })();
+const SP = (() => { const r = rng(13); return Array.from({ length: 70 }, () => ({ x: 200 + r() * 600, vx: (r() - .5) * 1400, vy: -600 - r() * 1300, d: r() * 0.25 })); })();
+const tempAt = kf([[2.4, 25], [3.6, 80, lin], [4.8, 130, lin], [6.0, 200, lin], [7.2, 450, easeIn2]]);
+const tempCol = T => T < 130 ? mix(C.heat, '#FF6A1A', seg(T, 25, 130)) : mix('#FF6A1A', '#FF3B30', seg(T, 130, 450));
+
+function boom(u) {
+  const IG = 7.2, T = tempAt(u), hk = seg(T, 25, 450), fire = u > IG;
+  const sh = fire ? Math.max(0, 1 - (u - IG) / 1.4) : 0, r = rng(Math.floor(u * 60) + 3);
+  ctx.save(); ctx.translate((r() - .5) * 46 * sh, (r() - .5) * 46 * sh);
+  ctx.fillStyle = '#26262D'; ctx.fillRect(40, 820, 1000, 4);
+  const fly = fire ? easeOut(seg(u, IG, IG + 1.3)) : 0;
+  sideView(-280, 1, u, {
+    heat: hk,
+    coverT: g => { if (fly > 0) { const p = 540, q = g.covBot(540); ctx.translate(p - fly * 260, q - fly * 1100); ctx.rotate(-fly * 0.9); ctx.translate(-p, -q); ctx.globalAlpha *= 1 - seg(u, IG + 0.9, IG + 1.3); } },
+    inside: g => {
+      // humo antes de arder
+      const sa = seg(T, 110, 200) * (1 - seg(u, IG + 0.2, IG + 1.5));
+      if (sa > 0) for (const p of SM) { const k = frac(u * 0.55 + p.ph), x = (p.side ? 120 : 860) + p.sx * k * (p.side ? -1 : 1), y = g.covBot(p.side ? 150 : 850) - k * 420; blit(G.smoke, x, y, 50 + k * 140 * p.sz, sa * (1 - k) * 0.9); }
+    },
+    after: g => {
+      // aguja que perfora
+      const pin = ease(seg(u, 1.0, 1.6)), pa = 1 - seg(u, IG - 0.4, IG);
+      A(pin > 0 ? pa : 0, () => {
+        const tipY = lerp(g.base - 560, g.batTop(430) + 34, pin);
+        const mg = ctx.createLinearGradient(418, 0, 442, 0); mg.addColorStop(0, '#6A707C'); mg.addColorStop(.5, '#E4E6EC'); mg.addColorStop(1, '#6A707C');
+        ctx.fillStyle = mg; ctx.beginPath(); ctx.moveTo(430, tipY); ctx.lineTo(442, tipY - 40); ctx.lineTo(442, tipY - 210); ctx.lineTo(418, tipY - 210); ctx.lineTo(418, tipY - 40); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#C0392B'; rr(404, tipY - 300, 52, 100, 14); ctx.fill();
+      });
+      // chispa de cortocircuito
+      const sp = seg(u, 1.6, 2.4);
+      if (sp > 0 && sp < 1) { ctx.globalCompositeOperation = 'lighter'; blit(G.white, 430, g.batTop(430) + 34, 160 * (1 - sp) + 30, 1 - sp); blit(G.fy, 430, g.batTop(430) + 34, 260, (1 - sp) * 0.8); ctx.globalCompositeOperation = 'source-over'; }
+      if (fire) {
+        const f = u - IG, burst = Math.max(0, 1 - f / 0.8), env = Math.min(1, f * 6) * (1 - seg(u, 10.6, 11));
+        ctx.globalCompositeOperation = 'lighter';
+        for (const p of FL) {
+          const L = 0.95, age0 = f - p.ph * L; if (age0 < 0) continue; const a = (age0 % L) / L;
+          const v = p.v * (1 + burst * 1.2), x = p.x + p.sx * a, y = g.batTop(p.x) - v * a * L + 140 * a * a;
+          const rad = (34 + a * 150) * p.sz * (1 + burst * 0.6), img = a < .25 ? G.fy : a < .6 ? G.fo : G.fr;
+          blit(img, x, y, rad, env * (1 - a) * 0.85);
+        }
+        blit(G.fo, 540, g.base - 200, 520, env * 0.5);
+        ctx.globalCompositeOperation = 'source-over';
+        for (const p of SM) { const k = frac(f * 0.35 + p.ph), x = 200 + p.ph * 640 + p.sx * k, y = g.base - 450 - k * 900; blit(G.smoke, x, y, 120 + k * 260 * p.sz, env * (1 - k) * 0.6 * seg(f, 0.4, 1.4)); }
+        for (const p of SP) { const tt = f - p.d; if (tt < 0 || tt > 1.3) continue; const x = p.x + p.vx * tt, y = g.batTop(p.x) + p.vy * tt + 0.5 * 2400 * tt * tt;
+          A(1 - tt / 1.3, () => { ctx.strokeStyle = '#FFE08A'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - p.vx * 0.018, y - (p.vy + 2400 * tt) * 0.018); ctx.stroke(); }); }
+      }
+    },
+  });
+  ctx.restore();
+  if (fire) A(Math.max(0, 1 - (u - IG) / 0.5) * 0.85, () => { ctx.fillStyle = '#FFF4E0'; ctx.fillRect(0, 0, W, H); });
+  // textos
+  A(1 - seg(u, 2.2, 2.5), () => text(['¿Y cómo llega a', '[explotar|red]?'], 540, 190, 84, 0.2, u, { weight: 750 }));
+  A(1 - seg(u, 2.5, 2.8), () => text(['Si se [perfora|red], se dobla', 'o sigue cargando…'], 540, 1010, 52, 0.8, u, { weight: 600 }));
+  const ca = seg(u, 2.4, 2.8) * (1 - seg(u, 8.6, 9.0));
+  A(ca, () => {
+    label(`${Math.round(T)} °C`, 540, 1110, 150, 1, { weight: 800, color: tempCol(T), align: 'center' });
+    const rows = [[80, '80 °C', 'Se rompe la capa protectora'], [130, '130 °C', 'Se derrite el separador'], [200, '200 °C', 'El cátodo suelta oxígeno'], [400, '+400 °C', 'Todo arde: fuga térmica']];
+    rows.forEach(([th, a, b], i) => {
+      const on = T >= th, y = 1330 + i * 112, k = on ? 1 : 0.22;
+      A(k, () => {
+        ctx.fillStyle = on ? tempCol(th + 1) : '#3A3A42'; rr(90, y - 38, 200, 76, 38); ctx.fill();
+        label(a, 190, y + 2, 38, 1, { weight: 750, color: on ? '#140A06' : C.sub, align: 'center' });
+        label(b, 320, y + 2, 40, 1, { weight: i === 3 ? 750 : 600, color: i === 3 && on ? C.red : C.text });
+      });
+    });
+    label('temperaturas aproximadas', 540, 1810, 26, 0.8, { weight: 500, color: C.sub, align: 'center' });
+  });
+  text(['No es una bomba: es', '[gas inflamable|red] saliendo', 'a presión y ardiendo'], 540, 1250, 64, 8.9, u, { weight: 700 });
+}
+
+function todo(u) {
+  text(['Si tu batería está', '[inflada|heat]:'], 540, 280, 84, 0.2, u, { weight: 750 });
+  const items = [['x', 'No lo cargues', 'ni lo dejes enchufado'], ['x', 'No lo aprietes ni lo pinches', 'ni intentes “desinflarla”'], ['ok', 'Apágalo', 'y déjalo sobre algo que no arda'], ['ok', 'Llévalo al servicio técnico', 'la batería se cambia'], ['ok', 'Nunca a la basura', 'va a un punto de reciclaje']];
+  items.forEach(([ic, a, b], i) => {
+    const t0 = 1.0 + i * 0.85, k = seg(u, t0, t0 + 0.3), dx = (1 - spring(u - t0, 12, 1)) * 60, y = 640 + i * 200, col = ic === 'x' ? C.red : C.ok;
+    A(k, () => {
+      ctx.save(); ctx.translate(dx, 0);
+      ctx.fillStyle = ic === 'x' ? 'rgba(255,69,58,0.16)' : 'rgba(50,215,75,0.16)'; ctx.beginPath(); ctx.arc(140, y, 50, 0, 7); ctx.fill();
+      icon(ic, 140, y, 1.25, col);
+      label(a, 225, y - 22, 48, 1, { weight: 720 }); label(b, 225, y + 30, 34, 1, { weight: 500, color: C.sub });
+      ctx.restore();
+    });
+  });
+}
+
+function endCard(u) {
+  ctx.save(); cam(lerp(1.06, 1, easeOut(seg(u, 0, 3))));
+  text(['Una batería inflada', 'no se arregla:', '[se cambia.|ok]'], 540, 820, 92, 0.2, u, { weight: 760 });
+  label('Redmi 13C · batería Li-ion de 5000 mAh', 540, 1270, 34, seg(u, 1.2, 1.6), { weight: 500, color: C.sub, align: 'center' });
+  ctx.restore();
+}
+
+const SCENES = [[S.hook, hook], [S.inside, inside], [S.cell, cellScene], [S.causes, causes], [S.gas, gas], [S.side, side], [S.boom, boom], [S.todo, todo], [S.end, endCard]];
+window.seek = function (t) {
+  t = clamp(t, 0, D - 1e-6);
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  background(t);
+  SCENES.forEach(([win, fn], i) => {
+    const a = sceneA(t, win, i === 0, i === SCENES.length - 1);
+    if (a > 0.001) A(a, () => fn(t - win[0]));
+  });
+  ctx.drawImage(VIG, 0, 0);
+};
+
+// ---------- sonido (efectos reales CC0 de skills/sound-effects) ----------
+const SFX = /*SFX*/;
+const CUES = [
+  ['impact', 1.8, 0.9], ['whoosh', 4.95, 0.7], ['pop', 7.1, 0.6], ['pop', 7.6, 0.6], ['whoosh', 9.95, 0.8],
+  ['tick', 12.5, 0.6], ['tick', 13.1, 0.6], ['tick', 13.7, 0.6], ['tick', 14.3, 0.6], ['pop', 17.1, 0.5],
+  ['whoosh', 19.45, 0.7], ['pop', 20.3, 0.8], ['pop', 21.0, 0.8], ['pop', 21.7, 0.8], ['pop', 22.4, 0.8],
+  ['whoosh', 25.95, 0.7], ['plop', 26.7, 0.45], ['plop', 27.3, 0.4], ['plop', 27.8, 0.45], ['plop', 28.5, 0.4], ['plop', 29.1, 0.45], ['plop', 29.8, 0.4], ['plop', 30.3, 0.4],
+  ['whoosh', 32.95, 0.7], ['impact', 34.9, 0.6], ['impact', 35.6, 0.4],
+  ['whoosh', 38.45, 0.7], ['spark', 40.1, 1.0], ['impact', 40.1, 0.9], ['riser', 39.73, 0.8],
+  ['tick', 42.1, 0.8], ['tick', 43.3, 0.8], ['tick', 44.5, 0.8], ['tick', 45.57, 0.8],
+  ['boom', 45.7, 1.0], ['hit', 45.7, 0.8], ['jet', 45.68, 0.7],
+  ['whoosh', 49.45, 0.7], ['click', 50.5, 0.7], ['click', 51.35, 0.7], ['confirm', 52.2, 0.6], ['confirm', 53.05, 0.6], ['confirm', 53.9, 0.6],
+  ['whoosh', 56.45, 0.7], ['ding', 57.0, 0.7],
+];
+window.buildAudio = async function (ac) {
+  const dec = {};
+  for (const [k, b64] of Object.entries(SFX)) { const bin = atob(b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); dec[k] = await ac.decodeAudioData(u8.buffer); }
+  const out = ac.createGain(); out.gain.value = 0.9; out.connect(ac.destination);
+  const play = (k, t, g) => { const s = ac.createBufferSource(); s.buffer = dec[k]; const gn = ac.createGain(); gn.gain.value = g; s.connect(gn).connect(out); s.start(Math.max(0, t)); };
+  for (let t = 0; t < D; t += dec.room.duration) play('room', t, 0.5);
+  CUES.forEach(([k, t, g]) => play(k, t, g));
+};
+
+// ---------- vista previa ----------
+let buf, ac, src, startAt = 0, offset = 0, playing = false;
+async function play() {
+  ac ??= new AudioContext();
+  if (!buf) { const off = new OfflineAudioContext(2, Math.ceil(48000 * D), 48000); await buildAudio(off); buf = await off.startRendering(); }
+  src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination);
+  src.start(0, offset % D); startAt = ac.currentTime; playing = true; pp.textContent = 'Pause';
+}
+function pause() { if (!playing) return; offset += ac.currentTime - startAt; src.stop(); playing = false; pp.textContent = 'Play'; }
+function now() { return playing ? (offset + ac.currentTime - startAt) % D : offset; }
+const pp = document.getElementById('pp'), sc = document.getElementById('sc'), tm = document.getElementById('tm');
+if (!RENDER) {
+  const fit = () => { const s = Math.min(innerWidth / W, (innerHeight - 56) / H); cv.style.transform = `scale(${s})`; cv.style.left = `${(innerWidth - W * s) / 2}px`; };
+  addEventListener('resize', fit); fit();
+  pp.onclick = () => playing ? pause() : play();
+  sc.oninput = () => { const was = playing; pause(); offset = +sc.value; if (was) play(); };
+  (function loop() { const t = now(); seek(t); sc.value = t; tm.textContent = t.toFixed(2) + ' s'; requestAnimationFrame(loop); })();
+}
+document.fonts.load('700 40px Geist').then(() => seek(now()));
+seek(0);
+</script>
+</body>
+</html>
