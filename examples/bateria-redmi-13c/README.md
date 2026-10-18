@@ -8,7 +8,7 @@ Motion graphic vertical (1080×1920, 60 s, en español) que explica qué pasa cu
 | `bateria-redmi-13c.html` | La misma animación en el navegador: ábrela y mueve el scrubber. |
 | `src.html` | El código fuente (sin la fuente ni los sonidos incrustados). |
 | `build.py` | Incrusta Geist y los sonidos CC0 de `skills/sound-effects` en `src.html`. |
-| `render.mjs` | El renderizador de los skills `explainer-*` (con un limitador de picos añadido). |
+| `render.mjs` | El renderizador de los skills `explainer-*` (con un limitador de picos añadido: el audio queda a unos −20 LUFS y con picos por debajo de −4 dBFS). |
 
 ## Guion
 
