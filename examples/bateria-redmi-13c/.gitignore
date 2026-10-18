@@ -2,3 +2,6 @@ node_modules/
 *_silent.mp4
 draft.mp4
 final.log
+*_seg*.mp4
+*_segs.txt
+*.pcm
