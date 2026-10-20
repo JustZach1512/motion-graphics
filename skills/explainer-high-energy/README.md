@@ -20,6 +20,8 @@ This is the **high-energy** one. Sister skills: [`explainer-default`](../explain
 
 It never invents facts: no made-up stats, customers or offers. Numbers appear only if you or your website give them.
 
+**Example:** [`examples/verity`](examples/verity/README.md), an 18 s teaser for the Minecraft mod Verity that you can scrub live in a browser.
+
 **Requirements:** Node 18+, ffmpeg, and Playwright (`npm i playwright`; the skill sets it up). Each skill is a single [`SKILL.md`](SKILL.md) with its renderer inside it.
 
 ## Licence
