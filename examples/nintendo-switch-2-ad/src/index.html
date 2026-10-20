@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nintendo Switch 2 · anuncio conceptual (fan-made)</title>
+<style>
+/*@FONTS@*/
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000; transform-origin: 0 0; }
+#stage canvas { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+#ui { position: fixed; left: 0; right: 0; bottom: 0; height: 56px; display: flex; align-items: center; gap: 14px; padding: 0 18px;
+  background: rgba(14,14,16,.94); color: #d8d8dc; font: 500 14px Montserrat, system-ui, sans-serif; }
+#ui button { width: 40px; height: 32px; border: 0; border-radius: 8px; background: #e60012; color: #fff; font-size: 15px; cursor: pointer; }
+#ui input { flex: 1; accent-color: #e60012; }
+#ui span { font-variant-numeric: tabular-nums; min-width: 64px; text-align: right; }
+body.render #ui { display: none; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="out" width="1920" height="1080"></canvas></div>
+<div id="ui"><button id="play" title="Play / pause (space)">▶</button><input id="scrub" type="range" min="0" max="30" step="0.001" value="0"><span id="tc">0.00 s</span></div>
+<script>/*@SFX@*/</script>
+<script>/*@THREE@*/</script>
+<script>/*@AD@*/</script>
+</body>
+</html>

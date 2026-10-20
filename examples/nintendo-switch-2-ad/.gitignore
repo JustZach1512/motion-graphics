@@ -1,0 +1,7 @@
+# render byproducts
+draft*.mp4
+*_silent.mp4
+*_seg*.mp4
+*_segs.txt
+*.pcm
+check.png

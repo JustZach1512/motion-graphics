@@ -1,0 +1,16 @@
+{
+  "name": "nintendo-switch-2-ad",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "stills": "node render.mjs switch2-ad.html check.png --stills 3,6.1,12.5,15,17,19,20.7,22.6,25.8,28.5",
+    "draft": "node render.mjs switch2-ad.html draft.mp4 30 1 4",
+    "final": "node render.mjs switch2-ad.html switch2-ad.mp4 60 2 4"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0",
+    "playwright": "1.56.1",
+    "three": "0.170.0"
+  }
+}
