@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choque de trenes en Urda</title>
+<style>
+@font-face { font-family: "Geist"; src: url(data:font/woff2;base64,/*FONT_GEIST*/) format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Geist Mono"; src: url(data:font/woff2;base64,/*FONT_MONO*/) format("woff2"); font-weight: 500; }
+:root {
+  --bg: #0A0F1A; --panel: #111a2b; --panel2: #16213a; --line: #24314a; --ink: #EEF2F8; --dim: #8D99AE; --faint: #4A5872;
+  --iryo: #E5484D; --ave: #8E7BFF; --red: #FF453A; --amber: #FFB020; --teal: #2EC4B6; --green: #30D158;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #000; overflow: hidden; }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg);
+  font-family: "Geist", system-ui, sans-serif; color: var(--ink); transform-origin: 0 0; }
+.abs { position: absolute; }
+.nw { white-space: nowrap; }
+.mono { font-family: "Geist Mono", ui-monospace, monospace; font-weight: 500; }
+svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.card { position: absolute; background: rgba(17, 26, 43, .94); border: 1px solid var(--line); border-radius: 18px; }
+.kicker { font-size: 17px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
+.pill { position: absolute; padding: 7px 14px 8px; border-radius: 999px; font-size: 21px; font-weight: 650; white-space: nowrap; }
+.lbl { position: absolute; font-size: 20px; color: var(--dim); white-space: nowrap; font-weight: 550; }
+.src { font-size: 16px; color: var(--faint); }
+#vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%); pointer-events: none; }
+#controls { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 12px; align-items: center; padding: 10px 16px;
+  background: rgba(0,0,0,.75); font: 14px system-ui; color: #ddd; z-index: 10; }
+#controls input { flex: 1; }
+#controls button { font: inherit; padding: 6px 14px; border-radius: 8px; border: 1px solid #555; background: #222; color: #eee; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- MAP (intro) -->
+  <svg id="map" width="1920" height="1080"><g id="mapcam"></g><g id="maplabels"></g></svg>
+  <!-- STRIP (schematic of the line) -->
+  <svg id="strip" width="1920" height="1080"><g id="cam"></g></svg>
+  <div id="labels" class="abs" style="inset:0"></div>
+  <div id="vignette"></div>
+  <div id="flash" class="abs" style="inset:0;background:#fff;opacity:0"></div>
+  <div id="hud" class="abs" style="inset:0"></div>
+  <div id="black" class="abs" style="inset:0;background:#000;opacity:0"></div>
+  <div id="closing" class="abs" style="inset:0"></div>
+  <div id="caption" class="abs" style="left:210px;right:210px;bottom:52px;display:flex;justify-content:center"></div>
+</div>
+<script>
+/* Beat sheet (times come from timeline.json, i.e. from the narration itself)
+   intro          map of Spain, Madrid–Sevilla line draws, zoom to Urda (Toledo)
+   salidas        departures board: Iryo 6076 07:54, AVE 2080 08:00; both trains leave Atocha on the same track
+   lzb            LZB cable pulses; ~08:30 failure (glitch sfx), 6 trains stop; Iryo held at Urda entrance signal; radio
+   orden          08:36 Adif control centre → AVE: «reanude con marcha normal»; red signal + occupied block; rule vs order
+   choque         Iryo still stopped; AVE runs, brakes, hits the Iryo's rear ~08:54 near PK 118 (impact sfx); 40 vs ≈137 km/h
+   balance        544 on board · at least 68 dead · 107 in hospital (15 very serious) · provisional
+   investigacion  Puente «inexplicable» · Orgaz court + CIAF · line suspended, 3 days of mourning
+   cierre         sources and caveats
+*/
+const TL = /*TIMELINE*/;
+const MAP = /*MAP*/;
+window.VIDEO = { w: 1920, h: 1080, duration: TL.duration };
+
+// ---------- helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const ease = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const vis = (t, a, b, fi = .45, fo = .45) => Math.min(easeOut(seg(t, a, a + fi)), 1 - ease(seg(t, b - fo, b)));
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const svgEl = (parent, tag, attrs = {}) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+const html = (parent, markup) => { parent.insertAdjacentHTML('beforeend', markup); return parent.lastElementChild; };
+const show = (el, o, dy = 0, sc = 1) => { el.style.opacity = o; el.style.visibility = o > 0.002 ? 'visible' : 'hidden'; el.style.transform = `translateY(${dy}px) scale(${sc})`; };
+
+// ---------- timeline anchors ----------
+const S = {}; TL.scenes.forEach(s => S[s.id] = s);
+const L = (id, i) => S[id].lines[i];
+const T_IMPACT = L('choque', 1).end - 1.35;
+
+// ---------- world geometry (schematic, not to scale) ----------
+const PX_KM = 30, X0 = 300;
+const xPK = pk => X0 + pk * PX_KM;
+const TRAIN_LEN = 240;
+const X_COLLISION = xPK(118);                 // Iryo's tail, where the AVE hits
+const X_IRYO_STOP = X_COLLISION + TRAIN_LEN;  // Iryo's nose, held at Urda's entrance signal
+const X_SIG_URDA = X_IRYO_STOP + 14;
+const X_AVE_STOP = xPK(96);                   // AVE's nose, held at a red signal several km behind
+const X_SIG_AVE = X_AVE_STOP + 14;
+const X_CREAL = xPK(171);
+
+// trapezoidal speed profile: from x0 at t0 to x1 at t1, accelerating for acc s and braking for dec s
+function run(t, t0, t1, x0, x1, acc = 2.2, dec = 1.6) {
+  const T = t1 - t0, D = x1 - x0, v = D / (T - (acc + dec) / 2), tau = clamp(t - t0, 0, T);
+  if (tau < acc) return x0 + 0.5 * v / acc * tau * tau;
+  if (tau < T - dec) return x0 + v * acc / 2 + v * (tau - acc);
+  return x1 - 0.5 * v / dec * (T - tau) * (T - tau);
+}
+const T_IRYO_GO = L('salidas', 0).start + 1.4, T_AVE_GO = L('salidas', 1).start + 1.8;
+const T_STOP = L('lzb', 1).start + 3.6;      // "Seis trenes se detienen automáticamente"
+const T_AVE_RESUME = L('choque', 0).start + 2.2;
+const T_BRAKE = T_IMPACT - 1.3;
+
+// AVE after the order: accelerates, cruises, brakes hard in the last 1.3 s, hits at ~55 % of cruise speed
+function aveApproach(t) {
+  const acc = 3.0, dec = T_IMPACT - T_BRAKE, Ttot = T_IMPACT - T_AVE_RESUME, cruise = Ttot - acc - dec, k = 0.55;
+  const D = X_COLLISION - X_AVE_STOP, v = D / (acc / 2 + cruise + dec * (1 + k) / 2);
+  const tau = clamp(t - T_AVE_RESUME, 0, Ttot);
+  if (tau < acc) return X_AVE_STOP + 0.5 * v / acc * tau * tau;
+  if (tau < acc + cruise) return X_AVE_STOP + v * acc / 2 + v * (tau - acc);
+  const u = tau - acc - cruise;
+  return X_AVE_STOP + v * acc / 2 + v * cruise + v * u - 0.5 * (v * (1 - k) / dec) * u * u;
+}
+const after = t => t > T_IMPACT ? t - T_IMPACT : 0;
+function xIryo(t) {
+  const x = run(t, T_IRYO_GO, T_STOP, X0, X_IRYO_STOP, 2.2, 1.7);
+  return x + 15 * spring(after(t), 9, 0.9);
+}
+function xAve(t) {
+  if (t < T_AVE_RESUME) return run(t, T_AVE_GO, T_STOP + 0.5, X0, X_AVE_STOP, 2.2, 1.9);
+  if (t < T_IMPACT) return aveApproach(t);
+  return X_COLLISION + 10 + 18 * spring(after(t), 9, 0.95);   // slight overlap: the nose ends inside the Iryo's tail
+}
+
+// ---------- camera shots (pure functions of t), blended at each shot's start ----------
+const shots = [
+  { at: 0, d: 0, f: t => ({ cx: 2900, s: 0.33, ty: 760 }) },
+  { at: L('lzb', 0).start - 0.8, d: 2.4, f: t => { const a = xAve(t) - TRAIN_LEN / 2, b = xIryo(t) - TRAIN_LEN / 2; return { cx: (a + b) / 2, s: clamp(1350 / (Math.abs(b - a) + 700), 0.3, 0.9), ty: 640 }; } },
+  { at: L('lzb', 2).start - 0.4, d: 2.0, f: t => ({ cx: X_IRYO_STOP - 30, s: 1.45, ty: 640 }) },
+  { at: L('orden', 0).start - 0.3, d: 2.2, f: t => ({ cx: X_AVE_STOP - 20, s: 1.35, ty: 720 }) },
+  { at: L('orden', 2).start - 0.3, d: 2.0, f: t => ({ cx: (X_AVE_STOP - TRAIN_LEN + X_IRYO_STOP) / 2 + 20, s: 1.28, ty: 730 }) },
+  { at: L('choque', 1).start - 0.6, d: 1.8, f: t => ({ cx: Math.min(xAve(t) + 300, X_COLLISION + 290), s: 1.5, ty: 690 }) },
+  { at: T_IMPACT + 0.7, d: 3.0, f: t => ({ cx: X_COLLISION + 60, s: lerp(1.9, 2.15, ease(seg(t, T_IMPACT + 1, S.balance.start + 4))), ty: 760 }) },
+];
+function camAt(t) {
+  let c = shots[0].f(t);
+  for (let i = 1; i < shots.length; i++) {
+    const sh = shots[i]; if (t < sh.at) break;
+    const n = sh.f(t), k = ease(seg(t, sh.at, sh.at + sh.d));
+    c = { cx: lerp(c.cx, n.cx, k), s: Math.exp(lerp(Math.log(c.s), Math.log(n.s), k)), ty: lerp(c.ty, n.ty, k) };
+  }
+  const a = after(t), shake = 13 * Math.exp(-5 * a) * (a > 0 ? 1 : 0);
+  return { ...c, sx: shake * Math.sin(a * 71), sy: shake * Math.cos(a * 53) * 0.6 };
+}
+let CAM = { cx: 0, s: 1, ty: 0, sx: 0, sy: 0 };
+const toScreen = (x, y) => [960 + (x - CAM.cx) * CAM.s + CAM.sx, CAM.ty + y * CAM.s + CAM.sy];
+
+// ---------- build: map ----------
+const mapcam = $('mapcam'), maplabels = $('maplabels');
+for (const k in MAP.neighbours) svgEl(mapcam, 'path', { d: MAP.neighbours[k], fill: '#0D1422', stroke: '#1A2438', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' });
+svgEl(mapcam, 'path', { d: MAP.portugal, fill: '#0F1727', stroke: '#1E2a40', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' });
+const provEls = MAP.provinces.map(p => svgEl(mapcam, 'path', { d: p.d, fill: '#152036', stroke: '#2A3A57', 'stroke-width': 1, 'vector-effect': 'non-scaling-stroke' }));
+const toledoEl = provEls[MAP.provinces.findIndex(p => p.name === 'Toledo')];
+const lineD = 'M' + MAP.line.map(p => p.join(',')).join('L');
+const lineGlow = svgEl(mapcam, 'path', { d: lineD, fill: 'none', stroke: 'rgba(238,242,248,.18)', 'stroke-width': 9, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'vector-effect': 'non-scaling-stroke' });
+const lineEl = svgEl(mapcam, 'path', { d: lineD, fill: 'none', stroke: '#EEF2F8', 'stroke-width': 3.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'vector-effect': 'non-scaling-stroke' });
+const LINE_LEN = lineEl.getTotalLength();
+const mapPlaces = ['Madrid', 'Toledo', 'Ciudad Real', 'Córdoba', 'Sevilla'].map(name => {
+  const g = svgEl(maplabels, 'g');
+  const dot = svgEl(g, 'circle', { r: 6, fill: '#EEF2F8' });
+  const txt = svgEl(g, 'text', { 'font-size': 24, 'font-weight': 600, fill: '#C9D2E0', 'font-family': 'Geist' }); txt.textContent = name;
+  return { name, g, dot, txt };
+});
+const urdaMark = svgEl(maplabels, 'g');
+const urdaRings = [0, 1, 2].map(() => svgEl(urdaMark, 'circle', { fill: 'none', stroke: '#E5484D', 'stroke-width': 2.5 }));
+svgEl(urdaMark, 'circle', { r: 9, fill: '#E5484D', stroke: '#fff', 'stroke-width': 3 });
+const urdaTxt = svgEl(urdaMark, 'text', { x: 22, y: 9, 'font-size': 30, 'font-weight': 700, fill: '#fff', 'font-family': 'Geist' }); urdaTxt.textContent = 'Urda';
+const urdaSub = svgEl(urdaMark, 'text', { x: 22, y: 38, 'font-size': 20, 'font-weight': 500, fill: '#AEB8C8', 'font-family': 'Geist' }); urdaSub.textContent = 'Toledo';
+const mapNote = svgEl(maplabels, 'text', { 'font-size': 17, fill: '#5A6884', 'font-family': 'Geist' }); mapNote.textContent = 'Trazado aproximado de la línea';
+
+// ---------- build: strip ----------
+const cam = $('cam');
+const W0 = -200, W1 = xPK(190);
+// tracks: upper = sentido Sevilla (where both trains run), lower = sentido Madrid
+const trackG = svgEl(cam, 'g');
+for (const [y, op] of [[0, 1], [74, .45]]) {
+  svgEl(trackG, 'line', { x1: W0, x2: W1, y1: y - 5, y2: y - 5, stroke: '#5B6984', 'stroke-width': 1.6, opacity: op, 'vector-effect': 'non-scaling-stroke' });
+  svgEl(trackG, 'line', { x1: W0, x2: W1, y1: y + 5, y2: y + 5, stroke: '#5B6984', 'stroke-width': 1.6, opacity: op, 'vector-effect': 'non-scaling-stroke' });
+  svgEl(trackG, 'line', { x1: W0, x2: W1, y1: y, y2: y, stroke: '#2A3650', 'stroke-width': 14, 'stroke-dasharray': '2 9', opacity: op });
+}
+// PK ticks
+for (let pk = 0; pk <= 185; pk += 5) svgEl(trackG, 'line', { x1: xPK(pk), x2: xPK(pk), y1: 108, y2: pk % 50 ? 116 : 126, stroke: '#3A4864', 'stroke-width': 1.4, 'vector-effect': 'non-scaling-stroke' });
+// stations
+for (const x of [X0, X_CREAL]) svgEl(trackG, 'rect', { x: x - 26, y: -26, width: 52, height: 126, rx: 8, fill: 'rgba(238,242,248,.06)', stroke: '#4A5872', 'stroke-width': 1.4, 'vector-effect': 'non-scaling-stroke' });
+// LZB cable (between the tracks)
+const lzbBase = svgEl(cam, 'line', { x1: W0, x2: W1, y1: 30, y2: 30, stroke: '#2EC4B6', 'stroke-width': 2, opacity: .25, 'vector-effect': 'non-scaling-stroke' });
+const lzbPulse = svgEl(cam, 'line', { x1: W0, x2: W1, y1: 30, y2: 30, stroke: '#2EC4B6', 'stroke-width': 3, 'stroke-dasharray': '10 34', 'vector-effect': 'non-scaling-stroke' });
+// occupied block (AVE's signal → beyond the Iryo)
+const block = svgEl(cam, 'rect', { x: X_SIG_AVE, y: -30, width: X_SIG_URDA - X_SIG_AVE + 10, height: 60, rx: 6, fill: 'rgba(255,69,58,.13)', stroke: '#FF453A', 'stroke-width': 2, 'stroke-dasharray': '8 6', 'vector-effect': 'non-scaling-stroke' });
+// distance bracket (AVE nose → Iryo tail)
+const bracket = svgEl(cam, 'path', { fill: 'none', stroke: '#AEB8C8', 'stroke-width': 1.6, 'vector-effect': 'non-scaling-stroke' });
+// signals
+function signal(x) {
+  const g = svgEl(cam, 'g', { transform: `translate(${x},0)` });
+  svgEl(g, 'line', { x1: 0, x2: 0, y1: -14, y2: -58, stroke: '#7D8AA3', 'stroke-width': 3 });
+  svgEl(g, 'rect', { x: -11, y: -84, width: 22, height: 30, rx: 7, fill: '#0B111D', stroke: '#7D8AA3', 'stroke-width': 1.5 });
+  const glow2 = svgEl(g, 'circle', { cx: 0, cy: -69, r: 26, opacity: .12 });
+  const glow1 = svgEl(g, 'circle', { cx: 0, cy: -69, r: 15, opacity: .25 });
+  const lamp = svgEl(g, 'circle', { cx: 0, cy: -69, r: 7.5 });
+  return { g, set(color, k) { for (const e of [glow2, glow1, lamp]) e.setAttribute('fill', color); glow1.setAttribute('opacity', .25 * k); glow2.setAttribute('opacity', .12 * k); } };
+}
+const sigAve = signal(X_SIG_AVE), sigUrda = signal(X_SIG_URDA);
+// trains (nose at x = 0, pointing south = right)
+function train(color, stripe) {
+  const g = svgEl(cam, 'g'), Lh = TRAIN_LEN, h = 15;
+  svgEl(g, 'path', { d: `M${-Lh + 6},${-h} L-50,${-h} C-20,${-h} -3,-6 0,5 L0,${h} L${-Lh + 6},${h} Q${-Lh},${h} ${-Lh},${h - 6} L${-Lh},${-h + 6} Q${-Lh},${-h} ${-Lh + 6},${-h} Z`, fill: color });
+  svgEl(g, 'line', { x1: -Lh + 14, x2: -56, y1: -4, y2: -4, stroke: 'rgba(10,15,26,.55)', 'stroke-width': 6, 'stroke-dasharray': '10 5' });
+  svgEl(g, 'line', { x1: -Lh + 8, x2: -6, y1: 9, y2: 9, stroke: stripe, 'stroke-width': 2.5 });
+  svgEl(g, 'path', { d: 'M-44,-11 C-24,-11 -11,-6 -7,-1 L-36,-1 Z', fill: 'rgba(10,15,26,.7)' });
+  for (const x of [-62, -122, -182]) svgEl(g, 'line', { x1: x, x2: x, y1: -h, y2: h, stroke: '#0A0F1A', 'stroke-width': 2 });
+  return g;
+}
+const gAve = train('#8E7BFF', 'rgba(255,255,255,.75)');
+const gIryo = train('#E5484D', 'rgba(255,255,255,.75)');
+// impact rings
+const rings = [0, 1].map(() => svgEl(cam, 'circle', { fill: 'none', stroke: '#fff', 'stroke-width': 3, 'vector-effect': 'non-scaling-stroke', opacity: 0 }));
+
+// ---------- build: labels anchored to the world (screen-space text) ----------
+const labels = $('labels');
+const lab = (markup, cls = 'lbl') => html(labels, `<div class="${cls}">${markup}</div>`);
+const lAtocha = lab('Madrid-Atocha'), lCReal = lab('Ciudad Real <span style="color:#56647F">→ Sevilla</span>'), lUrdaO = lab('Urda');
+const pkLabels = [0, 50, 100, 150].map(pk => ({ pk, el: lab(`PK ${pk}`, 'lbl mono') }));
+pkLabels.forEach(p => { p.el.style.fontSize = '15px'; p.el.style.color = '#4A5872'; });
+const lVia1 = lab('Vía sentido Sevilla'), lVia2 = lab('Vía sentido Madrid');
+[lVia1, lVia2].forEach(e => { e.style.fontSize = '16px'; e.style.color = '#56647F'; });
+const pIryo = lab('<span style="display:inline-block;width:10px;height:10px;border-radius:5px;background:#fff;margin-right:9px;vertical-align:1px"></span>Iryo 6076', 'pill');
+pIryo.style.background = '#E5484D';
+const pAve = lab('<span style="display:inline-block;width:10px;height:10px;border-radius:5px;background:#fff;margin-right:9px;vertical-align:1px"></span>AVE 2080 · Renfe', 'pill');
+pAve.style.background = '#8E7BFF';
+const lUrda = lab('<div style="text-align:center;line-height:1.2"><b style="color:#EEF2F8;font-size:22px">Urda</b><br><span style="font-size:17px">señal de entrada</span></div>');
+const lSigAve = lab('Señal en rojo');
+lSigAve.style.color = '#FF6B61';
+const lLZB = lab('<span class="mono" style="color:#2EC4B6">LZB</span> · control continuo de velocidad y distancia');
+lLZB.style.fontSize = '18px';
+const lBlock = lab('TRAMO OCUPADO', 'pill mono');
+Object.assign(lBlock.style, { background: 'rgba(255,69,58,.16)', border: '1.5px solid #FF453A', color: '#FF8A80', fontSize: '17px', letterSpacing: '.08em' });
+const lGap = lab('varios km');
+lGap.style.color = '#C9D2E0';
+const lBrake = lab('FRENANDO', 'pill mono');
+Object.assign(lBrake.style, { background: '#FFB020', color: '#1a1200', fontSize: '16px', letterSpacing: '.1em' });
+const lNoOrder = lab('Detenido · sin orden de reanudar', 'pill');
+Object.assign(lNoOrder.style, { background: 'rgba(17,26,43,.95)', border: '1.5px solid #E5484D', color: '#FFB4B6', fontSize: '19px' });
+const lMuni = lab('Términos de Mora, Orgaz y Urda');
+lMuni.style.fontSize = '18px';
+const lPin = html(labels, `<div class="abs nw" style="text-align:center">
+  <div class="mono" style="font-size:30px;color:#fff">PK 118</div>
+  <div style="font-size:19px;color:#C9D2E0;margin-top:2px">≈ 08:54 · 28 oct 2026</div></div>`);
+const lRadio = html(labels, `<div class="card nw" style="padding:18px 22px;border-color:#E5484D">
+  <div class="kicker" style="color:#FF9A9E;font-size:15px">Radio · maquinista del Iryo → control</div>
+  <div style="font-size:25px;font-weight:600;margin-top:8px">El tren no le permite reiniciar el LZB</div>
+  <div class="src" style="margin-top:6px">Según los audios publicados</div></div>`);
+
+// ---------- build: HUD ----------
+const hud = $('hud');
+const topbar = html(hud, `<div class="abs nw" style="left:64px;top:44px;display:flex;align-items:center;gap:16px">
+  <div class="mono" style="background:#E5484D;color:#fff;font-size:15px;letter-spacing:.14em;padding:6px 11px 7px;border-radius:6px">RECREACIÓN</div>
+  <div><div style="font-size:22px;font-weight:650">Choque de trenes en Urda (Toledo)</div>
+  <div style="font-size:15px;color:#6D7A93;margin-top:3px">Esquema no a escala · Información provisional a 29 oct 2026</div></div></div>`);
+const clock = html(hud, `<div class="abs nw" style="right:64px;top:38px;text-align:right">
+  <div class="mono" id="clockT" style="font-size:54px;line-height:1;letter-spacing:.02em">07:54</div>
+  <div class="kicker" style="font-size:13px;margin-top:6px">Hora aproximada</div></div>`);
+const clockT = $('clockT');
+
+// intro title
+const title = html(hud, `<div class="abs" style="left:110px;top:330px;width:760px">
+  <div class="kicker" style="color:#E5484D">Miércoles 28 de octubre de 2026</div>
+  <div style="font-size:84px;font-weight:720;line-height:1.02;letter-spacing:-.02em;margin-top:18px">Choque de trenes<br>en Urda</div>
+  <div style="font-size:28px;color:#AEB8C8;margin-top:24px;line-height:1.35">Línea de alta velocidad Madrid–Sevilla.<br>Lo que se sabe hasta ahora.</div></div>`);
+
+// departures board
+const board = html(hud, `<div class="card" style="left:330px;top:150px;width:1260px;padding:26px 34px 22px">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div class="mono" style="font-size:24px;letter-spacing:.12em;color:#FFC94D">SALIDAS · MADRID-PUERTA DE ATOCHA</div>
+    <div class="src">Miércoles 28 oct</div></div>
+  <div class="kicker nw" style="display:grid;grid-template-columns:150px 380px 1fr 170px;margin-top:20px;font-size:14px">
+    <div>Hora</div><div>Tren</div><div>Destino</div><div style="text-align:right">Viajeros</div></div>
+  <div id="row0" class="mono nw" style="display:grid;grid-template-columns:150px 380px 1fr 170px;align-items:center;margin-top:12px;padding:14px 0;border-top:1px solid #24314a;font-size:30px"></div>
+  <div id="row1" class="mono nw" style="display:grid;grid-template-columns:150px 380px 1fr 170px;align-items:center;padding:14px 0;border-top:1px solid #24314a;font-size:30px"></div>
+  <div class="src" style="margin-top:8px">Viajeros: cifras aproximadas; varían ligeramente según la fuente.</div></div>`);
+const rows = [
+  { el: $('row0'), cells: ['07:54', 'IRYO 6076', 'SEVILLA-STA. JUSTA', '≈147'], color: '#E5484D' },
+  { el: $('row1'), cells: ['08:00', 'AVE 2080 · RENFE', 'SEVILLA-STA. JUSTA', '≈397'], color: '#8E7BFF' },
+];
+rows.forEach(r => r.el.innerHTML = r.cells.map((c, i) => `<div style="${i === 3 ? 'text-align:right' : ''}${i === 1 ? `;color:${r.color}` : ''}"></div>`).join(''));
+const sameWay = html(hud, `<div class="abs nw" style="left:0;right:0;top:520px;text-align:center;font-size:24px;color:#C9D2E0">
+  <span class="mono" style="color:#FFC94D">→</span>&nbsp; Misma vía, mismo sentido, con seis minutos de diferencia</div>`);
+
+// LZB explainer
+const lzbCard = html(hud, `<div class="card nw" style="left:64px;top:150px;padding:20px 26px">
+  <div style="display:flex;gap:14px;align-items:baseline"><div class="mono" style="font-size:32px;color:#2EC4B6">LZB</div><div style="font-size:23px;font-weight:650">Sistema de seguridad de la línea</div></div>
+  <div style="margin-top:12px;font-size:22px;color:#C9D2E0;line-height:1.55">• Vigila de forma continua la velocidad de cada tren<br>• Controla la distancia con el tren de delante</div></div>`);
+// LZB failure
+const alertC = html(hud, `<div class="card nw" style="left:64px;top:150px;padding:18px 24px;border-color:#FFB020;display:flex;gap:18px;align-items:center">
+  <svg width="40" height="40" style="position:relative"><path d="M20 4 L37 34 L3 34 Z" fill="none" stroke="#FFB020" stroke-width="3" stroke-linejoin="round"/><path d="M20 15 V24 M20 28.5 V29" stroke="#FFB020" stroke-width="3.2" stroke-linecap="round"/></svg>
+  <div><div class="mono" style="font-size:26px;color:#FFB020">≈08:30 · CAÍDA DEL LZB</div>
+  <div style="font-size:19px;color:#C9D2E0;margin-top:4px">Fallo informático en el sistema de seguridad</div></div></div>`);
+const six = html(hud, `<div class="card nw" style="left:64px;top:262px;padding:18px 24px">
+  <div style="font-size:21px;font-weight:600">6 trenes detenidos automáticamente</div>
+  <div id="sixRow" style="display:flex;gap:16px;margin-top:14px"></div></div>`);
+const sixIcons = [...Array(6)].map(() => html($('sixRow'), `<div style="position:relative;width:78px;height:52px">
+  <div class="mono" style="position:absolute;left:0;top:0;background:#FF453A;color:#fff;font-size:12px;padding:2px 6px;border-radius:4px">STOP</div>
+  <svg width="78" height="30" style="top:22px"><path d="M2 3 H54 C67 3 74 13 76 27 H2 Z" fill="#4A5872"/><rect x="6" y="10" width="44" height="6" rx="2" fill="#0A0F1A" opacity=".6"/></svg></div>`));
+
+// order
+const crc = html(hud, `<div class="card nw" style="left:64px;top:150px;padding:20px 24px;width:470px">
+  <div style="display:flex;gap:16px;align-items:center">
+    <svg width="46" height="46" style="position:relative"><rect x="3" y="7" width="40" height="26" rx="4" fill="none" stroke="#C9D2E0" stroke-width="2.4"/><path d="M15 41 H31 M23 33 V41" stroke="#C9D2E0" stroke-width="2.4" stroke-linecap="round"/><path d="M10 26 L17 19 L23 23 L35 13" fill="none" stroke="#2EC4B6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><div style="font-size:22px;font-weight:650">Centro de control de Adif</div><div style="font-size:18px;color:#AEB8C8;margin-top:2px">Madrid-Atocha</div></div></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid #24314a">
+    <div class="mono" style="font-size:26px">08:36</div>
+    <div style="font-size:19px;color:#C9B8FF">Autoriza al AVE a reanudar</div></div></div>`);
+const quote = html(hud, `<div class="card" style="left:580px;top:150px;width:1276px;padding:24px 30px">
+  <div style="display:flex;align-items:center;gap:18px">
+    <div class="kicker" style="font-size:15px">Audio · centro de control → maquinista del AVE</div>
+    <svg id="wave" width="300" height="30" style="position:relative"></svg></div>
+  <div id="quoteT" style="font-size:38px;font-weight:600;line-height:1.25;margin-top:14px;min-height:96px"></div>
+  <div class="src" style="margin-top:8px">Según los audios difundidos por EFE y la Cadena SER</div></div>`);
+const QUOTE = '«Desconecte y vuelva a conectar el LZB y reanude con marcha normal»';
+const waveBars = [...Array(40)].map((_, i) => svgEl($('wave'), 'rect', { x: i * 7.5, width: 4, rx: 2, fill: '#8E7BFF' }));
+const rule = html(hud, `<div class="card nw" style="left:580px;top:150px;width:1276px;padding:24px 30px;display:grid;grid-template-columns:1fr 1fr;gap:30px">
+  <div><div class="kicker" style="font-size:15px;color:#C9B8FF">Orden dada</div>
+    <div style="font-size:40px;font-weight:680;margin-top:10px">«Marcha normal»</div>
+    <div style="font-size:20px;color:#AEB8C8;margin-top:6px">Sin limitación de velocidad</div></div>
+  <div style="border-left:1px solid #24314a;padding-left:30px"><div class="kicker" style="font-size:15px;color:#7FE0D6">Lo que exigía la norma, según el Ministerio</div>
+    <div style="font-size:40px;font-weight:680;margin-top:10px">«A la vista» · <span class="mono">40 km/h</span></div>
+    <div style="font-size:20px;color:#AEB8C8;margin-top:6px">Velocidad máxima, atento a cualquier obstáculo</div></div></div>`);
+
+// speed comparison
+const speed = html(hud, `<div class="card nw" style="left:64px;top:150px;width:860px;padding:24px 30px">
+  <div class="kicker" style="font-size:15px">Velocidad</div>
+  <div style="margin-top:16px;font-size:20px;color:#C9D2E0">Máximo con marcha «a la vista»</div>
+  <div style="display:flex;align-items:center;gap:16px;margin-top:8px"><div id="bar40" style="height:22px;border-radius:6px;background:#2EC4B6"></div><div class="mono" style="font-size:28px">40 km/h</div></div>
+  <div style="margin-top:18px;font-size:20px;color:#C9D2E0">AVE · velocidad media en el último minuto</div>
+  <div style="display:flex;align-items:center;gap:16px;margin-top:8px"><div id="bar137" style="height:22px;border-radius:6px;background:#8E7BFF"></div><div class="mono" style="font-size:28px">≈137 km/h</div></div>
+  <div class="src" style="margin-top:16px;white-space:normal">Media del minuto del choque, con la frenada incluida. No es la velocidad exacta del impacto.<br>Datos de Renfe recogidos por SpainTrainRadar (El Español).</div></div>`);
+
+// balance
+const bal = html(hud, `<div class="abs" style="left:0;right:0;top:0;bottom:0"></div>`);
+const b544 = html(bal, `<div class="abs nw" style="left:0;right:0;top:250px;text-align:center">
+  <div class="mono" style="font-size:120px;line-height:1">544</div>
+  <div style="font-size:30px;color:#C9D2E0;margin-top:14px">personas viajaban en los dos trenes</div>
+  <div style="font-size:20px;color:#6D7A93;margin-top:8px">≈397 en el AVE · ≈147 en el Iryo</div></div>`);
+const bDead = html(bal, `<div class="abs nw" style="left:340px;width:560px;top:560px;text-align:center">
+  <div style="font-size:24px;color:#C9D2E0">Al menos</div>
+  <div class="mono" style="font-size:150px;line-height:1.05">68</div>
+  <div style="font-size:32px;font-weight:600">fallecidos</div></div>`);
+const bHosp = html(bal, `<div class="abs nw" style="left:1020px;width:560px;top:560px;text-align:center">
+  <div style="font-size:24px;color:#C9D2E0">&nbsp;</div>
+  <div class="mono" style="font-size:150px;line-height:1.05">107</div>
+  <div style="font-size:32px;font-weight:600">hospitalizados</div>
+  <div style="font-size:22px;color:#AEB8C8;margin-top:6px">15 de ellos muy graves</div></div>`);
+const bNote = html(bal, `<div class="abs nw" style="left:0;right:0;top:902px;text-align:center"><span class="mono" style="font-size:17px;letter-spacing:.12em;color:#FFB020;border:1.5px solid #FFB020;border-radius:6px;padding:6px 12px">BALANCE PROVISIONAL · PUEDE AUMENTAR</span></div>`);
+
+// investigation
+const cardsInv = [
+  `<div class="kicker" style="font-size:15px">Ministro de Transportes</div>
+   <div style="font-size:30px;font-weight:650;margin-top:6px">Óscar Puente</div>
+   <div style="font-size:52px;font-weight:720;margin-top:26px;line-height:1.1;color:#fff">«Inexplicable»</div>
+   <div style="font-size:24px;color:#AEB8C8;margin-top:14px;line-height:1.35;white-space:normal">Así calificó la orden del centro de control. También habló de «una decisión errónea».</div>`,
+  `<div class="kicker" style="font-size:15px">Investigación</div>
+   <div style="font-size:30px;font-weight:650;margin-top:6px">Juzgado de Orgaz</div>
+   <div style="font-size:24px;color:#C9D2E0;margin-top:18px;line-height:1.45;white-space:normal">• Actuaciones bajo secreto<br>• Custodia de las cajas negras</div>
+   <div style="font-size:30px;font-weight:650;margin-top:22px">CIAF</div>
+   <div style="font-size:24px;color:#C9D2E0;margin-top:8px;line-height:1.35;white-space:normal">Comisión de Investigación de Accidentes Ferroviarios</div>`,
+  `<div class="kicker" style="font-size:15px">Consecuencias</div>
+   <div style="font-size:30px;font-weight:650;margin-top:6px;white-space:normal">Alta velocidad Madrid–Andalucía suspendida</div>
+   <div style="display:flex;gap:16px;align-items:center;margin-top:34px">
+     <svg width="44" height="60" style="position:relative"><path d="M22 6 C10 6 8 20 22 32 C36 20 34 6 22 6 Z M22 32 L8 56 M22 32 L36 56" fill="none" stroke="#EEF2F8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+     <div style="font-size:30px;font-weight:650">3 días de<br>luto oficial</div></div>`,
+].map((m, i) => html(hud, `<div class="card" style="left:${120 + i * 572}px;top:300px;width:536px;height:410px;padding:30px 32px">${m}</div>`));
+const invHead = html(hud, `<div class="abs nw kicker" style="left:120px;top:248px;font-size:17px">La investigación</div>`);
+
+// closing
+const closing = $('closing');
+const closeTxt = html(closing, `<div class="abs" style="left:260px;right:260px;top:300px;text-align:center">
+  <div style="font-size:34px;font-weight:600;line-height:1.4">Recreación basada en la información publicada<br>hasta el 29 de octubre de 2026.</div>
+  <div style="font-size:26px;color:#AEB8C8;margin-top:22px;line-height:1.45">Las cifras son provisionales y las causas siguen bajo investigación.<br>El esquema de la vía no está a escala.</div>
+  <div style="font-size:18px;color:#6D7A93;margin-top:56px;line-height:1.6">Fuentes: Ministerio de Transportes · Adif · Iryo · 112 Castilla-La Mancha · Junta de Castilla-La Mancha · EFE ·<br>Cadena SER · El Español · eldiario.es · Infobae · CMM · CNN · BOE</div></div>`);
+
+// captions
+const capEl = html($('caption'), `<div style="max-width:1500px;padding:12px 26px 14px;border-radius:14px;background:rgba(5,8,14,.78);font-size:33px;line-height:1.32;text-align:center;font-weight:500"></div>`);
+const capLines = TL.scenes.flatMap(s => s.lines);
+
+// ---------- seek ----------
+const pad2 = n => String(n).padStart(2, '0');
+function clockMinutes(t) {   // minutes after 07:00
+  if (t < L('salidas', 1).start + 1.6) return 54;
+  if (t < L('lzb', 0).start - 0.5) return 60;
+  if (t < S.orden.start) return lerp(60, 90, seg(t, L('lzb', 0).start - 0.5, L('lzb', 1).start + 0.4));
+  if (t < L('choque', 0).start + 1) return 96;
+  return lerp(96, 114, ease(seg(t, L('choque', 0).start + 1, T_IMPACT)));
+}
+function scramble(str, k, seed) {   // departures-board flip: letters settle left to right
+  const r = rng(seed), A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return [...str].map((ch, i) => (ch === ' ' || k * (str.length + 6) > i + 6) ? ch : (k <= 0 ? '' : A[Math.floor(r() * A.length)])).join('');
+}
+function place(el, x, y, ax = 0.5, ay = 1) {   // anchor (ax, ay) of el at screen (x, y)
+  el.style.left = (x - el.offsetWidth * ax) + 'px'; el.style.top = (y - el.offsetHeight * ay) + 'px';
+}
+
+window.seek = function (t) {
+  t = clamp(t, 0, TL.duration);
+  // ===== MAP =====
+  const mapO = 1 - ease(seg(t, S.salidas.start - 0.2, S.salidas.start + 1.0));
+  $('map').style.opacity = mapO; $('map').style.visibility = mapO > 0 ? 'visible' : 'hidden';
+  if (mapO > 0) {
+    const zk = ease(seg(t, L('intro', 1).start + 0.2, L('intro', 1).end + 0.2));
+    const zk2 = ease(seg(t, S.salidas.start - 0.4, S.salidas.start + 1.0));
+    const [ux, uy] = MAP.places.Urda;
+    const ms = Math.exp(lerp(Math.log(1.08), Math.log(5.2), zk)) * (1 + 1.6 * zk2);
+    const cx = lerp(470, ux, zk), cy = lerp(430, uy, zk), sx = lerp(1340, 1320, zk), sy = lerp(560, 560, zk);
+    const tr = (x, y) => [sx + (x - cx) * ms, sy + (y - cy) * ms];
+    mapcam.setAttribute('transform', `translate(${sx - cx * ms},${sy - cy * ms}) scale(${ms})`);
+    const draw = ease(seg(t, L('intro', 0).start + 1.6, L('intro', 0).end + 0.6));
+    const dash = draw >= 1 ? 'none' : `${LINE_LEN * draw * ms} ${LINE_LEN * ms * 2}`;
+    lineEl.setAttribute('stroke-dasharray', dash); lineGlow.setAttribute('stroke-dasharray', dash);
+    const tol = easeOut(seg(t, L('intro', 1).start + 2.2, L('intro', 1).start + 3.4));
+    toledoEl.setAttribute('fill', `rgba(229,72,77,${0.08 + 0.2 * tol})`);
+    toledoEl.setAttribute('stroke', tol > 0 ? `rgba(229,72,77,${0.4 + 0.6 * tol})` : '#2A3A57');
+    const mapIn = easeOut(seg(t, 0.1, 1.4));
+    mapcam.style.opacity = mapIn;
+    for (const p of mapPlaces) {
+      const [x, y] = tr(...MAP.places[p.name]);
+      const isLine = p.name !== 'Toledo';
+      const o = (isLine ? easeOut(seg(t, L('intro', 0).start + 1.4 + (p.name === 'Madrid' ? 0 : 2.2), L('intro', 0).start + 2.2 + (p.name === 'Madrid' ? 0 : 2.2))) : tol) * (1 - zk * (p.name === 'Toledo' ? 0.4 : 1));
+      p.g.setAttribute('opacity', o);
+      p.dot.setAttribute('cx', x); p.dot.setAttribute('cy', y);
+      p.dot.setAttribute('r', p.name === 'Toledo' ? 4.5 : 6);
+      const left = p.name === 'Sevilla' || p.name === 'Córdoba' || p.name === 'Toledo';
+      p.txt.setAttribute('x', left ? x - 14 : x + 14); p.txt.setAttribute('y', y + 8);
+      p.txt.setAttribute('text-anchor', left ? 'end' : 'start');
+    }
+    const [ux2, uy2] = tr(ux, uy);
+    const uo = easeOut(seg(t, L('intro', 1).start + 2.6, L('intro', 1).start + 3.4));
+    urdaMark.setAttribute('transform', `translate(${ux2},${uy2})`);
+    urdaMark.setAttribute('opacity', uo);
+    urdaRings.forEach((r, i) => { const ph = ((t * 0.7 + i / 3) % 1); r.setAttribute('r', 10 + ph * 60); r.setAttribute('opacity', (1 - ph) * 0.8); });
+    const [nx, ny] = tr(560, 700);
+    mapNote.setAttribute('x', nx); mapNote.setAttribute('y', ny); mapNote.setAttribute('opacity', draw * (1 - zk));
+  }
+
+  // ===== STRIP =====
+  const stripIn = easeOut(seg(t, S.salidas.start + 0.1, S.salidas.start + 1.3));
+  const stripDim = 1 - ease(seg(t, S.balance.start, S.balance.start + 1.6));
+  const stripO = stripIn * stripDim * (1 - ease(seg(t, S.investigacion.start, S.investigacion.start + 1)));
+  $('strip').style.opacity = stripO; labels.style.opacity = stripO;
+  $('strip').style.visibility = labels.style.visibility = stripO > 0.002 ? 'visible' : 'hidden';
+  CAM = camAt(t);
+  cam.setAttribute('transform', `translate(${960 - CAM.cx * CAM.s + CAM.sx},${CAM.ty + CAM.sy}) scale(${CAM.s})`);
+  const xa = xAve(t), xi = xIryo(t);
+  gAve.setAttribute('transform', `translate(${xa},0)`);
+  gIryo.setAttribute('transform', `translate(${xi},0)`);
+  // LZB state
+  const tFail = L('lzb', 1).start + 0.9;
+  const lzbOn = t < tFail, flick = t >= tFail && t < tFail + 1.1;
+  const fr = rng(Math.floor(t * 30))();
+  if (lzbOn) { lzbPulse.setAttribute('stroke', '#2EC4B6'); lzbPulse.setAttribute('opacity', 0.9); lzbBase.setAttribute('stroke', '#2EC4B6'); lzbBase.setAttribute('opacity', .25); }
+  else if (flick) { lzbPulse.setAttribute('stroke', fr > 0.5 ? '#FFB020' : '#2EC4B6'); lzbPulse.setAttribute('opacity', fr > 0.3 ? 0.9 : 0.1); lzbBase.setAttribute('stroke', '#FFB020'); }
+  else { lzbPulse.setAttribute('opacity', 0); lzbBase.setAttribute('stroke', '#5A6884'); lzbBase.setAttribute('opacity', .35); lzbBase.setAttribute('stroke-dasharray', '4 8'); }
+  if (lzbOn) lzbBase.removeAttribute('stroke-dasharray');
+  lzbPulse.setAttribute('stroke-dashoffset', -t * 120);
+  // signals: both red once the LZB falls (lit softly before)
+  const pulse = 0.75 + 0.25 * Math.sin(t * 6);
+  const redHi = t > L('orden', 2).start && t < S.balance.start ? pulse : 0.7;
+  sigAve.set(t < tFail ? '#3A4864' : '#FF453A', t < tFail ? 0 : redHi);
+  sigUrda.set(t < tFail ? '#3A4864' : '#FF453A', t < tFail ? 0 : 0.8);
+  // occupied block
+  const blkO = vis(t, L('orden', 2).start + 0.6, T_IMPACT + 0.4, .5, .4);
+  block.setAttribute('opacity', blkO);
+  // gap bracket
+  const gapO = vis(t, L('choque', 0).start + 0.4, L('choque', 1).start + 0.5, .5, .5);
+  bracket.setAttribute('d', `M${xa + 6},46 V54 H${X_COLLISION - 6} V46`);
+  bracket.setAttribute('opacity', gapO);
+  // impact rings
+  rings.forEach((r, i) => { const a = after(t) - i * 0.18; const k = seg(a, 0, 1.4);
+    r.setAttribute('cx', X_COLLISION); r.setAttribute('cy', 0); r.setAttribute('r', 10 + 260 * easeOut(k)); r.setAttribute('opacity', a > 0 ? (1 - k) * 0.9 : 0); });
+  $('flash').style.opacity = after(t) > 0 ? 0.32 * Math.exp(-after(t) * 9) : 0;
+
+  if (stripO > 0.002) {
+    const trk = toScreen(0, 0);
+    place(lAtocha, ...toScreen(X0, -40)); place(lCReal, ...toScreen(X_CREAL, -40));
+    show(lUrdaO, vis(t, S.salidas.start + 1, L('lzb', 0).start + 0.5)); place(lUrdaO, ...toScreen(X_SIG_URDA, -40));
+    for (const p of pkLabels) place(p.el, ...toScreen(xPK(p.pk), 132), 0.5, 0);
+    const vO = vis(t, S.salidas.start + 1, L('lzb', 0).start + 0.5);
+    show(lVia1, vO); show(lVia2, vO);
+    place(lVia1, ...toScreen(xPK(136), -14), 0, 1); place(lVia2, ...toScreen(xPK(136), 60), 0, 1);
+    const [ix, iy] = toScreen(xi - TRAIN_LEN / 2, -15), [ax, ay] = toScreen(xa - TRAIN_LEN / 2, -15);
+    const pO = easeOut(seg(t, T_IRYO_GO - 0.6, T_IRYO_GO)), paO = easeOut(seg(t, T_AVE_GO - 0.6, T_AVE_GO));
+    show(pIryo, pO * (1 - ease(seg(t, T_IMPACT + 0.4, T_IMPACT + 1)))); place(pIryo, ix, iy - 14 - (t > L('choque', 0).start ? 54 * vis(t, L('choque', 0).start + 0.2, L('choque', 1).start + 1.2) : 0));
+    show(pAve, paO * (1 - ease(seg(t, T_IMPACT + 0.4, T_IMPACT + 1)))); place(pAve, ax, ay - 14);
+    show(lUrda, vis(t, L('lzb', 2).start, L('orden', 0).start + 0.4) + vis(t, L('orden', 2).start, T_IMPACT - 1.2));
+    place(lUrda, ...toScreen(X_SIG_URDA, -92), 0.5, 1);
+    show(lSigAve, vis(t, L('orden', 0).start + 0.4, L('choque', 0).start + 2.2));
+    place(lSigAve, ...toScreen(X_SIG_AVE + 22, -76), 0, 0.5);
+    show(lLZB, vis(t, L('lzb', 0).start + 0.6, L('lzb', 1).start + 1.6));
+    place(lLZB, ...toScreen((xa + xi) / 2 - TRAIN_LEN / 2, 30), 0.5, -0.6);
+    show(lBlock, blkO * (1 - gapO) * (t < T_AVE_RESUME ? 1 : 0)); place(lBlock, ...toScreen((X_SIG_AVE + X_COLLISION) / 2, 30), 0.5, -0.5);
+    show(lGap, gapO); place(lGap, ...toScreen((xa + X_COLLISION) / 2, 58), 0.5, -0.35);
+    show(lBrake, t > T_BRAKE && t < T_IMPACT + 0.3 ? 1 : 0); place(lBrake, ax, ay - 66);
+    show(lNoOrder, vis(t, L('choque', 0).start + 0.3, L('choque', 1).start + 1.2)); place(lNoOrder, ix, iy - 14);
+    show(lMuni, vis(t, L('choque', 1).start + 2.6, T_IMPACT - 0.2)); place(lMuni, ...toScreen(X_COLLISION, 132), 0.5, 0);
+    const pinO = easeOut(seg(t, T_IMPACT + 0.9, T_IMPACT + 1.5));
+    show(lPin, pinO); place(lPin, ...toScreen(X_COLLISION, -34), 0.5, 1);
+    show(lRadio, vis(t, L('lzb', 2).end - 3.4, L('orden', 0).start - 0.2), 12 * (1 - easeOut(seg(t, L('lzb', 2).end - 3.4, L('lzb', 2).end - 2.8))));
+    place(lRadio, ix, iy - 64, 0.8, 1);
+  }
+
+  // ===== HUD =====
+  show(topbar, easeOut(seg(t, 0.4, 1.2)) * (1 - ease(seg(t, S.cierre.start - 0.6, S.cierre.start + 0.4))));
+  const clkO = vis(t, L('salidas', 0).start - 0.2, S.balance.start + 0.4, .5, .6);
+  show(clock, clkO);
+  const cm = Math.floor(clockMinutes(t)), hh = 7 + Math.floor(cm / 60);
+  clockT.textContent = `${pad2(hh)}:${pad2(cm % 60)}`;
+  show(title, vis(t, 0.6, L('intro', 1).end + 0.3, .8, .6), 14 * (1 - easeOut(seg(t, 0.6, 1.6))));
+  // board
+  const boardO = vis(t, L('salidas', 0).start - 0.3, S.lzb.start + 0.6, .5, .5);
+  show(board, boardO, 18 * (1 - easeOut(seg(t, L('salidas', 0).start - 0.3, L('salidas', 0).start + 0.5))));
+  rows.forEach((r, i) => {
+    const t0 = L('salidas', i).start + 0.1, k = seg(t, t0, t0 + 1.1);
+    [...r.el.children].forEach((c, j) => c.textContent = scramble(r.cells[j], k, 99 + i * 7 + j * 3 + Math.floor(t * 20)));
+    const hi = i === 0 ? (t < L('salidas', 1).start ? 1 : 0.45) : 1;
+    r.el.style.opacity = t < t0 ? 0 : hi;
+  });
+  show(sameWay, vis(t, L('salidas', 1).start + 4.6, S.lzb.start + 0.6));
+  show(lzbCard, vis(t, L('lzb', 0).start + 0.3, L('lzb', 1).start + 0.9, .5, .3), 10 * (1 - easeOut(seg(t, L('lzb', 0).start + 0.3, L('lzb', 0).start + 0.9))));
+  // lzb failure
+  const tFailHud = L('lzb', 1).start + 0.9;
+  show(alertC, vis(t, tFailHud, L('lzb', 2).end, .3, .5), 0, 1 + 0.06 * (1 - spring(t - tFailHud, 16, 0.6)));
+  const sixO = vis(t, L('lzb', 1).start + 3.2, L('lzb', 2).start + 1.2);
+  show(six, sixO, 10 * (1 - easeOut(seg(t, L('lzb', 1).start + 3.2, L('lzb', 1).start + 3.8))));
+  sixIcons.forEach((e, i) => { const k = easeOut(seg(t, L('lzb', 1).start + 3.6 + i * 0.22, L('lzb', 1).start + 3.9 + i * 0.22)); e.style.opacity = k; e.style.transform = `scale(${0.7 + 0.3 * k})`; });
+  // order
+  show(crc, vis(t, L('orden', 0).start + 0.2, L('choque', 0).start + 0.2), 12 * (1 - easeOut(seg(t, L('orden', 0).start + 0.2, L('orden', 0).start + 0.8))));
+  const qO = vis(t, L('orden', 1).start - 0.2, L('orden', 3).start + 0.1, .5, .4);
+  show(quote, qO, 12 * (1 - easeOut(seg(t, L('orden', 1).start - 0.2, L('orden', 1).start + 0.4))));
+  if (qO > 0) {
+    const tq0 = L('orden', 1).start + 2.4, tq1 = L('orden', 1).end - 0.2;   // typed while the words are spoken
+    const n = Math.round(QUOTE.length * seg(t, tq0, tq1));
+    $('quoteT').innerHTML = QUOTE.slice(0, n) + (n < QUOTE.length && t > tq0 ? '<span style="color:#8E7BFF">▍</span>' : '');
+    const talking = t > tq0 - 0.2 && t < tq1 + 0.2;
+    waveBars.forEach((b, i) => { const h = talking ? 4 + 22 * Math.abs(Math.sin(i * 1.7 + t * 9) * Math.sin(i * 0.45 + t * 3.1)) : 4; b.setAttribute('height', h); b.setAttribute('y', 15 - h / 2); });
+  }
+  show(rule, vis(t, L('orden', 3).start, L('choque', 0).start + 0.3), 12 * (1 - easeOut(seg(t, L('orden', 3).start, L('orden', 3).start + 0.6))));
+  // speed
+  const spO = vis(t, L('choque', 2).start + 0.1, S.balance.start + 0.2, .5, .5);
+  show(speed, spO, 12 * (1 - easeOut(seg(t, L('choque', 2).start + 0.1, L('choque', 2).start + 0.7))));
+  $('bar40').style.width = (480 * 40 / 150 * easeOut(seg(t, L('choque', 2).start + 0.6, L('choque', 2).start + 1.4))) + 'px';
+  $('bar137').style.width = (480 * 137 / 150 * easeOut(seg(t, L('choque', 2).start + 1.6, L('choque', 2).start + 2.8))) + 'px';
+  // balance
+  const balEnd = S.investigacion.start + 0.2;
+  const k544 = seg(t, L('balance', 1).start - 0.3, L('balance', 1).start + 0.7);
+  show(b544, vis(t, L('balance', 0).start - 0.3, balEnd, .7, .6), lerp(0, -130, ease(k544)), lerp(1, 0.78, ease(k544)));
+  show(bDead, vis(t, L('balance', 1).start + 1.6, balEnd, .8, .6));
+  show(bHosp, vis(t, L('balance', 1).start + 3.6, balEnd, .8, .6));
+  show(bNote, vis(t, L('balance', 2).start - 0.2, balEnd, .6, .6));
+  // investigation
+  const invEnd = S.cierre.start + 0.2;
+  show(invHead, vis(t, S.investigacion.start + 0.6, invEnd, .6, .6));
+  cardsInv.forEach((c, i) => { const t0 = L('investigacion', i).start - 0.3; show(c, vis(t, t0, invEnd, .6, .6), 18 * (1 - easeOut(seg(t, t0, t0 + 0.7)))); c.style.borderColor = t > L('investigacion', i).start && (i === 2 || t < L('investigacion', i + 1).start) ? '#3B4C6E' : '#24314a'; });
+  // closing
+  const cO = vis(t, S.cierre.start + 0.4, TL.duration - 0.2, .9, 1.2);
+  show(closeTxt, cO);
+  $('black').style.opacity = ease(seg(t, S.cierre.start - 0.4, S.cierre.start + 0.6));
+  // caption
+  const cur = capLines.find(l => t >= l.start - 0.12 && t < l.end + 0.3);
+  if (cur) { capEl.textContent = cur.cap; show(capEl, Math.min(easeOut(seg(t, cur.start - 0.12, cur.start + 0.08)), 1 - seg(t, cur.end + 0.12, cur.end + 0.3))); }
+  else show(capEl, 0);
+};
+
+// ---------- preview controls (hidden with ?render) ----------
+if (!location.search.includes('render')) {
+  const stage = $('stage');
+  const fit = () => { const k = Math.min(innerWidth / 1920, (innerHeight - 52) / 1080); stage.style.transform = `scale(${k})`; };
+  addEventListener('resize', fit); fit();
+  document.body.insertAdjacentHTML('beforeend', `<div id="controls"><button id="pp">▶︎</button><input id="sc" type="range" min="0" max="${VIDEO.duration}" step="0.01" value="0"><span id="tc">0.00</span></div>`);
+  const audio = new Audio('urda-audio.m4a');
+  let playing = false, t0 = 0, base = 0;
+  const now = () => playing ? (audio.duration ? audio.currentTime : base + (performance.now() - t0) / 1000) : base;
+  $('pp').onclick = () => { playing = !playing; $('pp').textContent = playing ? '❚❚' : '▶︎'; if (playing) { t0 = performance.now(); audio.currentTime = base; audio.play().catch(() => {}); } else { base = now(); audio.pause(); } };
+  $('sc').oninput = e => { base = +e.target.value; audio.currentTime = base; t0 = performance.now(); };
+  (function loop() { const t = now(); if (t >= VIDEO.duration) { playing = false; base = 0; } seek(Math.min(t, VIDEO.duration)); $('sc').value = t; $('tc').textContent = t.toFixed(2); requestAnimationFrame(loop); })();
+} else seek(0);
+</script>
+</body>
+</html>

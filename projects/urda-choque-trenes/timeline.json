@@ -1,0 +1,160 @@
+{
+ "scenes": [
+  {
+   "id": "intro",
+   "start": 0.0,
+   "lines": [
+    {
+     "start": 1.6,
+     "end": 5.797,
+     "cap": "Miércoles, 28 de octubre. Línea de alta velocidad Madrid–Sevilla."
+    },
+    {
+     "start": 6.247,
+     "end": 10.718,
+     "cap": "Esto es lo que se sabe, hasta ahora, del choque de trenes en Urda, en la provincia de Toledo."
+    }
+   ],
+   "end": 11.118
+  },
+  {
+   "id": "salidas",
+   "start": 11.118,
+   "lines": [
+    {
+     "start": 12.018,
+     "end": 20.013,
+     "cap": "A las 7:54 sale de Madrid-Atocha el Iryo 6076, rumbo a Sevilla, con unos 147 pasajeros."
+    },
+    {
+     "start": 20.463,
+     "end": 28.55,
+     "cap": "Seis minutos después parte, por la misma vía y en el mismo sentido, el AVE 2080 de Renfe, con unas 397 personas a bordo."
+    }
+   ],
+   "end": 28.95
+  },
+  {
+   "id": "lzb",
+   "start": 28.95,
+   "lines": [
+    {
+     "start": 29.85,
+     "end": 37.48,
+     "cap": "La línea está protegida por el sistema LZB, que vigila de forma continua la velocidad de cada tren y su distancia con el de delante."
+    },
+    {
+     "start": 37.93,
+     "end": 44.134,
+     "cap": "Sobre las 8:30, un fallo informático deja el sistema fuera de servicio. Seis trenes se detienen automáticamente."
+    },
+    {
+     "start": 44.584,
+     "end": 51.04,
+     "cap": "Uno de ellos es el Iryo, que queda parado ante la señal de entrada de Urda. Su maquinista avisa de que no puede reiniciar el sistema."
+    }
+   ],
+   "end": 51.44
+  },
+  {
+   "id": "orden",
+   "start": 51.44,
+   "lines": [
+    {
+     "start": 52.34,
+     "end": 58.128,
+     "cap": "A las 8:36, el centro de control de Adif en Atocha autoriza al AVE a reanudar la marcha."
+    },
+    {
+     "start": 58.578,
+     "end": 65.344,
+     "cap": "Según los audios publicados, la instrucción es: «Desconecte y vuelva a conectar el LZB y reanude con marcha normal»."
+    },
+    {
+     "start": 65.794,
+     "end": 70.084,
+     "cap": "Pero la señal seguía en rojo, y el tramo de delante estaba ocupado por el Iryo."
+    },
+    {
+     "start": 70.534,
+     "end": 76.051,
+     "cap": "Según el Ministerio, la norma obligaba a circular «a la vista», a un máximo de 40 km/h."
+    }
+   ],
+   "end": 76.451
+  },
+  {
+   "id": "choque",
+   "start": 76.451,
+   "lines": [
+    {
+     "start": 77.351,
+     "end": 82.64,
+     "cap": "El Iryo no había recibido orden de reanudar. Seguía detenido, varios kilómetros por delante."
+    },
+    {
+     "start": 83.09,
+     "end": 89.755,
+     "cap": "Sobre las 8:54, cerca del kilómetro 118, entre Mora, Orgaz y Urda, el AVE lo alcanza por detrás."
+    },
+    {
+     "start": 90.205,
+     "end": 98.802,
+     "cap": "Los datos de circulación apuntan a una velocidad media de unos 137 km/h en el último minuto, con el tren ya frenando."
+    }
+   ],
+   "end": 99.202
+  },
+  {
+   "id": "balance",
+   "start": 99.202,
+   "lines": [
+    {
+     "start": 101.402,
+     "end": 104.593,
+     "cap": "En los dos trenes viajaban 544 personas."
+    },
+    {
+     "start": 105.043,
+     "end": 112.634,
+     "cap": "El último balance provisional es de al menos 68 fallecidos y 107 personas hospitalizadas, 15 de ellas muy graves."
+    },
+    {
+     "start": 113.084,
+     "end": 115.885,
+     "cap": "Las autoridades no descartan que la cifra aumente."
+    }
+   ],
+   "end": 116.285
+  },
+  {
+   "id": "investigacion",
+   "start": 116.285,
+   "lines": [
+    {
+     "start": 117.485,
+     "end": 122.892,
+     "cap": "El ministro de Transportes, Óscar Puente, ha calificado de «inexplicable» la orden del centro de control."
+    },
+    {
+     "start": 123.342,
+     "end": 132.64,
+     "cap": "Un juzgado de Orgaz investiga el caso bajo secreto y ha ordenado custodiar las cajas negras. La Comisión de Investigación de Accidentes Ferroviarios también analiza qué falló."
+    },
+    {
+     "start": 133.09,
+     "end": 139.777,
+     "cap": "Adif ha suspendido la alta velocidad entre Madrid y Andalucía, y el Gobierno ha decretado tres días de luto oficial."
+    }
+   ],
+   "end": 140.177
+  },
+  {
+   "id": "cierre",
+   "start": 140.177,
+   "lines": [],
+   "end": 147.177
+  }
+ ],
+ "duration": 147.177
+}

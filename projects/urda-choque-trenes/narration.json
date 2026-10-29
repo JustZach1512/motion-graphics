@@ -1,0 +1,134 @@
+{
+  "voice": "piper es_ES-davefx-medium (via sherpa-onnx)",
+  "speed": 0.97,
+  "scenes": [
+    {
+      "id": "intro",
+      "lead": 1.6,
+      "lines": [
+        {
+          "say": "Miércoles, veintiocho de octubre. Línea de alta velocidad Madrid, Sevilla.",
+          "cap": "Miércoles, 28 de octubre. Línea de alta velocidad Madrid–Sevilla."
+        },
+        {
+          "say": "Esto es lo que se sabe, hasta ahora, del choque de trenes en Urda, en la provincia de Toledo.",
+          "cap": "Esto es lo que se sabe, hasta ahora, del choque de trenes en Urda, en la provincia de Toledo."
+        }
+      ]
+    },
+    {
+      "id": "salidas",
+      "lead": 0.9,
+      "lines": [
+        {
+          "say": "A las siete y cincuenta y cuatro sale de Madrid Atocha el Írio seis mil setenta y seis, rumbo a Sevilla, con unos ciento cuarenta y siete pasajeros.",
+          "cap": "A las 7:54 sale de Madrid-Atocha el Iryo 6076, rumbo a Sevilla, con unos 147 pasajeros."
+        },
+        {
+          "say": "Seis minutos después parte, por la misma vía y en el mismo sentido, el Ave dos mil ochenta de Renfe, con unas trescientas noventa y siete personas a bordo.",
+          "cap": "Seis minutos después parte, por la misma vía y en el mismo sentido, el AVE 2080 de Renfe, con unas 397 personas a bordo."
+        }
+      ]
+    },
+    {
+      "id": "lzb",
+      "lead": 0.9,
+      "lines": [
+        {
+          "say": "La línea está protegida por el sistema ele, zeta, be, que vigila de forma continua la velocidad de cada tren y su distancia con el de delante.",
+          "cap": "La línea está protegida por el sistema LZB, que vigila de forma continua la velocidad de cada tren y su distancia con el de delante."
+        },
+        {
+          "say": "Sobre las ocho y media, un fallo informático deja el sistema fuera de servicio. Seis trenes se detienen automáticamente.",
+          "cap": "Sobre las 8:30, un fallo informático deja el sistema fuera de servicio. Seis trenes se detienen automáticamente."
+        },
+        {
+          "say": "Uno de ellos es el Írio, que queda parado ante la señal de entrada de Urda. Su maquinista avisa de que no puede reiniciar el sistema.",
+          "cap": "Uno de ellos es el Iryo, que queda parado ante la señal de entrada de Urda. Su maquinista avisa de que no puede reiniciar el sistema."
+        }
+      ]
+    },
+    {
+      "id": "orden",
+      "lead": 0.9,
+      "lines": [
+        {
+          "say": "A las ocho y treinta y seis, el centro de control de Adif, en Atocha, autoriza al Ave a reanudar la marcha.",
+          "cap": "A las 8:36, el centro de control de Adif en Atocha autoriza al AVE a reanudar la marcha."
+        },
+        {
+          "say": "Según los audios publicados, la instrucción es: desconecte y vuelva a conectar el ele, zeta, be, y reanude con marcha normal.",
+          "cap": "Según los audios publicados, la instrucción es: «Desconecte y vuelva a conectar el LZB y reanude con marcha normal»."
+        },
+        {
+          "say": "Pero la señal seguía en rojo, y el tramo de delante estaba ocupado por el Írio.",
+          "cap": "Pero la señal seguía en rojo, y el tramo de delante estaba ocupado por el Iryo."
+        },
+        {
+          "say": "Según el Ministerio, la norma obligaba a circular a la vista, a un máximo de cuarenta kilómetros por hora.",
+          "cap": "Según el Ministerio, la norma obligaba a circular «a la vista», a un máximo de 40 km/h."
+        }
+      ]
+    },
+    {
+      "id": "choque",
+      "lead": 0.9,
+      "lines": [
+        {
+          "say": "El Írio no había recibido orden de reanudar. Seguía detenido, varios kilómetros por delante.",
+          "cap": "El Iryo no había recibido orden de reanudar. Seguía detenido, varios kilómetros por delante."
+        },
+        {
+          "say": "Sobre las ocho y cincuenta y cuatro, cerca del kilómetro ciento dieciocho, entre Mora, Orgaz y Urda, el Ave lo alcanza por detrás.",
+          "cap": "Sobre las 8:54, cerca del kilómetro 118, entre Mora, Orgaz y Urda, el AVE lo alcanza por detrás."
+        },
+        {
+          "say": "Los datos de circulación apuntan a una velocidad media de unos ciento treinta y siete kilómetros por hora en el último minuto, con el tren ya frenando.",
+          "cap": "Los datos de circulación apuntan a una velocidad media de unos 137 km/h en el último minuto, con el tren ya frenando."
+        }
+      ]
+    },
+    {
+      "id": "balance",
+      "lead": 2.2,
+      "lines": [
+        {
+          "say": "En los dos trenes viajaban quinientas cuarenta y cuatro personas.",
+          "cap": "En los dos trenes viajaban 544 personas."
+        },
+        {
+          "say": "El último balance provisional es de al menos sesenta y ocho fallecidos, y ciento siete personas hospitalizadas, quince de ellas muy graves.",
+          "cap": "El último balance provisional es de al menos 68 fallecidos y 107 personas hospitalizadas, 15 de ellas muy graves."
+        },
+        {
+          "say": "Las autoridades no descartan que la cifra aumente.",
+          "cap": "Las autoridades no descartan que la cifra aumente."
+        }
+      ]
+    },
+    {
+      "id": "investigacion",
+      "lead": 1.2,
+      "lines": [
+        {
+          "say": "El ministro de Transportes, Óscar Puente, ha calificado de inexplicable la orden del centro de control.",
+          "cap": "El ministro de Transportes, Óscar Puente, ha calificado de «inexplicable» la orden del centro de control."
+        },
+        {
+          "say": "Un juzgado de Orgaz investiga el caso bajo secreto y ha ordenado custodiar las cajas negras. La Comisión de Investigación de Accidentes Ferroviarios también analiza qué falló.",
+          "cap": "Un juzgado de Orgaz investiga el caso bajo secreto y ha ordenado custodiar las cajas negras. La Comisión de Investigación de Accidentes Ferroviarios también analiza qué falló."
+        },
+        {
+          "say": "Adif ha suspendido la alta velocidad entre Madrid y Andalucía, y el Gobierno ha decretado tres días de luto oficial.",
+          "cap": "Adif ha suspendido la alta velocidad entre Madrid y Andalucía, y el Gobierno ha decretado tres días de luto oficial."
+        }
+      ]
+    },
+    {
+      "id": "cierre",
+      "lead": 1.0,
+      "tail": 6.0,
+      "lines": []
+    }
+  ]
+}

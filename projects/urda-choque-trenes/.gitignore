@@ -1,0 +1,4 @@
+audio/*.wav
+out/*_silent.mp4
+out/*_seg*
+work/checks/
