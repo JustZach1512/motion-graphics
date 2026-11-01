@@ -1,0 +1,21 @@
+Claude Code crea un juego: créditos de sonido
+
+Todos los efectos vienen de la librería incluida en skills/sound-effects/sfx/ (CC0 1.0, no hace falta atribución).
+
+- "Whoosh" by qubodup: https://freesound.org/people/qubodup/sounds/60013/ (CC0)
+- Quick woosh by florianreichelt: https://freesound.org/people/florianreichelt/sounds/683101/ (CC0)
+- "Classic Click" by adh.dreaming: https://freesound.org/people/adh.dreaming/sounds/671105/ (CC0)
+- "Click / Tick" by Squirrel_404: https://freesound.org/people/Squirrel_404/sounds/683048/ (CC0)
+- "POP SFX Neutral" by ethernel0: https://freesound.org/people/ethernel0/sounds/776016/ (CC0)
+- Plop by Breviceps: https://freesound.org/people/Breviceps/sounds/447910/ (CC0)
+- "Cinematic Riser #3 subtle" by BeaconStudio: https://freesound.org/people/BeaconStudio/sounds/859482/ (CC0)
+- "soft_impact3" by peoplearehappy: https://freesound.org/people/peoplearehappy/sounds/841274/ (CC0)
+- Lil pip by adh.dreaming: https://freesound.org/people/adh.dreaming/sounds/634690/ (CC0)
+- Soft notification bell by LegitCheese: https://freesound.org/people/LegitCheese/sounds/571513/ (CC0)
+- Keyboard typing by Breviceps: https://freesound.org/people/Breviceps/sounds/447909/ (CC0)
+- Typing by Alivvie: https://freesound.org/people/Alivvie/sounds/323432/ (CC0)
+- Keyboard typing by j1987: https://freesound.org/people/j1987/sounds/79388/ (CC0)
+- Kenney "Interface Sounds" (confirmation_001, toggle_001, select_002, maximize_005): https://kenney.nl/assets/interface-sounds (CC0)
+
+Música: sintetizada en la propia página (buildAudio), sin samples de terceros.
+Fuentes: Geist y Geist Mono (SIL Open Font License).
