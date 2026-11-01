@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Delta Executor explicado</title>
+<style>
+@font-face{font-family:'Geist';src:url(data:font/woff2;base64,{{GEIST}}) format('woff2');font-weight:100 900;font-style:normal}
+@font-face{font-family:'GeistMono';src:url(data:font/woff2;base64,{{GEISTMONO}}) format('woff2');font-weight:100 900;font-style:normal}
+:root{--bg:#07090E;--fg:#EEF1F7;--mut:#8A93A6;--dim:#5A6276;--line:#1D2330;--card:#0D1119;--acc:#5B8CFF;--accA:rgba(91,140,255,.34);--red:#FF4D5E;--redA:rgba(255,77,94,.32)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--fg);font-family:'Geist',sans-serif;transform-origin:0 0}
+#bg{position:absolute;left:0;top:0}
+.scene{position:absolute;left:0;top:0;width:1920px;height:1080px;display:none}
+.cam,.ov{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+.abs{position:absolute;white-space:nowrap}
+.line{position:absolute;white-space:nowrap;transform:translate(-50%,-50%);letter-spacing:-.025em;isolation:isolate;line-height:1.2}
+.w{display:inline-block}
+.hl{position:relative;display:inline-block}
+.hlbox{position:absolute;left:-.12em;right:-.12em;top:.06em;bottom:0;background:var(--accA);border-radius:.14em;transform-origin:0 50%;transform:scaleX(0);z-index:-1}
+.hl.red .hlbox{background:var(--redA)}
+.mono{font-family:'GeistMono',monospace;font-weight:500;letter-spacing:.08em}
+.para{position:absolute;white-space:normal;line-height:1.34;letter-spacing:-.01em}
+.cap{text-shadow:0 2px 16px rgba(0,0,0,.8)}
+.card{position:absolute;background:var(--card);border:1px solid var(--line);border-radius:24px}
+svg text{font-family:'Geist',sans-serif}
+svg .m{font-family:'GeistMono',monospace;font-weight:500}
+#ui{position:fixed;left:0;right:0;bottom:0;height:56px;display:flex;align-items:center;gap:14px;padding:0 16px;background:#0b0d12;color:#cfd5e0;font:14px system-ui,sans-serif}
+#ui button{background:#1c2232;color:#fff;border:0;border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}
+#ui input{flex:1}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="bg" width="1920" height="1080"></canvas></div>
+<div id="ui"><button id="pp">Play</button><input id="scrub" type="range" min="0" max="1000" value="0"><span id="tc">0.0 s</span></div>
+<script>
+'use strict';
+/* =====================================================================
+   DELTA EXECUTOR · EXPLICADO  (16:9, 126 s, español)
+   Beat sheet (tiempos absolutos)                                  sonido
+   0.0   A  Intro: "Delta Executor", qué hace / cómo / por qué     tick, whoosh, pop
+   6.6   B  "Un executor mete tus propios scripts…" push + resaltado whoosh, tick
+   11.2  C  Móvil: botón flotante, panel, se teclea WalkSpeed=100  click, tecleo, click, pop, whoosh
+   21.0  D1 PARTE 1 · ¿Qué hace en los juegos?                     tick, impacto suave
+   23.6  D2 4 tarjetas: auto-farm, ESP, velocidad/vuelo, teleport  pop por tarjeta
+   35.0  E1 PARTE 2 · ¿Cómo funciona?                              tick, impacto (entra batería)
+   37.6  E2 4 pasos: app modificada → VM Luau → tu script → extras tick por paso, pops
+   58.0  E3 Cliente vs servidor: 2 paquetes aceptados, 1 rechazado whoosh, pop, impacto
+   70.4  F1 PARTE 3 · ¿Por qué el anticheat no lo detecta?         riser → impacto
+   73.2  F2 Hyperion (Byfron): 2022 compra, 2023 Windows           whoosh, ticks
+   79.6  F3 Razón 1: se diseñó para PC; executors → móvil          clicks (rebotes), pops
+   86.0  F4 Razón 2: no entra desde fuera (cheat.exe vs Delta)     impacto, pop, ticks
+   93.6  F5 Razón 3: para el servidor eres un jugador más          —
+   99.4  F6 Razón 4: el gato y el ratón (bucle de versiones)       ticks
+   105.6 F7 Pero no es invisible: baneo diferido                   ticks, riser, impacto fuerte
+   113.0 G  Riesgos reales                                         pops
+   120.0 H  "Indetectable hoy no significa seguro mañana."         whoosh
+   ===================================================================== */
+const W = 1920, H = 1080;
+const T = { A: 0, B: 6.6, C: 11.2, D1: 21.0, D2: 23.6, E1: 35.0, E2: 37.6, E3: 58.0, F1: 70.4, F2: 73.2, F3: 79.6, F4: 86.0, F5: 93.6, F6: 99.4, F7: 105.6, G: 113.0, H: 120.0, END: 126.0 };
+const DUR = T.END;
+window.VIDEO = { w: W, h: H, duration: DUR };
+const RENDER = /[?&]render\b/.test(location.search);
+const C = { fg: '#EEF1F7', mut: '#8A93A6', dim: '#5A6276', line: '#1D2330', card: '#0D1119', acc: '#5B8CFF', accL: '#A9C1FF', red: '#FF4D5E', grn: '#34D399', amb: '#FFB547' };
+const NS = 'http://www.w3.org/2000/svg';
+
+// ---------- helpers ----------
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const kf = keys => t => { if (t <= keys[0][0]) return keys[0][1]; for (let i = 1; i < keys.length; i++) { const [a, va] = keys[i - 1], [b, vb, e = ease] = keys[i]; if (t <= b) return lerp(va, vb, e((t - a) / (b - a))); } return keys[keys.length - 1][1]; };
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const eOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const eBack = x => { x = clamp(x); const c1 = 1.4, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const pulse = (t, a, d) => { const k = (t - a) / d; return k <= 0 || k >= 1 ? 0 : Math.sin(Math.PI * k); };
+const bez = (a, c, b, k) => [(1 - k) * (1 - k) * a[0] + 2 * (1 - k) * k * c[0] + k * k * b[0], (1 - k) * (1 - k) * a[1] + 2 * (1 - k) * k * c[1] + k * k * b[1]];
+const f1 = v => (+v).toFixed(1), f2 = v => (+v).toFixed(3);
+const px = v => v + 'px';
+
+const stage = document.getElementById('stage');
+function $(tag, cls, parent, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (parent) parent.appendChild(e); return e; }
+function css(e, o) { for (const k in o) e.style[k] = o[k]; return e; }
+function Svg(parent, w, h, cx, cy) {
+  const e = document.createElementNS(NS, 'svg');
+  e.setAttribute('width', w); e.setAttribute('height', h); e.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  e.style.cssText = `position:absolute;left:${cx - w / 2}px;top:${cy - h / 2}px;overflow:visible`;
+  parent.appendChild(e); return e;
+}
+function Glow(parent, x, y, r, col) {
+  const c = $('canvas', '', parent); c.width = r * 2; c.height = r * 2;
+  css(c, { position: 'absolute', left: px(x - r), top: px(y - r) });
+  const g = c.getContext('2d'), rg = g.createRadialGradient(r, r, 0, r, r, r);
+  rg.addColorStop(0, col); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, r * 2, r * 2);
+  return c;
+}
+// absolutely positioned single-line text; anchor c (centre), l (left), r (right)
+function Txt(parent, html, o = {}) {
+  const e = $('div', 'abs' + (o.mono ? ' mono' : ''), parent, html);
+  css(e, { left: px(o.x ?? 960), top: px(o.y ?? 540), fontSize: px(o.size ?? 30), fontWeight: o.weight ?? 500, color: o.color ?? C.fg });
+  if (o.ls != null) e.style.letterSpacing = o.ls;
+  e._pre = o.anchor === 'l' ? 'translate(0,-50%) ' : o.anchor === 'r' ? 'translate(-100%,-50%) ' : 'translate(-50%,-50%) ';
+  e.style.transform = e._pre; e.style.opacity = 0;
+  return e;
+}
+// wrapping paragraph, anchored at its top
+function Para(parent, html, o = {}) {
+  const e = $('div', 'para' + (o.cls ? ' ' + o.cls : ''), parent, html), al = o.align ?? 'center';
+  css(e, { left: px(o.x ?? 960), top: px(o.y ?? 880), width: px(o.w ?? 1400), fontSize: px(o.size ?? 30), color: o.color ?? '#C9D0DC', fontWeight: o.weight ?? 400, textAlign: al });
+  e._pre = al === 'center' ? 'translateX(-50%) ' : '';
+  e.style.opacity = 0; return e;
+}
+function show(el, lt, a, dur = 0.5, rise = 16, b = 1e9) {
+  const k = Math.min(eOut(seg(lt, a, a + dur)), 1 - ease(seg(lt, b - 0.35, b)));
+  el.style.opacity = f2(k); el.style.transform = `${el._pre || ''}translateY(${f1((1 - k) * rise)}px)`;
+  return k;
+}
+// a line of words; *text* = highlighted phrase
+function Line(parent, text, o = {}) {
+  const el = $('div', 'line', parent);
+  css(el, { left: px(o.x ?? 960), top: px(o.y ?? 540), fontSize: px(o.size ?? 40), fontWeight: o.weight ?? 500, color: o.color ?? C.fg });
+  const words = [], boxes = [];
+  text.split('*').forEach((part, i) => {
+    if (!part) return;
+    let host = el;
+    if (i % 2) { host = $('span', 'hl' + (o.red ? ' red' : ''), el); boxes.push($('span', 'hlbox', host)); }
+    part.split(/(\s+)/).forEach(tok => {
+      if (!tok) return;
+      if (/^\s+$/.test(tok)) { host.appendChild(document.createTextNode(' ')); return; }
+      const w = $('span', 'w', host); w.textContent = tok; w.style.opacity = 0; words.push(w);
+    });
+  });
+  return {
+    el,
+    reveal(lt, start, per = 0.07, dur = 0.45, rise = 18) {
+      words.forEach((w, i) => { const k = eOut(seg(lt, start + i * per, start + i * per + dur)); w.style.opacity = f2(k); w.style.transform = `translateY(${f1((1 - k) * rise)}px)`; });
+    },
+    hl(lt, start, dur = 0.5) { boxes.forEach((b, i) => { b.style.transform = `scaleX(${f2(ease(seg(lt, start + i * 0.15, start + i * 0.15 + dur)))})`; }); },
+  };
+}
+
+// blocky avatar, front view. (x, y) = feet centre
+function avatar(x, y, s = 1, o = {}) {
+  const a = (o.sw || 0) * Math.sin(o.ph || 0), sy = o.sy ?? 1;
+  const hc = '#F5CD30', tc = '#2F6FDB', lc = '#4CAF50', g = o.ghost;
+  const st = g ? ` stroke="${g}" stroke-width="${f2(1.8 / s)}" stroke-dasharray="${f2(4 / s)} ${f2(3 / s)}"` : '';
+  const F = c => g ? 'rgba(91,140,255,.10)' : c;
+  const face = g ? '' : `<rect x="-6" y="-84" width="3" height="5" rx="1" fill="#1b1b1b"/><rect x="3" y="-84" width="3" height="5" rx="1" fill="#1b1b1b"/><path d="M-5 -75 Q0 -70.5 5 -75" stroke="#1b1b1b" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+  return `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${f1(o.lean || 0)}) scale(${f2(s)} ${f2(s * sy)})" opacity="${f2(o.op ?? 1)}">` +
+    `<rect x="-15" y="-32" width="14.5" height="32" rx="2" fill="${F(lc)}"${st} transform="rotate(${f1(a)} -7.5 -32)"/>` +
+    `<rect x="0.5" y="-32" width="14.5" height="32" rx="2" fill="${F(lc)}"${st} transform="rotate(${f1(-a)} 7.5 -32)"/>` +
+    `<rect x="-30" y="-64" width="13.5" height="31" rx="2" fill="${F(hc)}"${st} transform="rotate(${f1(-a * .8)} -23 -62)"/>` +
+    `<rect x="16.5" y="-64" width="13.5" height="31" rx="2" fill="${F(hc)}"${st} transform="rotate(${f1(a * .8)} 23 -62)"/>` +
+    `<rect x="-16" y="-65" width="32" height="33" rx="2" fill="${F(tc)}"${st}/>` +
+    `<rect x="-12" y="-91" width="24" height="24" rx="5" fill="${F(hc)}"${st}/>` + face + `</g>`;
+}
+// blocky avatar, side view (running right)
+function avatarSide(x, y, s = 1, o = {}) {
+  const a = (o.sw || 0) * Math.sin(o.ph || 0);
+  return `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${f1(o.lean || 0)}) scale(${f2(s)})">` +
+    `<rect x="-6" y="-63" width="12" height="31" rx="2" fill="#C9A21E" transform="rotate(${f1(a * .9)} 0 -61)"/>` +
+    `<rect x="-7" y="-32" width="14" height="32" rx="2" fill="#3A8A3E" transform="rotate(${f1(-a)} 0 -32)"/>` +
+    `<rect x="-9" y="-65" width="18" height="34" rx="2" fill="#2F6FDB"/>` +
+    `<rect x="-7" y="-32" width="14" height="32" rx="2" fill="#4CAF50" transform="rotate(${f1(a)} 0 -32)"/>` +
+    `<rect x="-6" y="-63" width="12" height="31" rx="2" fill="#F5CD30" transform="rotate(${f1(-a * .9)} 0 -61)"/>` +
+    `<rect x="-12" y="-91" width="24" height="24" rx="5" fill="#F5CD30"/>` +
+    `<rect x="5" y="-84" width="3" height="5" rx="1" fill="#1b1b1b"/><path d="M3 -75 Q7 -72 10 -75.5" stroke="#1b1b1b" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>`;
+}
+const SHIELD = 'M0 -150 L125 -104 L125 4 C125 92 64 138 0 160 C-64 138 -125 92 -125 4 L-125 -104 Z';
+const LOCK = (c, bg) => `<path d="M-26 -10 V-32 A26 26 0 0 1 26 -32 V-10" fill="none" stroke="${c}" stroke-width="9"/><rect x="-42" y="-12" width="84" height="66" rx="12" fill="${c}"/><circle cx="0" cy="14" r="8" fill="${bg}"/><rect x="-3" y="16" width="6" height="18" rx="3" fill="${bg}"/>`;
+function rack(cx, cy, t) {
+  let h = '';
+  for (let k = 0; k < 3; k++) {
+    const y = cy - 95 + k * 66;
+    h += `<rect x="${cx - 110}" y="${y}" width="220" height="52" rx="10" fill="#141B2A" stroke="#2A3448" stroke-width="1.5"/>`;
+    for (let j = 0; j < 2; j++) { const on = (Math.floor(t * 3.3 + k * 1.7 + j * 2.3) % 3) !== 0; h += `<circle cx="${cx - 82 + j * 20}" cy="${y + 26}" r="5" fill="${on ? C.grn : '#1E2B26'}"/>`; }
+    h += `<rect x="${cx - 30}" y="${y + 19}" width="110" height="5" rx="2.5" fill="#222C40"/><rect x="${cx - 30}" y="${y + 29}" width="76" height="5" rx="2.5" fill="#222C40"/>`;
+  }
+  return h;
+}
+const CHECK = `<path d="M-9 0 l6 6 l12 -13" fill="none" stroke="${C.grn}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+const CROSS = `<path d="M-8 -8 L8 8 M8 -8 L-8 8" stroke="${C.red}" stroke-width="3.2" stroke-linecap="round"/>`;
+
+// ---------- background (drawn once) ----------
+(function () {
+  const g = document.getElementById('bg').getContext('2d');
+  g.fillStyle = '#07090E'; g.fillRect(0, 0, W, H);
+  let rg = g.createRadialGradient(960, 360, 0, 960, 360, 1100);
+  rg.addColorStop(0, 'rgba(46,70,140,0.20)'); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(255,255,255,0.045)';
+  for (let y = 24; y < H; y += 48) for (let x = 24; x < W; x += 48) { g.beginPath(); g.arc(x, y, 1.3, 0, 7); g.fill(); }
+  rg = g.createRadialGradient(960, 540, 320, 960, 540, 1150);
+  rg.addColorStop(0, 'rgba(0,0,0,0)'); rg.addColorStop(1, 'rgba(0,0,0,0.6)'); g.fillStyle = rg; g.fillRect(0, 0, W, H);
+})();
+
+// ---------- scenes ----------
+const ORDER = ['A', 'B', 'C', 'D1', 'D2', 'E1', 'E2', 'E3', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'G', 'H'];
+const FADE = 0.4, scenes = [];
+function Scene(key) {
+  const i = ORDER.indexOf(key), a = T[key], b = i < ORDER.length - 1 ? T[ORDER[i + 1]] + FADE : DUR;
+  const root = $('div', 'scene', stage), cam = $('div', 'cam', root), ov = $('div', 'ov', root);
+  const s = { key, a, b, len: b - a, root, cam, ov, caps: [], sfx: [], upd: () => {} };
+  s.cap = (text, t0, t1 = s.len, o = {}) => { const e = Para(ov, text, { y: o.y ?? 874, w: o.w ?? 1480, size: o.size ?? 31, color: '#D7DDE7', cls: 'cap' }); s.caps.push([e, t0, t1]); return e; };
+  s.reason = (n, title) => {
+    s.rh = { k: Txt(ov, `RAZÓN ${n}`, { mono: true, y: 132, size: 20, color: C.acc, ls: '.32em' }), L: Line(ov, title, { size: 54, weight: 640, y: 196 }) };
+  };
+  scenes.push(s); return s;
+}
+function setCam(s, x, y, k) { s.cam.style.transform = `translate(${f2(W / 2 - k * x)}px,${f2(H / 2 - k * y)}px) scale(${k.toFixed(4)})`; }
+const camKF = keys => { const fx = kf(keys.map(k => [k[0], k[1]])), fy = kf(keys.map(k => [k[0], k[2]])), fk = kf(keys.map(k => [k[0], k[3]])); return t => [fx(t), fy(t), fk(t)]; };
+
+// ===== A · intro =====
+{
+  const s = Scene('A');
+  const glow = Glow(s.cam, 960, 520, 700, 'rgba(91,140,255,0.16)');
+  const kick = Txt(s.cam, 'ROBLOX · EXPLICADO', { mono: true, y: 392, size: 22, color: C.mut, ls: '.34em' });
+  const title = $('div', 'line', s.cam);
+  css(title, { left: '960px', top: '512px', fontSize: '156px', fontWeight: 700, letterSpacing: '-.045em' });
+  const chars = [...'Delta Executor'].map(c => { const sp = $('span', 'w', title); sp.textContent = c === ' ' ? ' ' : c; sp.style.opacity = 0; return sp; });
+  const rule = $('div', 'abs', s.cam); css(rule, { left: '760px', top: '618px', width: '400px', height: '3px', background: C.acc, borderRadius: '2px', transform: 'scaleX(0)' });
+  const sub = Line(s.cam, 'Qué hace · Cómo funciona · Por qué el anticheat no lo detecta', { size: 34, weight: 450, y: 690, color: '#C2C9D6' });
+  const foot = Txt(s.cam, 'VÍDEO EDUCATIVO · NO ES UNA GUÍA DE USO', { mono: true, y: 965, size: 16, color: C.dim, ls: '.26em' });
+  s.sfx = [[0.3, 'tick', .35], [0.75, 'whoosh', .45], [1.85, 'pop', .3], [4.3, 'tick', .25]];
+  s.upd = lt => {
+    setCam(s, 960, 540, lerp(1, 1.06, ease(seg(lt, 0, s.len))));
+    glow.style.opacity = f2(ease(seg(lt, 0.6, 2.6)));
+    show(kick, lt, 0.3, 0.6, 12);
+    chars.forEach((c, i) => { const k = eOut(seg(lt, 0.8 + i * 0.045, 1.4 + i * 0.045)); c.style.opacity = f2(k); c.style.transform = `translateY(${f1((1 - k) * 60)}px)`; c.style.filter = k < 1 ? `blur(${f1((1 - k) * 12)}px)` : 'none'; });
+    rule.style.transform = `scaleX(${f2(ease(seg(lt, 1.8, 2.6)))})`;
+    sub.reveal(lt, 2.4, 0.08);
+    show(foot, lt, 4.3, 0.6, 0);
+  };
+}
+
+// ===== B · what an executor is =====
+{
+  const s = Scene('B');
+  const L = Line(s.cam, 'Un executor mete *tus propios scripts* dentro de un juego de Roblox.', { size: 30, weight: 500 });
+  s.sfx = [[1.4, 'whoosh', .3], [2.6, 'tick', .3]];
+  s.upd = lt => {
+    const k1 = clamp(0.8 * W / L.el.offsetWidth, 1, 3);
+    setCam(s, 960, 540, kf([[0, 1], [1.4, 1], [2.6, k1], [s.len, k1 * 1.05]])(lt));
+    L.reveal(lt, 0.25, 0.075);
+    L.hl(lt, 2.6, 0.5);
+  };
+}
+
+// ===== C · the phone demo =====
+{
+  const s = Scene('C');
+  const PX = 320, PY = 220, PW = 1280, PH = 640, SX = PX + 16, SY = PY + 16, SW = 1248, SH = 608;
+  const phone = $('div', '', s.cam); css(phone, { position: 'absolute', left: px(PX), top: px(PY), width: px(PW), height: px(PH), borderRadius: '64px', background: '#0A0D14', border: '2px solid #2A3244' });
+  const screen = $('div', '', s.cam); css(screen, { position: 'absolute', left: px(SX), top: px(SY), width: px(SW), height: px(SH), borderRadius: '48px', overflow: 'hidden', background: '#000' });
+  const game = Svg(screen, SW, SH, SW / 2, SH / 2);
+  const fab = $('div', 'mono', screen, '&lt;/&gt;');
+  css(fab, { position: 'absolute', left: '36px', top: '36px', width: '76px', height: '76px', borderRadius: '50%', background: 'rgba(10,13,20,.88)', border: '2px solid ' + C.acc, color: C.acc, fontSize: '22px', letterSpacing: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' });
+  const panel = $('div', '', screen);
+  css(panel, { position: 'absolute', left: 0, top: 0, width: '620px', height: px(SH), background: 'rgba(10,13,20,.97)', borderRight: '1px solid #263045' });
+  panel.innerHTML = `
+    <div style="position:absolute;left:0;top:0;right:0;height:72px;border-bottom:1px solid #1E2533;display:flex;align-items:center;padding:0 30px;gap:16px">
+      <span style="font-size:24px;font-weight:620;letter-spacing:-.01em">Executor</span>
+      <span class="mono" style="font-size:15px;color:${C.mut};padding:6px 12px;border:1px solid #263045;border-radius:8px;letter-spacing:.02em">script.lua</span>
+    </div>
+    <div class="mono" style="position:absolute;left:0;top:96px;width:60px;text-align:right;font-size:20px;line-height:44px;color:${C.dim};letter-spacing:0">1<br>2<br>3<br>4<br>5</div>
+    <div class="mono code" style="position:absolute;left:84px;top:96px;font-size:22px;line-height:44px;letter-spacing:0;white-space:pre"></div>
+    <div class="btns" style="position:absolute;left:30px;bottom:30px;display:flex;gap:14px">
+      <div class="run" style="background:${C.acc};color:#fff;font-size:22px;font-weight:600;padding:14px 34px;border-radius:14px">Ejecutar</div>
+      <div style="border:1px solid #2C3548;color:#C2C9D6;font-size:22px;padding:14px 30px;border-radius:14px">Limpiar</div>
+    </div>`;
+  const codeEl = panel.querySelector('.code'), run = panel.querySelector('.run');
+  const CODE = [
+    [['local', '#C792EA'], [' yo ', C.fg], ['=', '#89DDFF'], [' game', '#82AAFF'], ['.Players.LocalPlayer', C.fg]],
+    [['yo.Character.Humanoid.', C.fg], ['WalkSpeed', '#FFCB6B'], [' = ', '#89DDFF'], ['100', '#F78C6C']],
+  ];
+  const FLAT = CODE.map(l => l.map(p => p[0]).join('')).join('\n');
+  const T0 = 2.75, CPS = 25;
+  function codeHTML(n, caretOn) {
+    let out = '', left = n;
+    CODE.forEach((line, li) => {
+      if (li > 0) { if (left <= 0) return; out += '\n'; left--; }
+      for (const [str, col] of line) { if (left <= 0) break; const part = str.slice(0, left); left -= part.length; out += `<span style="color:${col}">${part}</span>`; }
+    });
+    return out + `<span style="display:inline-block;width:3px;height:30px;background:${C.acc};vertical-align:-7px;margin-left:1px;opacity:${caretOn ? 1 : 0}"></span>`;
+  }
+  // world drawn in the phone
+  const R = rng(7);
+  const far = Array.from({ length: 14 }, (_, i) => ({ x: i * 110 + R() * 40, w: 70 + R() * 80, h: 50 + R() * 120 }));
+  const trees = Array.from({ length: 5 }, (_, i) => ({ x: i * 300 + R() * 80, s: 0.8 + R() * 0.5 }));
+  const streaks = Array.from({ length: 16 }, () => ({ y: 40 + R() * 520, l: 90 + R() * 220, x: R() * 1900, w: 1.5 + R() * 2.5 }));
+  const GY = 470;
+  function drawGame(lt, scroll, phase, spd) {
+    let h = `<defs><linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121C33"/><stop offset="1" stop-color="#34558A"/></linearGradient></defs><rect width="${SW}" height="${SH}" fill="url(#gSky)"/>`;
+    const fo = -((scroll * 0.15) % 1540);
+    for (const rep of [0, 1540]) for (const b of far) h += `<rect x="${f1(b.x + fo + rep)}" y="${f1(GY - b.h)}" width="${f1(b.w)}" height="${f1(b.h)}" fill="#1E2E50"/>`;
+    const mo = -((scroll * 0.5) % 1500);
+    for (const rep of [0, 1500]) for (const tr of trees) { const x = tr.x + mo + rep, k = tr.s; h += `<rect x="${f1(x - 9 * k)}" y="${f1(GY - 80 * k)}" width="${f1(18 * k)}" height="${f1(80 * k)}" fill="#5A3E2B"/><rect x="${f1(x - 48 * k)}" y="${f1(GY - 170 * k)}" width="${f1(96 * k)}" height="${f1(96 * k)}" rx="6" fill="#2F6B45"/>`; }
+    h += `<rect x="0" y="${GY}" width="${SW}" height="${SH - GY}" fill="#223326"/><rect x="0" y="${GY}" width="${SW}" height="16" fill="#3C9A57"/>`;
+    for (let x = -(scroll % 96); x < SW + 96; x += 96) h += `<rect x="${f1(x)}" y="${GY + 16}" width="2" height="${SH - GY - 16}" fill="rgba(0,0,0,.22)"/>`;
+    if (spd > 0.01) for (const L of streaks) { const x = ((L.x - lt * 2400) % 1900 + 1900) % 1900 - 250; h += `<rect x="${f1(x)}" y="${f1(L.y)}" width="${f1(L.l)}" height="${f1(L.w)}" rx="1" fill="rgba(255,255,255,${f2(0.3 * spd)})"/>`; }
+    h += `<ellipse cx="860" cy="${GY + 4}" rx="44" ry="8" fill="rgba(0,0,0,.35)"/>` + avatarSide(860, GY + 2, 1.75, { ph: phase, sw: lerp(28, 46, spd), lean: spd * 9 });
+    game.innerHTML = h;
+  }
+  function motion(lt) {
+    let sc = 0, ph = 0; const dt = 1 / 240;
+    for (let u = 0; u < lt; u += dt) { const k = ease(seg(u, 7.2, 7.7)); sc += lerp(140, 950, k) * dt; ph += 2 * Math.PI * lerp(2.0, 4.6, k) * dt; }
+    return { scroll: sc, phase: ph, spd: ease(seg(lt, 7.2, 7.7)) };
+  }
+  const touch = $('div', '', s.cam); css(touch, { position: 'absolute', left: 0, top: 0, width: '56px', height: '56px', marginLeft: '-28px', marginTop: '-28px', borderRadius: '50%', background: 'rgba(255,255,255,.22)', border: '2px solid rgba(255,255,255,.85)' });
+  const ripple = $('div', '', s.cam); css(ripple, { position: 'absolute', left: 0, top: 0, width: '56px', height: '56px', marginLeft: '-28px', marginTop: '-28px', borderRadius: '50%', border: '2px solid rgba(255,255,255,.9)' });
+  const toast = Txt(s.cam, `<span style="display:inline-flex;align-items:center;gap:12px;background:#0F1522;border:1px solid #2A3448;border-radius:999px;padding:12px 24px 12px 16px"><svg width="28" height="28" viewBox="-14 -14 28 28"><circle r="13" fill="rgba(52,211,153,.16)" stroke="${C.grn}" stroke-width="1.6"/><g transform="scale(.7)">${CHECK}</g></svg>Script ejecutado</span>`, { x: 1100, y: 300, size: 22, weight: 550 });
+  const chip = Txt(s.cam, `<span style="display:inline-flex;align-items:baseline;gap:14px;background:rgba(10,13,20,.8);border:1px solid #2A3448;border-radius:16px;padding:12px 22px"><span class="mono" style="font-size:16px;color:${C.mut}">WALKSPEED</span><span class="v" style="font-size:40px;font-weight:700;color:${C.accL};letter-spacing:-.02em">16</span></span>`, { x: 1440, y: 304, size: 20 });
+  const chipV = chip.querySelector('.v');
+  const CAM = camKF([[0, 960, 540, 1], [2.5, 960, 540, 1], [3.3, 650, 430, 1.6], [5.7, 650, 430, 1.6], [6.4, 960, 540, 1], [s.len, 960, 540, 1.04]]);
+  s.cap('Delta es un executor pensado sobre todo para el móvil: Android e iOS.', 0.4, 5.5);
+  s.cap('Tu script se ejecuta dentro del juego, como si fuera parte de él.', 7.4);
+  const rr = rng(3);
+  s.sfx = [[1.82, 'click', .5], [2.0, 'whoosh', .16, 1.3], [6.42, 'click', .5], [6.7, 'pop', .35], [7.2, 'whoosh', .45], [7.3, 'riser', .12, 2.2]];
+  [...FLAT].forEach((ch, i) => { if (ch.trim()) s.sfx.push([T0 + i / CPS, 'click', .11, 1.45 + rr() * 0.35]); });
+  function offIn(el, anc) { let x = 0, y = 0; while (el && el !== anc) { x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; } return [x, y]; }
+  s.upd = lt => {
+    const [cx, cy, ck] = CAM(lt); setCam(s, cx, cy, ck);
+    const m = motion(lt); drawGame(lt, m.scroll, m.phase, m.spd);
+    const open = eOut(seg(lt, 2.0, 2.45)), close = ease(seg(lt, 6.95, 7.35));
+    panel.style.display = open > 0 && close < 1 ? 'block' : 'none';
+    panel.style.transform = `translateX(${f1(-640 * (1 - open) - 640 * close)}px)`;
+    fab.style.opacity = f2(clamp(1 - seg(lt, 2.0, 2.2) + seg(lt, 7.3, 7.6)));
+    fab.style.transform = `scale(${f2(1 - .14 * pulse(lt, 1.82, .26))})`;
+    const n = clamp(Math.floor((lt - T0) * CPS), 0, FLAT.length);
+    codeEl.innerHTML = codeHTML(n, (lt > T0 && n < FLAT.length) || Math.floor(lt * 2.4) % 2 === 0);
+    run.style.transform = `scale(${f2(1 - .07 * pulse(lt, 6.42, .26))})`;
+    // touch indicator
+    let tp, op;
+    if (lt < 4) { tp = bez([1500, 820], [1050, 330], [410, 310], ease(seg(lt, 0.9, 1.8))); op = Math.min(seg(lt, 0.8, 1.0), 1 - seg(lt, 2.3, 2.6)); }
+    else {
+      const [rx, ry] = offIn(run, s.cam);
+      tp = bez([1000, 860], [760, 900], [rx + run.offsetWidth / 2, ry + run.offsetHeight / 2], ease(seg(lt, 5.75, 6.38)));
+      op = Math.min(seg(lt, 5.6, 5.8), 1 - seg(lt, 6.9, 7.2));
+    }
+    const press = Math.max(pulse(lt, 1.82, .26), pulse(lt, 6.42, .26));
+    touch.style.opacity = f2(op); touch.style.transform = `translate(${f1(tp[0])}px,${f1(tp[1])}px) scale(${f2(1 - .25 * press)})`;
+    const rp = lt < 4 ? seg(lt, 1.9, 2.4) : seg(lt, 6.5, 7.0);
+    ripple.style.opacity = f2(rp > 0 && rp < 1 ? (1 - rp) * 0.9 : 0);
+    ripple.style.transform = `translate(${f1(tp[0])}px,${f1(tp[1])}px) scale(${f2(1 + rp * 1.6)})`;
+    show(toast, lt, 6.65, 0.4, -14, 8.9);
+    show(chip, lt, 7.1, 0.4, 12);
+    chipV.textContent = Math.round(lerp(16, 100, ease(seg(lt, 7.2, 7.8))));
+  };
+}
+
+// ===== chapter headers =====
+function Chapter(key, n, title, o = {}) {
+  const s = Scene(key);
+  const big = Txt(s.cam, '0' + n, { mono: true, y: 540, size: 560, color: 'rgba(255,255,255,.028)', ls: '-.04em' });
+  const glow = Glow(s.cam, 960, 560, 640, o.red ? 'rgba(255,77,94,0.10)' : 'rgba(91,140,255,0.12)');
+  const kick = Txt(s.cam, `PARTE ${n}`, { mono: true, y: 440, size: 22, color: C.acc, ls: '.34em' });
+  const bar = $('div', 'abs', s.cam); css(bar, { left: '928px', top: '476px', width: '64px', height: '3px', background: C.acc, borderRadius: '2px', transform: 'scaleX(0)' });
+  const L = Line(s.cam, title, { size: o.size || 84, weight: 660, y: 566, red: o.red });
+  s.sfx = [[0.1, 'tick', .35], [0.55, 'impact', .32]];
+  s.upd = lt => {
+    setCam(s, 960, 540, lerp(1, 1.06, ease(seg(lt, 0, s.len))));
+    show(big, lt, 0, 1.2, 0); glow.style.opacity = f2(ease(seg(lt, 0, 1)));
+    show(kick, lt, 0.1, 0.5, 10);
+    bar.style.transform = `scaleX(${f2(ease(seg(lt, 0.2, 0.7)))})`;
+    L.reveal(lt, 0.35, 0.08, 0.5, 34);
+    L.hl(lt, 1.35, 0.5);
+  };
+  return s;
+}
+Chapter('D1', 1, '¿Qué hace en los juegos?');
+Chapter('E1', 2, '¿Cómo funciona?');
+Chapter('F1', 3, '¿Por qué el anticheat *no lo detecta*?', { size: 70, red: true }).sfx.push([-1.42, 'riser', .32]);
+
+// ===== D2 · what it does in games =====
+{
+  const s = Scene('D2');
+  const head = Line(s.ov, 'Lo que suelen hacer los scripts', { size: 34, weight: 500, y: 128, color: C.mut });
+  const data = [
+    ['Auto-farm', 'Repite misiones y recoge recursos sin que toques nada.'],
+    ['ESP', 'Muestra a los demás jugadores a través de las paredes.'],
+    ['Velocidad y vuelo', 'Cambia cómo se mueve tu personaje.'],
+    ['Teletransporte', 'Salta de un punto del mapa a otro al instante.'],
+  ];
+  const AP = [0.5, 2.65, 4.8, 6.95];
+  const cards = data.map(([t, d], i) => {
+    const x = 140 + i * 420, y = 300;
+    const c = $('div', 'card', s.cam); css(c, { left: px(x), top: px(y), width: '380px', height: '470px', opacity: 0 });
+    const sv = Svg(c, 380, 250, 190, 135);
+    const tt = $('div', 'abs', c, t); css(tt, { left: 0, right: 0, top: '268px', textAlign: 'center', fontSize: '32px', fontWeight: 620, letterSpacing: '-.02em' });
+    const dd = $('div', '', c, d); css(dd, { position: 'absolute', left: '34px', right: '34px', top: '322px', textAlign: 'center', fontSize: '23px', lineHeight: '1.38', color: '#AEB6C6' });
+    return { c, sv, cx: x + 190 };
+  });
+  const rc = rng(11), lines = Array.from({ length: 7 }, () => ({ y: 50 + rc() * 150, x: rc() * 420, l: 40 + rc() * 60 }));
+  const ICONS = [
+    u => { // auto-farm loop
+      const r = 62, th = 150 / r; let h = `<g transform="translate(190 120) rotate(${f1(u * 140)})">`;
+      h += `<circle r="${r}" fill="none" stroke="${C.acc}" stroke-width="7" stroke-dasharray="150 44.8" stroke-linecap="round"/>`;
+      for (const off of [0, Math.PI]) { const a = th + off, P = [r * Math.cos(a), r * Math.sin(a)], Tn = [-Math.sin(a), Math.cos(a)], N = [Math.cos(a), Math.sin(a)];
+        h += `<path d="M${f1(P[0] + Tn[0] * 14)} ${f1(P[1] + Tn[1] * 14)} L${f1(P[0] - N[0] * 12)} ${f1(P[1] - N[1] * 12)} L${f1(P[0] + N[0] * 12)} ${f1(P[1] + N[1] * 12)} Z" fill="${C.acc}"/>`; }
+      h += `</g><text x="190" y="132" text-anchor="middle" class="m" font-size="32" fill="${C.fg}">×${1 + Math.floor(Math.max(0, u) * 2.4)}</text>`;
+      for (let k = 0; k < 6; k++) { const p = ((Math.max(0, u) * 0.9 + k / 6) % 1), a = k * Math.PI / 3 + 0.35, rr2 = 84 + p * 46;
+        h += `<g transform="translate(${f1(190 + Math.cos(a) * rr2)} ${f1(120 + Math.sin(a) * rr2 - p * 18)})" opacity="${f2(Math.sin(Math.PI * p) * clamp(u * 2))}"><circle r="10" fill="${C.amb}"/><circle r="5.5" fill="none" stroke="#B9791C" stroke-width="2"/></g>`; }
+      return h;
+    },
+    u => { // ESP through a wall
+      let h = `<rect x="40" y="36" width="300" height="186" rx="8" fill="#1C2332" stroke="#2D3648" stroke-width="2"/>`;
+      for (let y = 36 + 31; y < 222; y += 31) h += `<path d="M40 ${y} H340" stroke="#283043" stroke-width="2"/>`;
+      for (let r = 0; r < 6; r++) for (let x = 40 + (r % 2 ? 37 : 74); x < 340; x += 74) h += `<path d="M${x} ${36 + r * 31} V${36 + (r + 1) * 31}" stroke="#283043" stroke-width="2"/>`;
+      const bo = eOut(seg(u, 0.3, 0.8));
+      [[118 + 24 * Math.sin(u * 1.4), 'jugador_7', 23], [268 + 20 * Math.sin(u * 1.1 + 2), 'noob_42', 41]].forEach(([x, n, d], i) => {
+        h += avatar(x, 200, 1.18, { ghost: C.acc, ph: u * 5 + i, sw: 10, op: 0.85 });
+        const dist = Math.round(d + 3 * Math.sin(u * 1.3 + i));
+        h += `<g opacity="${f2(bo)}"><rect x="${f1(x - 40)}" y="86" width="80" height="120" rx="4" fill="rgba(91,140,255,.08)" stroke="${C.acc}" stroke-width="2"/><text x="${f1(x)}" y="74" text-anchor="middle" class="m" font-size="13" fill="${C.accL}">${n} · ${dist} m</text></g>`;
+      });
+      return h;
+    },
+    u => { // speed + flight
+      const hov = 22 + 12 * Math.sin(u * 2.6);
+      let h = `<ellipse cx="190" cy="220" rx="${f1(52 - hov * 0.6)}" ry="8" fill="rgba(0,0,0,.45)"/>`;
+      for (const L of lines) { const x = ((L.x - u * 520) % 420 + 420) % 420 - 20; h += `<rect x="${f1(x)}" y="${f1(L.y)}" width="${f1(L.l)}" height="3" rx="1.5" fill="${C.accL}" opacity=".55"/>`; }
+      h += avatarSide(190, 206 - hov, 1.45, { ph: u * 14, sw: 40, lean: 12 });
+      const by = 70 - 8 * Math.sin(u * 3.2);
+      h += `<path d="M320 ${f1(by + 24)} L320 ${f1(by - 18)} M306 ${f1(by - 4)} L320 ${f1(by - 18)} L334 ${f1(by - 4)}" stroke="${C.acc}" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+      return h;
+    },
+    u => { // teleport A <-> B
+      const A = [100, 196], B = [280, 196], P = 2.0, uu = Math.max(0, u), c = Math.floor(uu / P), f = uu % P;
+      const from = c % 2 ? B : A, to = c % 2 ? A : B;
+      let h = `<ellipse cx="190" cy="200" rx="168" ry="30" fill="#121926" stroke="#243047" stroke-width="2"/>`;
+      h += `<path d="M${A[0]} ${A[1]} Q190 30 ${B[0]} ${B[1]}" fill="none" stroke="${C.acc}" stroke-width="2" stroke-dasharray="6 8" opacity=".45"/>`;
+      for (const p of [A, B]) h += `<ellipse cx="${p[0]}" cy="${p[1]}" rx="34" ry="9" fill="none" stroke="${C.acc}" stroke-width="2.5"/>`;
+      const ring = (p, k) => k > 0 && k < 1 ? `<ellipse cx="${p[0]}" cy="${p[1]}" rx="${f1(34 + k * 40)}" ry="${f1(9 + k * 10)}" fill="none" stroke="${C.accL}" stroke-width="2" opacity="${f2(1 - k)}"/>` : '';
+      h += ring(from, seg(f, 0.7, 1.1)) + ring(to, seg(f, 1.0, 1.4));
+      if (f < 0.9) h += avatar(from[0], from[1], 1.05, { sy: 1 - eOut(seg(f, 0.7, 0.9)) });
+      else h += avatar(to[0], to[1], 1.05, { sy: eBack(seg(f, 1.0, 1.25)) });
+      const dk = seg(f, 0.75, 1.05);
+      if (dk > 0 && dk < 1) { const p = bez(from, [190, 30], to, ease(dk)); h += `<circle cx="${f1(p[0])}" cy="${f1(p[1])}" r="7" fill="${C.accL}"/>`; }
+      return h;
+    },
+  ];
+  const K = [[0, 960, 545, 1.0], [AP[0] + 0.35, cards[0].cx, 545, 1.36]];
+  for (let i = 1; i < 4; i++) K.push([AP[i] - 0.55, cards[i - 1].cx, 545, 1.36], [AP[i] + 0.25, cards[i].cx, 545, 1.36]);
+  K.push([9.2, cards[3].cx, 545, 1.36], [10.0, 960, 540, 1.0], [s.len, 960, 540, 1.03]);
+  const CAM = camKF(K);
+  s.sfx = AP.map(a => [a, 'pop', .35]).concat(AP.slice(1).map(a => [a - 0.55, 'whoosh', .16, 1.2]), [[9.2, 'whoosh', .3]]);
+  s.upd = lt => {
+    const [x, y, k] = CAM(lt); setCam(s, x, y, k);
+    head.reveal(lt, 0.0, 0.05);
+    cards.forEach((c, i) => {
+      const u = lt - AP[i], e = eBack(seg(u, 0, 0.6));
+      c.c.style.opacity = f2(clamp(eOut(seg(u, 0, 0.35))));
+      c.c.style.transform = `translateY(${f1((1 - e) * 40)}px) scale(${f2(0.94 + 0.06 * e)})`;
+      c.sv.innerHTML = ICONS[i](u);
+    });
+  };
+}
+
+// ===== E2 · how it works, step by step =====
+{
+  const s = Scene('E2');
+  const NX = [520, 1160, 1800, 2440], NY = 430, ST = [0.4, 4.8, 9.2, 13.6];
+  const steps = [
+    ['Una app de Roblox modificada', 'Se instala en lugar de la app oficial: es Roblox con código extra dentro, y se activa con una key temporal.'],
+    ['Entras a un juego', 'El juego carga sus scripts en la máquina virtual Luau de tu móvil y los ejecuta.'],
+    ['Ejecuta tu script ahí dentro', 'Delta lo compila y lo mete en esa misma máquina virtual, con más permisos que un script normal.'],
+    ['Añade funciones extra', 'Herramientas que Roblox no da a los juegos, para que los scripts lleguen más lejos.'],
+  ];
+  const conns = [0, 1, 2].map(i => {
+    const x0 = NX[i] + 200, x1 = NX[i + 1] - 200;
+    const base = $('div', 'abs', s.cam); css(base, { left: px(x0), top: px(NY - 1), width: px(x1 - x0), height: '2px', background: C.line });
+    const fill = $('div', 'abs', s.cam); css(fill, { left: px(x0), top: px(NY - 1), width: px(x1 - x0), height: '2px', background: C.acc, transformOrigin: '0 50%', transform: 'scaleX(0)' });
+    const dot = $('div', 'abs', s.cam); css(dot, { left: px(x0 - 6), top: px(NY - 6), width: '12px', height: '12px', borderRadius: '50%', background: C.acc, opacity: 0 });
+    return { x0, x1, fill, dot };
+  });
+  const nodes = steps.map(([t, d], i) => ({
+    chip: Txt(s.cam, `PASO ${i + 1}`, { mono: true, x: NX[i], y: 262, size: 18, color: C.acc, ls: '.3em' }),
+    sv: Svg(s.cam, 340, 250, NX[i], NY),
+    title: Txt(s.cam, t, { x: NX[i], y: 612, size: 38, weight: 620, ls: '-.02em' }),
+    desc: Para(s.cam, d, { x: NX[i], y: 652, w: 540, size: 25, color: '#B4BCCB' }),
+  }));
+  const app = u => {
+    const k = eBack(seg(u, 0.5, 1.1)), kc = eBack(seg(u, 1.4, 1.8));
+    return `<rect x="80" y="14" width="180" height="180" rx="42" fill="#141B2A" stroke="#2A3448" stroke-width="2"/>
+      <text x="170" y="112" text-anchor="middle" font-size="30" font-weight="650" fill="${C.fg}">Roblox</text>
+      <g transform="translate(${f1(lerp(330, 252, k))} 180) scale(${f2(clamp(k, 0, 1.2))})" opacity="${f2(clamp(k * 1.4))}"><rect x="-42" y="-42" width="84" height="84" rx="20" fill="${C.acc}"/><text x="0" y="8" text-anchor="middle" class="m" font-size="24" fill="#fff">&lt;/&gt;</text></g>
+      <g transform="translate(150 236) scale(${f2(kc)})" opacity="${f2(clamp(kc))}"><rect x="-70" y="-16" width="140" height="32" rx="16" fill="#2A2110" stroke="${C.amb}" stroke-width="1.5"/><text x="0" y="6" text-anchor="middle" class="m" font-size="14" fill="${C.amb}">key temporal</text></g>`;
+  };
+  const vm = (u, withScript, appear) => {
+    let h = `<rect x="20" y="10" width="300" height="230" rx="20" fill="#0F1522" stroke="#273046" stroke-width="2"/>
+      <path d="M20 58 H320" stroke="#273046" stroke-width="2"/>
+      <text x="44" y="42" class="m" font-size="17" fill="${C.acc}" letter-spacing="1.5">LUAU VM</text>
+      <circle cx="270" cy="34" r="5" fill="#273046"/><circle cx="290" cy="34" r="5" fill="#273046"/>`;
+    ['LocalScript', 'Interfaz', 'Cámara'].forEach((r, k) => {
+      const y = 78 + k * 38, op = appear ? eOut(seg(u, 0.3 + k * 0.2, 0.7 + k * 0.2)) : 1, p = ((Math.max(0, u) * 0.55 + k * 0.37) % 1);
+      h += `<g opacity="${f2(op)}"><text x="44" y="${y + 17}" class="m" font-size="15" fill="${C.mut}">${r}</text><rect x="170" y="${y + 6}" width="120" height="10" rx="5" fill="#1A2233"/><rect x="170" y="${y + 6}" width="${f1(120 * p)}" height="10" rx="5" fill="#3A4766"/></g>`;
+    });
+    if (withScript) {
+      const k = eBack(seg(u, 0.5, 1.1)), y = 192;
+      h += `<g transform="translate(${f1((1 - k) * 260)} 0)" opacity="${f2(clamp(k * 1.5))}"><rect x="32" y="${y - 4}" width="276" height="34" rx="9" fill="rgba(91,140,255,.18)" stroke="${C.acc}" stroke-width="1.5"/><text x="44" y="${y + 17}" class="m" font-size="15" fill="${C.accL}">tu script</text><rect x="170" y="${y + 6}" width="120" height="10" rx="5" fill="#22325A"/><rect x="170" y="${y + 6}" width="${f1(120 * ((Math.max(0, u) * 0.9) % 1))}" height="10" rx="5" fill="${C.acc}"/></g>`;
+      const b = eBack(seg(u, 1.3, 1.7));
+      h += `<g transform="translate(236 8) scale(${f2(b)})" opacity="${f2(clamp(b))}"><rect x="-92" y="-17" width="184" height="34" rx="17" fill="#2A2110" stroke="${C.amb}" stroke-width="1.5"/><text x="0" y="6" text-anchor="middle" class="m" font-size="14" fill="${C.amb}">permisos elevados</text></g>`;
+    }
+    return h;
+  };
+  const tools = u => {
+    let h = '';
+    ['leer datos ocultos', 'interceptar funciones', 'simular toques y clics', 'ver los scripts del juego'].forEach((t, k) => {
+      const e = eBack(seg(u, 0.4 + k * 0.35, 0.8 + k * 0.35)), y = 18 + k * 56;
+      h += `<g transform="translate(${f1((1 - e) * 40)} 0)" opacity="${f2(clamp(e))}"><rect x="10" y="${y}" width="320" height="44" rx="12" fill="#121A2A" stroke="#2B3A5E" stroke-width="1.5"/><rect x="28" y="${y + 15}" width="14" height="14" rx="4" fill="${C.acc}"/><text x="58" y="${y + 28}" font-size="19" fill="${C.fg}">${t}</text></g>`;
+    });
+    return h;
+  };
+  const CAM = camKF([[0, NX[0], 470, 1.12], [0.9, NX[0], 470, 1.3],
+    [ST[1] - 0.6, NX[0], 470, 1.3], [ST[1] + 0.3, NX[1], 470, 1.3],
+    [ST[2] - 0.6, NX[1], 470, 1.3], [ST[2] + 0.3, NX[2], 470, 1.3],
+    [ST[3] - 0.6, NX[2], 470, 1.3], [ST[3] + 0.3, NX[3], 470, 1.3],
+    [17.8, NX[3], 470, 1.3], [18.8, 1480, 470, 0.66], [s.len, 1480, 470, 0.68]]);
+  s.cap('Todo esto pasa dentro de tu dispositivo.', 18.7);
+  s.sfx = ST.map(t => [t, 'tick', .35]).concat(ST.slice(1).map(t => [t - 0.6, 'whoosh', .18, 1.15]), [[ST[0] + 0.55, 'pop', .3], [ST[0] + 1.4, 'pop', .22, 1.2], [ST[2] + 0.55, 'pop', .3], [ST[2] + 1.35, 'pop', .3, 1.2], [17.8, 'whoosh', .3]]);
+  s.upd = lt => {
+    const [x, y, k] = CAM(lt); setCam(s, x, y, k);
+    nodes.forEach((n, i) => {
+      const u = lt - ST[i];
+      show(n.chip, lt, ST[i], .4, 10); show(n.title, lt, ST[i] + .25, .5, 14); show(n.desc, lt, ST[i] + .55, .5, 14);
+      n.sv.style.opacity = f2(eOut(seg(lt, ST[i], ST[i] + .4)));
+      n.sv.innerHTML = i === 0 ? app(u) : i === 1 ? vm(u, false, true) : i === 2 ? vm(u, true, false) : tools(u);
+    });
+    conns.forEach((c, i) => {
+      const p = ease(seg(lt, ST[i + 1] - 0.7, ST[i + 1] + 0.1));
+      c.fill.style.transform = `scaleX(${f2(p)})`;
+      c.dot.style.transform = `translateX(${f1(p * (c.x1 - c.x0))}px)`; c.dot.style.opacity = p > 0 ? 1 : 0;
+    });
+  };
+}
+
+// ===== E3 · client vs server =====
+{
+  const s = Scene('E3');
+  const head = Line(s.cam, 'Cliente y servidor', { size: 52, weight: 640, y: 150 });
+  const sub = Txt(s.cam, 'Lo que tu script puede cambiar… y lo que no', { y: 210, size: 26, color: C.mut, weight: 400 });
+  const sv = Svg(s.cam, W, H, 960, 540);
+  const PK = [{ t: 1.0, label: 'posición: (x, y, z)', ok: true }, { t: 4.9, label: 'RemoteEvent: Recoger', ok: true }, { t: 8.8, label: 'monedas = 1 000 000', ok: false }];
+  const LY = [420, 540, 660], X0 = 760, X1 = 1090;
+  s.cap('El movimiento de tu personaje lo calcula tu móvil: por eso la velocidad, el vuelo y el teletransporte llegan al servidor.', 1.2, 4.8);
+  s.cap('Los auto-farm usan los mismos eventos remotos que el propio juego. Si el juego no los comprueba, funcionan.', 5.1, 8.7);
+  s.cap('Pero lo que guarda y comprueba el servidor (Robux, compras, datos guardados) no se puede falsear.', 9.0);
+  s.sfx = PK.flatMap(p => [[p.t, 'whoosh', .2, 1.3], [p.t + 1.0, p.ok ? 'pop' : 'impact', p.ok ? .35 : .45]]);
+  s.upd = lt => {
+    setCam(s, 960, 540, lerp(1, 1.03, seg(lt, 0, s.len)));
+    head.reveal(lt, 0.1, 0.06); show(sub, lt, 0.5);
+    const bo = eOut(seg(lt, 0.3, 0.9));
+    let h = `<g opacity="${f2(bo)}">
+      <rect x="150" y="300" width="440" height="480" rx="26" fill="${C.card}" stroke="${C.line}" stroke-width="2"/>
+      <text x="190" y="352" class="m" font-size="16" fill="${C.mut}" letter-spacing="3">TU MÓVIL</text>
+      <text x="190" y="394" font-size="34" font-weight="640" fill="${C.fg}">Cliente</text>
+      <rect x="190" y="440" width="360" height="118" rx="16" fill="#131A28" stroke="#283149" stroke-width="1.5"/>
+      <text x="214" y="488" font-size="23" font-weight="600" fill="${C.fg}">Roblox</text>
+      <text x="214" y="520" class="m" font-size="14" fill="${C.mut}">scripts locales del juego</text>
+      <rect x="190" y="578" width="360" height="118" rx="16" fill="rgba(91,140,255,.12)" stroke="${C.acc}" stroke-width="1.5"/>
+      <text x="214" y="626" font-size="23" font-weight="600" fill="${C.accL}">Delta + tu script</text>
+      <text x="214" y="658" class="m" font-size="14" fill="${C.mut}">corre aquí, en tu móvil</text>
+      <rect x="1330" y="300" width="440" height="480" rx="26" fill="${C.card}" stroke="${C.line}" stroke-width="2"/>
+      <text x="1370" y="352" class="m" font-size="16" fill="${C.mut}" letter-spacing="3">ROBLOX</text>
+      <text x="1370" y="394" font-size="34" font-weight="640" fill="${C.fg}">Servidor</text>
+      ${rack(1550, 565, lt)}
+      <text x="1550" y="712" text-anchor="middle" class="m" font-size="14" fill="${C.mut}">decide qué es verdad</text>
+    </g>`;
+    LY.forEach(y => h += `<path d="M604 ${y} H1316" stroke="#2A3245" stroke-width="2" stroke-dasharray="2 10" stroke-linecap="round" opacity="${f2(bo)}"/>`);
+    PK.forEach((p, i) => {
+      const u = lt - p.t; if (u < 0) return;
+      const y = LY[i], wpx = p.label.length * 10.3 + 52;
+      let x = lerp(X0, X1, ease(seg(u, 0, 1.0))), col = C.acc, fill = '#121A2E', tcol = C.accL, shake = 0;
+      if (!p.ok) { x = lerp(X1, X1 - 150, eOut(seg(u, 1.0, 1.5))); shake = Math.sin(u * 60) * 6 * pulse(u, 1.0, 0.5); if (u > 1.0) { col = C.red; fill = '#2A1218'; tcol = '#FF9AA4'; } }
+      h += `<g transform="translate(${f1(x + shake)} ${y})" opacity="${f2(eOut(seg(u, 0, .25)))}"><rect x="${f1(-wpx / 2)}" y="-24" width="${f1(wpx)}" height="48" rx="24" fill="${fill}" stroke="${col}" stroke-width="1.8"/><text x="0" y="6" text-anchor="middle" class="m" font-size="17" fill="${tcol}">${p.label}</text></g>`;
+      const v = eBack(seg(u, 1.0, 1.35));
+      if (v > 0) h += `<g transform="translate(1290 ${y}) scale(${f2(v)})"><circle r="22" fill="${p.ok ? 'rgba(52,211,153,.16)' : 'rgba(255,77,94,.18)'}" stroke="${p.ok ? C.grn : C.red}" stroke-width="2"/>${p.ok ? CHECK : CROSS}</g>
+        <text x="1290" y="${y + 44}" text-anchor="middle" class="m" font-size="13" fill="${p.ok ? C.grn : C.red}" opacity="${f2(eOut(seg(u, 1.2, 1.5)))}">${p.ok ? 'aceptado' : 'rechazado'}</text>`;
+    });
+    sv.innerHTML = h;
+  };
+}
+
+// ===== F2 · Hyperion =====
+{
+  const s = Scene('F2');
+  const sv = Svg(s.cam, 520, 600, 600, 540);
+  const t1 = Txt(s.cam, 'Hyperion', { x: 900, y: 330, size: 104, weight: 700, anchor: 'l', ls: '-.045em' });
+  const t2 = Txt(s.cam, 'El anti-tamper de Roblox, antes llamado Byfron', { x: 906, y: 412, size: 28, color: C.mut, weight: 400, anchor: 'l' });
+  const rows = [['2022', 'Roblox compra la empresa Byfron', 500], ['2023', 'Hyperion llega al cliente de Windows', 556]].map(([yr, t, y]) => [
+    Txt(s.cam, yr, { mono: true, x: 906, y, size: 24, color: C.acc, anchor: 'l' }), Txt(s.cam, t, { x: 1004, y, size: 31, anchor: 'l' })]);
+  const d = Para(s.cam, 'Vigila que ningún programa lea o modifique Roblox mientras se ejecuta. Si detecta algo, cierra el juego.', { x: 906, y: 618, w: 860, size: 28, align: 'left', color: '#B9C1CF' });
+  s.sfx = [[0.25, 'whoosh', .25], [1.3, 'tick', .35], [1.9, 'tick', .35]];
+  s.upd = lt => {
+    setCam(s, 960, 540, lerp(1, 1.04, seg(lt, 0, s.len)));
+    show(t1, lt, 0.3, 0.6, 20); show(t2, lt, 0.6);
+    rows.forEach(([a, b], i) => { show(a, lt, 1.3 + i * 0.6, .5, 10); show(b, lt, 1.38 + i * 0.6, .5, 10); });
+    show(d, lt, 2.8);
+    const a = eBack(seg(lt, 0.2, 0.9));
+    let h = `<defs><clipPath id="shC"><path d="${SHIELD}"/></clipPath><linearGradient id="scanG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.acc}" stop-opacity="0"/><stop offset="1" stop-color="${C.acc}" stop-opacity=".35"/></linearGradient></defs><g transform="translate(260 300) scale(${f2(a)})" opacity="${f2(clamp(a))}">`;
+    for (let k = 0; k < 3; k++) { const p = (lt * 0.55 + k / 3) % 1; h += `<path d="${SHIELD}" fill="none" stroke="${C.acc}" stroke-width="2" opacity="${f2((1 - p) * 0.35 * clamp(lt - 0.6))}" transform="scale(${f2(1 + p * 0.55)})"/>`; }
+    h += `<path d="${SHIELD}" fill="rgba(91,140,255,.12)" stroke="${C.acc}" stroke-width="4"/>`;
+    const sy = -150 + ((lt * 0.7) % 1) * 310;
+    h += `<g clip-path="url(#shC)"><rect x="-130" y="${f1(sy - 50)}" width="260" height="50" fill="url(#scanG)"/><rect x="-130" y="${f1(sy)}" width="260" height="2" fill="${C.accL}" opacity=".8"/></g>`;
+    h += LOCK(C.fg, '#0F1522') + '</g>';
+    sv.innerHTML = h;
+  };
+}
+
+// ===== F3 · reason 1: built for PC =====
+{
+  const s = Scene('F3'); s.reason(1, 'Se diseñó para PC');
+  const sv = Svg(s.cam, W, H, 960, 540);
+  const labs = [Txt(s.cam, 'PC · Windows', { x: 640, y: 760, size: 32, weight: 620 }), Txt(s.cam, 'Hyperion desde 2023', { x: 640, y: 802, size: 22, color: C.mut, weight: 400 }),
+    Txt(s.cam, 'Móvil · Android e iOS', { x: 1290, y: 760, size: 32, weight: 620 }), Txt(s.cam, 'protección históricamente más limitada', { x: 1290, y: 802, size: 22, color: C.mut, weight: 400 })];
+  s.cap('Por eso muchos executors, como Delta, se centraron en el móvil.', 3.7);
+  s.sfx = [0, 1, 2].flatMap(k => [[2.25 + k * 0.22, 'click', .45], [3.4 + k * 0.22, 'pop', .22, 1.1]]);
+  s.upd = lt => {
+    setCam(s, 960, 540, lerp(1, 1.03, seg(lt, 0, s.len)));
+    labs.forEach((e, i) => show(e, lt, 0.9 + (i >> 1) * 0.3 + (i & 1) * 0.12, .5, 10));
+    const a1 = eOut(seg(lt, 0.4, 1.0)), a2 = eOut(seg(lt, 0.7, 1.3));
+    let h = `<g transform="translate(640 500)" opacity="${f2(a1)}"><rect x="-190" y="-150" width="380" height="240" rx="16" fill="#0F1522" stroke="#2E3850" stroke-width="3"/><rect x="-172" y="-132" width="344" height="204" rx="8" fill="#0B101B"/><path d="M-235 100 H235 L212 128 H-212 Z" fill="#1A2233" stroke="#2E3850" stroke-width="2"/></g>`;
+    h += `<g transform="translate(1290 480)" opacity="${f2(a2)}"><rect x="-95" y="-170" width="190" height="340" rx="30" fill="#0F1522" stroke="#2E3850" stroke-width="3"/><rect x="-80" y="-152" width="160" height="304" rx="18" fill="#0B101B"/><rect x="-24" y="-162" width="48" height="6" rx="3" fill="#2E3850"/></g>`;
+    const sA = eBack(seg(lt, 1.0, 1.6)), sB = eBack(seg(lt, 1.3, 1.9));
+    const hit = Math.max(...[0, 1, 2].map(k => pulse(lt, 2.25 + k * 0.22, 0.35)));
+    h += `<g transform="translate(640 470) scale(${f2(0.62 * sA)})" opacity="${f2(clamp(sA))}"><path d="${SHIELD}" fill="${hit > .1 ? `rgba(255,77,94,${f2(.12 + .2 * hit)})` : 'rgba(91,140,255,.16)'}" stroke="${hit > .1 ? C.red : C.acc}" stroke-width="5"/>${LOCK(C.fg, '#0F1522')}</g>`;
+    h += `<g transform="translate(1290 470) scale(${f2(0.5 * sB)})" opacity="${f2(clamp(sB) * 0.7)}"><path d="${SHIELD}" fill="rgba(91,140,255,.05)" stroke="${C.acc}" stroke-width="4" stroke-dasharray="16 14"/></g>`;
+    const glow = Math.max(...[0, 1, 2].map(k => pulse(lt, 3.4 + k * 0.22, 0.6)));
+    h += `<rect x="1210" y="328" width="160" height="304" rx="18" fill="${C.acc}" opacity="${f2(glow * 0.3)}"/>`;
+    const fin = eBack(seg(lt, 4.0, 4.4));
+    h += `<g transform="translate(1290 470) scale(${f2(fin)})" opacity="${f2(clamp(fin))}"><rect x="-38" y="-38" width="76" height="76" rx="18" fill="${C.acc}"/><text y="8" text-anchor="middle" class="m" font-size="22" fill="#fff">&lt;/&gt;</text></g>`;
+    for (let k = 0; k < 3; k++) {
+      const u = lt - (1.8 + k * 0.22); if (u < 0 || u > 1.62) continue;
+      const y0 = 430 + k * 45; let p, sc = 1;
+      if (u < 0.45) p = [lerp(150, 535, u / 0.45), y0];
+      else { p = bez([535, y0], [900, 150], [1290, 470], ease(seg(u, 0.45, 1.6))); sc = 1 - 0.6 * seg(u, 1.35, 1.6); }
+      h += `<g transform="translate(${f1(p[0])} ${f1(p[1])}) scale(${f2(sc)})" opacity="${f2(Math.min(seg(u, 0, .1), 1 - seg(u, 1.45, 1.6)))}"><rect x="-24" y="-24" width="48" height="48" rx="12" fill="${C.acc}"/><text y="7" text-anchor="middle" class="m" font-size="17" fill="#fff">&lt;/&gt;</text></g>`;
+    }
+    sv.innerHTML = h;
+  };
+}
+
+// ===== F4 · reason 2: it does not come in from outside =====
+{
+  const s = Scene('F4'); s.reason(2, 'No entra desde fuera');
+  const sv = Svg(s.cam, W, H, 960, 540);
+  s.cap('En PC, un programa externo intenta colarse en Roblox mientras se ejecuta… y Hyperion lo ve.', 0.6, 3.9);
+  s.cap('Delta ya viene dentro de la app desde el arranque, y puede manipular las comprobaciones que deberían delatarlo.', 4.1);
+  s.sfx = [[0.9, 'whoosh', .18, 1.3], [1.55, 'impact', .4], [4.3, 'whoosh', .2], [5.0, 'pop', .35], [5.5, 'tick', .3], [6.3, 'tick', .3]];
+  s.upd = lt => {
+    setCam(s, 960, 540, lerp(1, 1.03, seg(lt, 0, s.len)));
+    const pa = eOut(seg(lt, 0.3, 0.8)), pb = eOut(seg(lt, 0.5, 1.0));
+    const dimL = lerp(1, 0.4, ease(seg(lt, 3.8, 4.3))), dimR = lerp(0.4, 1, ease(seg(lt, 3.8, 4.3)));
+    let h = `<g opacity="${f2(pa * dimL)}"><rect x="150" y="300" width="760" height="480" rx="26" fill="${C.card}" stroke="${C.line}" stroke-width="2"/><text x="190" y="352" font-size="26" font-weight="620" fill="${C.mut}">Cheat clásico de PC</text>`;
+    h += `<g transform="translate(320 560)"><rect x="-90" y="-46" width="180" height="92" rx="16" fill="#1A1F2E" stroke="#3A4560" stroke-width="2"/><text y="7" text-anchor="middle" class="m" font-size="20" fill="${C.fg}">cheat.exe</text></g>`;
+    const hitOn = lt > 1.55, hit = pulse(lt, 1.55, 0.6);
+    h += `<g transform="translate(720 560)"><rect x="-128" y="-98" width="256" height="196" rx="36" fill="${hitOn ? `rgba(255,77,94,${f2(.08 * hit)})` : 'none'}" stroke="${hitOn ? C.red : C.acc}" stroke-width="3.5" opacity="${f2(.7 + .3 * hit)}"/><rect x="-100" y="-70" width="200" height="140" rx="22" fill="#141B2A" stroke="#2A3448" stroke-width="2"/><text y="10" text-anchor="middle" font-size="28" font-weight="650" fill="${C.fg}">Roblox</text></g>`;
+    const bp = ease(seg(lt, 0.9, 1.55));
+    if (bp > 0) h += `<path d="M410 560 H${f1(lerp(410, 592, bp))}" stroke="${hitOn ? C.red : C.amb}" stroke-width="3" stroke-dasharray="10 8"/>`;
+    if (hitOn) {
+      const xk = eBack(seg(lt, 1.55, 1.85));
+      h += `<g transform="translate(592 560) scale(${f2(xk)})"><circle r="20" fill="#2A1218" stroke="${C.red}" stroke-width="2"/><g transform="scale(.8)">${CROSS}</g></g>`;
+      h += `<text x="720" y="712" text-anchor="middle" class="m" font-size="18" fill="${C.red}" opacity="${f2(eOut(seg(lt, 1.8, 2.2)))}">detectado → se cierra el juego</text>`;
+    }
+    h += `</g><g opacity="${f2(pb * dimR)}"><rect x="1010" y="300" width="760" height="480" rx="26" fill="${C.card}" stroke="${C.line}" stroke-width="2"/><text x="1050" y="352" font-size="26" font-weight="620" fill="${C.accL}">Delta</text>`;
+    const bi = eOut(seg(lt, 4.1, 4.4)), mg = ease(seg(lt, 4.3, 5.0)), co = eOut(seg(lt, 4.8, 5.2));
+    const sh = eOut(seg(lt, 5.4, 5.9)), weak = ease(seg(lt, 6.2, 6.8));
+    h += `<rect x="1210" y="470" width="360" height="180" rx="30" fill="#101624" stroke="#2A3448" stroke-width="2" opacity="${f2(co)}"/>`;
+    h += `<rect x="1180" y="440" width="420" height="240" rx="48" fill="none" stroke="${C.acc}" stroke-width="3.5" stroke-dasharray="${f1(lerp(1400, 18, weak))} ${f1(lerp(0, 16, weak))}" opacity="${f2(sh * lerp(1, 0.55, weak))}"/>`;
+    h += `<g opacity="${f2(bi)}"><g transform="translate(${f1(lerp(1180, 1310, mg))} 560)"><rect x="-90" y="-60" width="180" height="120" rx="20" fill="#141B2A" stroke="#2A3448" stroke-width="2"/><text y="9" text-anchor="middle" font-size="26" font-weight="650" fill="${C.fg}">Roblox</text></g>`;
+    h += `<g transform="translate(${f1(lerp(1620, 1488, mg))} 560) scale(${f2(1 + 0.08 * pulse(lt, 6.2, 0.6))})"><rect x="-56" y="-56" width="112" height="112" rx="20" fill="${C.acc}"/><text y="8" text-anchor="middle" class="m" font-size="22" fill="#fff">&lt;/&gt;</text></g></g>`;
+    h += `<text x="1390" y="${f1(722 + (1 - eOut(seg(lt, 5.2, 5.6))) * 10)}" text-anchor="middle" class="m" font-size="18" fill="${C.accL}" opacity="${f2(eOut(seg(lt, 5.2, 5.6)))}">arranca con Delta ya dentro</text>`;
+    h += `<text x="1390" y="${f1(752 + (1 - eOut(seg(lt, 6.4, 6.8))) * 10)}" text-anchor="middle" class="m" font-size="17" fill="${C.amb}" opacity="${f2(eOut(seg(lt, 6.4, 6.8)))}">la vigilancia corre en una app que Delta controla</text></g>`;
+    sv.innerHTML = h;
+  };
+}
+
+// ===== F5 · reason 3: to the server you are just another player =====
+{
+  const s = Scene('F5'); s.reason(3, 'Para el servidor, eres un jugador más');
+  const sv = Svg(s.cam, W, H, 960, 540);
+  s.cap('El servidor solo ve peticiones, no qué programa las generó.', 0.8, 3.5);
+  s.cap('Solo lo pilla si el juego comprueba que algo es imposible, como correr demasiado rápido.', 3.7);
+  const RW = [430, 650], LAB = ['mover', 'saltar', 'recoger'];
+  s.upd = lt => {
+    setCam(s, 960, 540, lerp(1, 1.03, seg(lt, 0, s.len)));
+    const a = eOut(seg(lt, 0.3, 0.9));
+    let h = `<g opacity="${f2(a)}">`;
+    RW.forEach((y, r) => {
+      h += avatar(300, y + 48, 1.05) + `<text x="380" y="${y - 4}" font-size="27" font-weight="600" fill="${C.fg}">${r ? 'jugador con Delta' : 'jugador normal'}</text>`;
+      if (r) h += `<g transform="translate(668 ${y - 13})"><rect x="-26" y="-17" width="52" height="34" rx="9" fill="${C.acc}"/><text y="6" text-anchor="middle" class="m" font-size="15" fill="#fff">&lt;/&gt;</text></g>`;
+      h += `<path d="M380 ${y + 36} H1430" stroke="#232B3C" stroke-width="2" stroke-dasharray="2 10" stroke-linecap="round"/>`;
+    });
+    h += rack(1610, 560, lt) + `<text x="1610" y="706" text-anchor="middle" class="m" font-size="15" fill="${C.mut}">servidor</text></g>`;
+    for (let k = 0; k < 7; k++) {
+      const p = (lt - (0.6 + k * 0.8)) / 1.5; if (p <= 0 || p >= 1) continue;
+      const x = lerp(470, 1420, p), op = Math.min(1, p * 6, (1 - p) * 6);
+      RW.forEach(y => { h += `<g transform="translate(${f1(x)} ${y + 36})" opacity="${f2(op)}"><rect x="-62" y="-20" width="124" height="40" rx="20" fill="#121A2E" stroke="${C.acc}" stroke-width="1.6"/><text y="6" text-anchor="middle" class="m" font-size="16" fill="${C.accL}">${LAB[k % 3]}</text></g>`; });
+    }
+    const eq = eBack(seg(lt, 1.8, 2.2));
+    h += `<g transform="translate(1250 576) scale(${f2(eq)})" opacity="${f2(clamp(eq))}"><rect x="-120" y="-34" width="240" height="68" rx="16" fill="#0D1119" stroke="#2A3448" stroke-width="1.5"/><text x="-74" y="15" text-anchor="middle" font-size="44" font-weight="300" fill="${C.fg}">=</text><text x="18" y="7" text-anchor="middle" class="m" font-size="15" fill="${C.mut}">mismas peticiones</text></g>`;
+    sv.innerHTML = h;
+  };
+}
+
+// ===== F6 · reason 4: cat and mouse =====
+{
+  const s = Scene('F6'); s.reason(4, 'El gato y el ratón');
+  const sv = Svg(s.cam, W, H, 960, 540);
+  const CX = 960, CY = 590, RR = 200, SPD = 150, T0 = 0.9;
+  const NODES = [[-90, 'Roblox actualiza la app', C.fg], [30, 'El executor deja de funcionar', C.red], [150, 'Sus creadores lo adaptan', C.accL]];
+  s.cap('Roblox actualiza su app casi cada semana, y cada versión obliga al executor a ponerse al día.', 1.4);
+  for (let j = 0; j < 3; j++) NODES.forEach(([a], i) => { const t = T0 + ((a + 90) + 360 * j) / SPD; if (t < s.len - 0.3) s.sfx.push([t, i === 1 ? 'click' : 'tick', .32]); });
+  s.upd = lt => {
+    setCam(s, 960, 540, lerp(1, 1.03, seg(lt, 0, s.len)));
+    const a0 = eOut(seg(lt, 0.3, 0.9)), ang = -90 + Math.max(0, lt - T0) * SPD, rad = d => d * Math.PI / 180;
+    const P = d => [CX + RR * Math.cos(rad(d)), CY + RR * Math.sin(rad(d))];
+    let h = `<g opacity="${f2(a0)}"><circle cx="${CX}" cy="${CY}" r="${RR}" fill="none" stroke="#1E2533" stroke-width="4"/>`;
+    const tail = Math.min(100, ang + 90);
+    if (tail > 0.5) { const [x0, y0] = P(ang - tail), [x1, y1] = P(ang); h += `<path d="M${f1(x0)} ${f1(y0)} A${RR} ${RR} 0 0 1 ${f1(x1)} ${f1(y1)}" fill="none" stroke="${C.acc}" stroke-width="4" stroke-linecap="round" opacity=".85"/>`; }
+    const loops = Math.floor((ang + 90) / 360);
+    h += `<text x="${CX}" y="${CY - 22}" text-anchor="middle" class="m" font-size="16" fill="${C.mut}" letter-spacing="3">SEMANA</text><text x="${CX}" y="${CY + 44}" text-anchor="middle" font-size="68" font-weight="700" fill="${C.fg}">${1 + loops}</text>`;
+    NODES.forEach(([a, label, col], i) => {
+      const d = ang - a; let glow = 0;
+      if (d >= 0) glow = Math.exp(-((d % 360) / SPD) * 2.2);
+      const [x, y] = P(a);
+      h += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(14 + glow * 16)}" fill="${col}" opacity="${f2(glow * 0.25)}"/><circle cx="${f1(x)}" cy="${f1(y)}" r="12" fill="${d >= 0 ? col : '#1E2533'}" stroke="#07090E" stroke-width="3"/>`;
+      const lx = i === 0 ? x : i === 1 ? x + 34 : x - 34, ly = i === 0 ? y - 38 : y + 10, anchor = i === 0 ? 'middle' : i === 1 ? 'start' : 'end';
+      h += `<text x="${f1(lx)}" y="${f1(ly)}" text-anchor="${anchor}" font-size="28" font-weight="600" fill="${col}" opacity="${f2(0.5 + 0.5 * Math.max(glow, d >= 0 ? 0.4 : 0))}">${label}</text>`;
+    });
+    if (lt > T0) { const [x, y] = P(ang); h += `<circle cx="${f1(x)}" cy="${f1(y)}" r="20" fill="${C.acc}" opacity=".25"/><circle cx="${f1(x)}" cy="${f1(y)}" r="9" fill="${C.accL}"/>`; }
+    sv.innerHTML = h + '</g>';
+  };
+}
+
+// ===== F7 · but it is not invisible =====
+{
+  const s = Scene('F7');
+  const L = Line(s.cam, 'Pero *no es invisible*.', { size: 72, weight: 680, y: 236, red: true });
+  const card = $('div', 'card', s.cam); css(card, { left: '610px', top: '400px', width: '700px', height: '300px', opacity: 0 });
+  card.innerHTML = `<svg width="150" height="150" viewBox="0 0 150 150" style="position:absolute;left:44px;top:50px"><defs><clipPath id="avC"><rect width="150" height="150" rx="28"/></clipPath></defs><g clip-path="url(#avC)"><rect width="150" height="150" fill="#141B2A"/>${avatar(75, 214, 1.65)}</g></svg>
+    <div class="abs" style="left:226px;top:66px;font-size:42px;font-weight:650;letter-spacing:-.02em">jugador_123</div>
+    <div class="abs st" style="left:226px;top:136px;display:flex;align-items:center;gap:10px;padding:8px 18px 8px 14px;border-radius:999px;font-size:21px;font-weight:550"><span class="dot" style="width:10px;height:10px;border-radius:50%"></span><span class="tx"></span></div>
+    <div class="abs mono day" style="right:34px;top:30px;font-size:18px;color:${C.mut}"></div>`;
+  const st = card.querySelector('.st'), dot = card.querySelector('.dot'), stx = card.querySelector('.tx'), day = card.querySelector('.day');
+  const stamp = Txt(s.cam, 'BANEADO', { x: 1112, y: 624, size: 52, weight: 800, color: C.red, ls: '.06em' });
+  css(stamp, { border: '5px solid ' + C.red, borderRadius: '12px', padding: '2px 22px', background: 'rgba(42,18,24,.6)' });
+  s.cap('Roblox puede detectarlo y banear días o semanas después, a menudo en oleadas, para no revelar qué ha detectado.', 4.1);
+  s.sfx = [[0.3, 'whoosh', .25], [1.0, 'tick', .25], [1.6, 'riser', .22], [3.6, 'impact', .6], [3.62, 'impact', .35, 0.7]];
+  for (let d = 1; d <= 21; d++) s.sfx.push([1.6 + (d / 21) * 1.7, 'tick', .14, 1.3]);
+  s.upd = lt => {
+    setCam(s, 960, 540, lerp(1, 1.04, seg(lt, 0, s.len)));
+    L.reveal(lt, 0.2, 0.09, 0.5, 26); L.hl(lt, 1.0, 0.5);
+    const ce = eOut(seg(lt, 0.8, 1.3)), sk = Math.sin(lt * 70) * 9 * pulse(lt, 3.6, 0.4);
+    card.style.opacity = f2(ce); card.style.transform = `translate(${f1(sk)}px, ${f1((1 - ce) * 24)}px)`;
+    const banned = lt >= 3.62;
+    card.style.borderColor = banned ? 'rgba(255,77,94,.6)' : C.line;
+    st.style.background = banned ? 'rgba(255,77,94,.14)' : 'rgba(52,211,153,.12)';
+    st.style.color = banned ? '#FF9AA4' : C.grn; dot.style.background = banned ? C.red : C.grn;
+    stx.textContent = banned ? 'Cuenta suspendida' : 'Cuenta activa';
+    const dd = Math.floor(lerp(0, 21, seg(lt, 1.6, 3.3)));
+    day.textContent = dd ? `+${dd} DÍA${dd > 1 ? 'S' : ''}` : 'HOY';
+    const k = eOut(seg(lt, 3.6, 3.85));
+    stamp.style.opacity = f2(k);
+    stamp.style.transform = `translate(-50%,-50%) translate(${f1(sk)}px,0) rotate(-10deg) scale(${f2(lerp(2.2, 1, k))})`;
+  };
+}
+
+// ===== G · the real risks =====
+{
+  const s = Scene('G');
+  const L = Line(s.cam, 'Los riesgos reales', { size: 64, weight: 660, y: 250 });
+  const IC = {
+    ban: `<circle r="15" fill="none" stroke="${C.red}" stroke-width="3.5"/><path d="M-10.5 10.5 L10.5 -10.5" stroke="${C.red}" stroke-width="3.5" stroke-linecap="round"/>`,
+    bug: `<ellipse cy="3" rx="10" ry="13" fill="none" stroke="${C.red}" stroke-width="3"/><path d="M-6 -12 Q0 -18 6 -12 M-10 0 H-17 M10 0 H17 M-10 9 L-16 14 M10 9 L16 14 M-9 -7 L-15 -12 M9 -7 L15 -12 M0 -8 V16" fill="none" stroke="${C.red}" stroke-width="2.6" stroke-linecap="round"/>`,
+    lock: `<rect x="-13" y="-3" width="26" height="20" rx="4" fill="none" stroke="${C.red}" stroke-width="3"/><path d="M-8 -3 V-10 A8 8 0 0 1 8 -12" fill="none" stroke="${C.red}" stroke-width="3" stroke-linecap="round"/>`,
+  };
+  const rows = [['ban', 'Baneo de la cuenta, temporal o permanente'], ['bug', 'Descargas falsas con malware'], ['lock', 'Scripts de terceros que roban cuentas']].map(([ic, t], i) => {
+    const y = 420 + i * 118, sv = Svg(s.cam, 72, 72, 556, y);
+    sv.innerHTML = `<g transform="translate(36 36)"><circle r="34" fill="rgba(255,77,94,.10)" stroke="rgba(255,77,94,.5)" stroke-width="1.5"/>${IC[ic]}</g>`; sv.style.opacity = 0;
+    return { sv, tx: Txt(s.cam, t, { x: 624, y, size: 38, weight: 550, anchor: 'l' }) };
+  });
+  const foot = Txt(s.cam, 'Además, usar executors va contra los Términos de Uso de Roblox.', { y: 812, size: 28, color: C.mut, weight: 400 });
+  s.sfx = [[0.9, 'pop', .35], [1.7, 'pop', .35], [2.5, 'pop', .35], [3.5, 'tick', .3]];
+  s.upd = lt => {
+    setCam(s, 960, 540, lerp(1, 1.04, seg(lt, 0, s.len)));
+    L.reveal(lt, 0.2, 0.08, 0.5, 24);
+    rows.forEach((r, i) => { const a = 0.9 + i * 0.8, e = eBack(seg(lt, a, a + 0.45)); r.sv.style.opacity = f2(clamp(e)); r.sv.style.transform = `scale(${f2(e)})`; show(r.tx, lt, a + 0.08, .5, 0); r.tx.style.transform = `translate(0,-50%) translateX(${f1((1 - eOut(seg(lt, a + .08, a + .58))) * 24)}px)`; });
+    show(foot, lt, 3.5);
+  };
+}
+
+// ===== H · close =====
+{
+  const s = Scene('H');
+  const L = Line(s.cam, 'Indetectable hoy *no significa* seguro mañana.', { size: 30, weight: 560 });
+  const kick = Txt(s.ov, 'DELTA EXECUTOR · EXPLICADO', { mono: true, y: 812, size: 18, color: C.mut, ls: '.32em' });
+  s.sfx = [[1.3, 'whoosh', .32], [2.45, 'tick', .3]];
+  s.upd = lt => {
+    const k1 = clamp(0.8 * W / L.el.offsetWidth, 1, 3);
+    setCam(s, 960, 520, kf([[0, 1], [1.3, 1], [2.5, k1], [s.len, k1 * 1.04]])(lt));
+    L.reveal(lt, 0.2, 0.07);
+    L.hl(lt, 2.4, 0.5);
+    show(kick, lt, 3.2, 0.6, 10);
+  };
+}
+
+// ---------- HUD ----------
+const hud = $('div', '', stage); css(hud, { position: 'absolute', left: 0, top: 0, width: '1920px', height: '1080px' });
+const hudL = $('div', 'abs mono', hud, 'DELTA EXECUTOR · EXPLICADO'); css(hudL, { left: '56px', top: '42px', fontSize: '15px', color: C.dim, letterSpacing: '.22em' });
+const CHS = [['01', 'QUÉ HACE', T.D1, T.E1], ['02', 'CÓMO FUNCIONA', T.E1, T.F1], ['03', 'POR QUÉ NO LO DETECTA', T.F1, T.G]];
+const hudR = $('div', 'abs mono', hud); css(hudR, { right: '56px', top: '42px', fontSize: '15px', letterSpacing: '.16em', display: 'flex', gap: '34px' });
+const chEls = CHS.map(([n, t]) => $('span', '', hudR, `<span>${n}</span>&nbsp; ${t}`));
+const track = $('div', 'abs', hud); css(track, { left: '56px', top: '1034px', width: '1808px', height: '2px', background: '#141924' });
+const fill = $('div', 'abs', hud); css(fill, { left: '56px', top: '1034px', width: '1808px', height: '2px', background: C.acc, transformOrigin: '0 50%' });
+function hudUpd(t) {
+  hud.style.opacity = f2(Math.min(seg(t, T.B, T.B + 0.6), 1 - seg(t, T.H, T.H + 0.6)));
+  chEls.forEach((e, i) => { const on = t >= CHS[i][2] && t < CHS[i][3]; e.style.color = on ? C.fg : C.dim; e.firstChild.style.color = on ? C.acc : C.dim; });
+  fill.style.transform = `scaleX(${(t / DUR).toFixed(4)})`;
+}
+
+// ---------- seek ----------
+window.seek = function (t) {
+  t = clamp(t, 0, DUR - 1e-6);
+  for (const s of scenes) {
+    if (t < s.a || t > s.b) { s.root.style.display = 'none'; continue; }
+    s.root.style.display = 'block';
+    let k = Math.min(s.a <= 0 ? 1 : seg(t, s.a, s.a + FADE), s.b >= DUR ? 1 - seg(t, DUR - 1.0, DUR - 0.05) : 1 - seg(t, s.b - FADE, s.b));
+    s.root.style.opacity = f2(k);
+    s.root.style.filter = k < 0.999 && s.b < DUR ? `blur(${f1((1 - k) * 10)}px)` : 'none';
+    const lt = t - s.a;
+    s.upd(lt);
+    for (const [e, a, b] of s.caps) show(e, lt, a, 0.5, 14, b);
+    if (s.rh) { show(s.rh.k, lt, 0.05, 0.45, 10); s.rh.L.reveal(lt, 0.15, 0.06); }
+  }
+  hudUpd(t);
+};
+
+// ---------- sound ----------
+const SFX = { whoosh: '{{SFX_whoosh}}', click: '{{SFX_click}}', pop: '{{SFX_pop}}', riser: '{{SFX_riser}}', impact: '{{SFX_impact}}', tick: '{{SFX_tick}}' };
+function b64ab(b) { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u.buffer; }
+function allCues() {
+  const out = [];
+  for (const s of scenes) {
+    if (s.a > 0) out.push([s.a, 'whoosh', .2, 1.1]);
+    for (const [lt, n, g = .4, r = 1] of s.sfx) out.push([s.a + lt, n, g, r]);
+  }
+  return out;
+}
+window.buildAudio = async function (ctx) {
+  const sr = ctx.sampleRate, R = rng(99);
+  const sfx = {}; for (const k in SFX) sfx[k] = await ctx.decodeAudioData(b64ab(SFX[k]));
+  const master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.2; comp.connect(master);
+  const music = ctx.createGain(); music.gain.value = 0.45; music.connect(comp);
+  const fx = ctx.createGain(); fx.gain.value = 0.9; fx.connect(comp);
+  const noise = ctx.createBuffer(1, sr, sr); { const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = R() * 2 - 1; }
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+  // A minor, i - VI - III - VII, 100 BPM, two bars per chord
+  const PROG = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], ROOT = [45, 41, 48, 43], CH = 4.8;
+  const chordAt = i => i * CH >= T.H - 0.01 ? 0 : i % 4;
+  // pad
+  const padLP = ctx.createBiquadFilter(); padLP.type = 'lowpass'; padLP.frequency.value = 1300; padLP.Q.value = 0.4; padLP.connect(music);
+  const pad = ctx.createGain(); pad.connect(padLP);
+  pad.gain.setValueAtTime(0, 0); pad.gain.linearRampToValueAtTime(1, 2); pad.gain.setValueAtTime(1, DUR - 2.5); pad.gain.linearRampToValueAtTime(0, DUR - 0.05);
+  for (let i = 0; i * CH < T.H + 0.5; i++) {
+    const st = i * CH, last = st >= T.H - 0.01, len = last ? DUR - st : CH;
+    for (const m of PROG[chordAt(i)]) for (const det of [-8, 8]) {
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(m); o.detune.value = det;
+      const g = ctx.createGain(); o.connect(g); g.connect(pad);
+      const a = Math.max(0, st - 0.35);
+      g.gain.setValueAtTime(0, a); g.gain.linearRampToValueAtTime(0.016, a + 0.9); g.gain.setValueAtTime(0.016, st + len - 0.1); g.gain.linearRampToValueAtTime(0, st + len + 0.9);
+      o.start(a); o.stop(st + len + 1);
+    }
+  }
+  // bass
+  const bLP = ctx.createBiquadFilter(); bLP.type = 'lowpass'; bLP.frequency.value = 420; bLP.connect(music);
+  for (let b = Math.ceil(T.B / 1.2); b * 1.2 < T.H + 0.01; b++) {
+    const t = b * 1.2, i = Math.floor(t / CH + 1e-6), end = t >= T.H - 0.01;
+    const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = mtof(ROOT[chordAt(i)]);
+    const g = ctx.createGain(); o.connect(g); g.connect(bLP);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.22, t + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t + (end ? 4 : 1.1));
+    o.start(t); o.stop(t + (end ? 4.1 : 1.15));
+  }
+  // arp with a little echo
+  const aLP = ctx.createBiquadFilter(); aLP.type = 'lowpass'; aLP.frequency.value = 2800; aLP.connect(music);
+  const dly = ctx.createDelay(1); dly.delayTime.value = 0.45; const fb = ctx.createGain(); fb.gain.value = 0.3; const wet = ctx.createGain(); wet.gain.value = 0.3;
+  aLP.connect(dly); dly.connect(fb); fb.connect(dly); dly.connect(wet); wet.connect(music);
+  const PAT = [0, 1, 2, 1, 0, 2, 1, 2];
+  const inArp = t => (t >= T.D1 && t < T.F7) || (t >= T.G && t < T.H);
+  for (let b = Math.ceil(T.D1 / 0.3); b * 0.3 < T.H; b++) {
+    const t = b * 0.3; if (!inArp(t)) continue;
+    const m = PROG[chordAt(Math.floor(t / CH + 1e-6))][PAT[b % 8]] + 12;
+    const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = mtof(m);
+    const g = ctx.createGain(); o.connect(g); g.connect(aLP);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.05, t + 0.005); g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    o.start(t); o.stop(t + 0.3);
+  }
+  // light drums from part 2
+  const inDrums = t => (t >= T.E1 && t < T.F7) || (t >= T.G && t < T.H);
+  for (let b = Math.ceil(T.E1 / 0.6); b * 0.6 < T.H; b++) {
+    const t = b * 0.6; if (!inDrums(t)) continue;
+    if (b % 2 === 0) {
+      const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+      const g = ctx.createGain(); o.connect(g); g.connect(music);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.34, t + 0.005); g.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+      o.start(t); o.stop(t + 0.35);
+    }
+    const th = t + 0.3; if (th < T.E2 || !inDrums(th)) continue;
+    const n = ctx.createBufferSource(); n.buffer = noise;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7500;
+    const g = ctx.createGain(); n.connect(hp); hp.connect(g); g.connect(music);
+    g.gain.setValueAtTime(0.0001, th); g.gain.linearRampToValueAtTime(0.05, th + 0.003); g.gain.exponentialRampToValueAtTime(0.001, th + 0.05);
+    n.start(th, R() * 0.8, 0.07);
+  }
+  // sound effects
+  for (const [t, n, g, r] of allCues()) {
+    if (!sfx[n] || t < 0 || t >= DUR) continue;
+    const src = ctx.createBufferSource(); src.buffer = sfx[n]; src.playbackRate.value = r;
+    const gn = ctx.createGain(); gn.gain.value = g; src.connect(gn); gn.connect(fx); src.start(t);
+  }
+};
+
+// ---------- preview ----------
+if (RENDER) { document.getElementById('ui').remove(); }
+else {
+  const fit = () => { const k = Math.min(innerWidth / W, (innerHeight - 56) / H); stage.style.transform = `translate(${(innerWidth - W * k) / 2}px,${(innerHeight - 56 - H * k) / 2}px) scale(${k})`; };
+  addEventListener('resize', fit); fit();
+  const pp = document.getElementById('pp'), scrub = document.getElementById('scrub'), tc = document.getElementById('tc');
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  async function play() {
+    ac ??= new AudioContext();
+    if (!buf) { pp.textContent = 'Cargando audio…'; const off = new OfflineAudioContext(2, Math.ceil(48000 * DUR), 48000); await buildAudio(off); buf = await off.startRendering(); }
+    src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination);
+    src.start(0, offset % DUR); startAt = ac.currentTime; playing = true; pp.textContent = 'Pausa';
+  }
+  function pause() { if (!playing) return; offset += ac.currentTime - startAt; src.stop(); playing = false; pp.textContent = 'Play'; }
+  function now() { return playing ? (offset + ac.currentTime - startAt) % DUR : offset; }
+  pp.onclick = () => playing ? pause() : play();
+  addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); } });
+  scrub.oninput = () => { const was = playing; pause(); offset = scrub.value / 1000 * DUR; if (was) play(); };
+  (function loop() { const t = now(); seek(t); if (document.activeElement !== scrub) scrub.value = Math.round(t / DUR * 1000); tc.textContent = t.toFixed(1) + ' s'; requestAnimationFrame(loop); })();
+}
+</script>
+</body>
+</html>
