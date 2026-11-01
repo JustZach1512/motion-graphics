@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Por qué las hitboxes de Roblox son una mierda</title>
+<style>
+/*FONTS*/
+html,body{margin:0;background:#000;overflow:hidden;font-family:"JetBrains Mono",monospace}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+canvas{display:block}
+#ui{position:fixed;left:0;right:0;bottom:0;display:flex;gap:12px;align-items:center;padding:10px 16px;background:rgba(0,0,0,.75);color:#EDEBE4;font-size:13px}
+#ui button{background:#FF4F1A;color:#0B0B10;border:0;font:inherit;font-weight:700;padding:6px 14px;cursor:pointer}
+#ui input{flex:1}
+body.render #ui{display:none}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="1920" height="1080"></canvas></div>
+<div id="ui"><button id="pp">PLAY</button><input id="scrub" type="range" min="0" max="90" step="0.001" value="0"><span id="tc">0.00</span></div>
+<script>
+/* ============================================================================
+  POR QUÉ LAS HITBOXES DE ROBLOX SON UNA MIERDA. 90 s, 1920x1080, 120 BPM (beat = 0.5 s, bar = 2 s)
+  Beat sheet (time · what happens · sound)
+   0.00  S1 cold open: arena, blue player + orange enemy              · music intro
+   0.45  player dashes in                                             · whoosh
+   1.50  swing goes clean through the enemy                           · whoosh
+   2.00  MISS stamp, music stops for a beat                           · impact
+   2.5-4 "Le has dado. / Lo has visto. / Y no cuenta."                · ticks
+   5.10  enemy swings from far away                                   · whoosh
+   5.50  you get hit anyway (-25)                                     · punch
+   7.00  its sword hitbox is revealed (huge)                          · pop, riser to 8.0
+   8.00  S2 the hitbox floods the screen green -> title slam          · impact, drop
+   9.50  "UNA MIERDA." on ink bar                                     · impact
+  10.50  misaligned "hitbox (aprox.)" box                              · glitch
+  11.50  the full stop detaches and floods ink                        · whoosh
+  12.00  S3 01 LO QUE VES YA PASÓ (header)                             · impact
+  13.50  three panels: su ordenador / servidor / tu pantalla          · pop
+  21.30  camera pushes into "tu pantalla"                              · whoosh
+  22.50  you swing at the enemy you see (the past)                    · whoosh
+  23.20  "en tu pantalla: sí"                                          · pop
+  24.00  server checks the present: MISS                              · impact
+  27.00  S4 02 NADIE REBOBINA                                          · impact
+  29.00  rewind 0.7 s, ghost slides back                              · vhs rewind
+  30.50  HIT                                                           · ding
+  31.00  hard cut: "¿Y en Roblox?"                                     · whoosh
+  31.50  NO VIENE DE SERIE                                             · impact
+  34.75  "…o no."                                                     · impact
+  35.60  accent wipe                                                   · whoosh
+  36.00  S5 03 HITBOXES DE UN SOLO FRAME                               · impact
+  40.00  one-frame check flashes, enemy arrives late                   · pop
+  40.50  MISS                                                          · glitch
+  44.00  the box becomes enormous                                      · whoosh
+  45.00  HIT from 3 metres                                             · punch
+  47.30  giant hitbox floods the screen                                · riser
+  48.00  S6 04 TU HITBOX VA DETRÁS DE TI                               · impact
+  50.00  dash, swing, server spawns the box where you were            · whoosh
+  51.50  MISS                                                          · glitch
+  57.40  streak wipe                                                   · whoosh
+  58.00  S7 05 SE COMPRUEBA A SALTOS                                   · impact
+  60.27  60/s lane: detected                                           · ding
+  61.50  20/s lane: goes straight through                             · glitch
+  67.40  dot floods blue                                               · whoosh
+  68.00  S8 06 ¿QUIÉN DECIDE SI HAS DADO?                              · impact
+  69.60  orange half slides in                                         · whoosh
+  77.00  "Elijas lo que elijas, alguien se come el lag."              · impact
+  80.00  S9 recap (6 rows)                                             · ticks
+  85.00  "No es solo tu wifi."                                         · impact
+  88.00  final MISS on the hitbox of the sentence                      · impact
+  89.30  fade out
+============================================================================ */
+const W = 1920, H = 1080, DUR = 90, BPM = 120, BEAT = 60 / BPM;
+window.VIDEO = { w: W, h: H, duration: DUR };
+const RENDER = location.search.includes('render');
+if (RENDER) document.body.classList.add('render');
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+
+// palette
+const INK = '#0B0B10', INK2 = '#13131B', CREAM = '#EDEBE4', ACC = '#FF4F1A', BLUE = '#2F47FF', HIT = '#38F28A', WHITE = '#FFFFFF';
+
+// ---------- helpers ----------
+function spring(t, w = 14, z = 0.82) {
+  if (t <= 0) return 0;
+  if (z >= 1) return 1 - Math.exp(-w * t) * (1 + w * t);
+  const wd = w * Math.sqrt(1 - z * z);
+  return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+}
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const eOut = x => 1 - Math.pow(1 - clamp(x), 3);
+const eIn = x => Math.pow(clamp(x), 3);
+const lerp = (a, b, k) => a + (b - a) * k;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const kf = keys => t => { if (t <= keys[0][0]) return keys[0][1]; for (let i = 1; i < keys.length; i++) { const [a, va] = keys[i - 1], [b, vb, e = ease] = keys[i]; if (t <= b) return lerp(va, vb, e((t - a) / (b - a))); } return keys[keys.length - 1][1]; };
+const rng = s => () => (s = (s + 0x6D2B79F5) | 0, s = Math.imul(s ^ (s >>> 15), 1 | s), s ^= s + Math.imul(s ^ (s >>> 7), 61 | s), ((s ^ (s >>> 14)) >>> 0) / 4294967296);
+const win = (t, a, b, fi = .2, fo = .2) => Math.min(ease(seg(t, a, a + fi)), 1 - ease(seg(t, b - fo, b)));
+const shake = (t, t0, amp) => t < t0 ? 0 : amp * Math.exp(-(t - t0) * 9) * Math.sin((t - t0) * 70);
+function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`; }
+function mixc(h1, h2, k) { const a = parseInt(h1.slice(1), 16), b = parseInt(h2.slice(1), 16); const c = (s) => Math.round(lerp(a >> s & 255, b >> s & 255, k)); return '#' + ((1 << 24) | (c(16) << 16) | (c(8) << 8) | c(0)).toString(16).slice(1); }
+
+// fonts
+const FL = (w, s, fam = 'Inter Tight', st = '') => `${st} ${w} ${s}px "${fam}"`.trim();
+const MONO = (s, w = 500) => FL(w, s, 'JetBrains Mono');
+const SERIF = s => FL(400, s, 'Instrument Serif', 'italic');
+
+function T(str, x, y, { f, c = CREAM, a = 1, al = 'left', ls = 0, stroke = 0 } = {}) {
+  if (a <= 0) return;
+  ctx.save(); ctx.font = f; ctx.globalAlpha *= a; ctx.textAlign = al; ctx.textBaseline = 'alphabetic'; ctx.letterSpacing = ls + 'px';
+  if (stroke) { ctx.lineWidth = stroke; ctx.strokeStyle = c; ctx.lineJoin = 'round'; ctx.strokeText(str, x, y); } else { ctx.fillStyle = c; ctx.fillText(str, x, y); }
+  ctx.restore();
+}
+function MW(str, f, ls = 0) { ctx.save(); ctx.font = f; ctx.letterSpacing = ls + 'px'; const w = ctx.measureText(str).width; ctx.restore(); return w; }
+
+// per-letter masked reveal
+function slam(str, x, y, size, t, t0, { w = 900, c = CREAM, al = 'left', ls = -0.02, per = 0.022, fam = 'Inter Tight', st = '', stroke = 0, a = 1, clip = true } = {}) {
+  if (t < t0 || a <= 0) return;
+  const f = FL(w, size, fam, st), L = ls * size, tw = MW(str, f, L);
+  const x0 = al === 'center' ? x - tw / 2 : al === 'right' ? x - tw : x;
+  ctx.save(); ctx.font = f; ctx.letterSpacing = L + 'px'; ctx.fillStyle = c; ctx.strokeStyle = c; ctx.lineWidth = stroke; ctx.lineJoin = 'round';
+  ctx.globalAlpha *= a; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  if (clip) { ctx.beginPath(); ctx.rect(x0 - size, y - size * 1.08, tw + size * 2, size * 1.4); ctx.clip(); }
+  let acc = '';
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i], ox = ctx.measureText(acc).width; acc += ch;
+    if (ch === ' ') continue;
+    const k = spring(t - t0 - i * per, 20, 0.72); if (k <= 0) continue;
+    const dy = (1 - k) * size * 1.15;
+    if (stroke) ctx.strokeText(ch, x0 + ox, y + dy); else ctx.fillText(ch, x0 + ox, y + dy);
+  }
+  ctx.restore();
+  return tw;
+}
+function typed(str, t, t0, cps = 40) { return t < t0 ? '' : str.slice(0, Math.floor((t - t0) * cps)); }
+function caret(x, y, size, t, c = CREAM) { if ((t * 2.2) % 1 < .55) { ctx.fillStyle = c; ctx.fillRect(x + 4, y - size * .8, size * .5, size * .95); } }
+
+// rich caption with *accent* words, optional sub line. Pill backing.
+function caption(t, t0, t1, lines, { y = 958, size = 42, sub = '', c = CREAM, acc = ACC, back = 'rgba(11,11,16,0.82)' } = {}) {
+  if (t < t0 || t > t1) return;
+  const aOut = 1 - ease(seg(t, t1 - .25, t1)), kIn = eOut(seg(t, t0, t0 + .25));
+  const f = FL(650, size), lh = size * 1.22, n = lines.length;
+  const subF = MONO(20, 500), subH = sub ? 34 : 0;
+  let maxw = 0; for (const l of lines) maxw = Math.max(maxw, MW(l.replace(/\*/g, ''), f));
+  if (sub) maxw = Math.max(maxw, MW(sub, subF));
+  const top = y - (n - 1) * lh - subH;
+  ctx.save(); ctx.globalAlpha *= aOut;
+  ctx.fillStyle = back; ctx.beginPath();
+  const pw = (maxw + 70) * lerp(.92, 1, kIn), ph = (n - 1) * lh + size + 38 + subH;
+  ctx.globalAlpha *= kIn; ctx.roundRect(W / 2 - pw / 2, top - size - 12, pw, ph, 14); ctx.fill(); ctx.globalAlpha /= Math.max(kIn, 1e-4);
+  let wi = 0;
+  lines.forEach((line, li) => {
+    const ly = top + li * lh, tw = MW(line.replace(/\*/g, ''), f);
+    let x = W / 2 - tw / 2, accOn = false;
+    const toks = line.split(/(\s+)/);
+    for (const tok of toks) {
+      if (!tok) continue;
+      if (/^\s+$/.test(tok)) { x += MW(tok, f); continue; }
+      const parts = tok.split('*');
+      const k = spring(t - t0 - wi * .035, 18, .85); wi++;
+      parts.forEach((p, pi) => {
+        if (pi > 0) accOn = !accOn;
+        if (!p) return;
+        T(p, x, ly + (1 - k) * 22, { f, c: accOn ? acc : c, a: clamp(k * 1.4) }); x += MW(p, f);
+      });
+    }
+  });
+  if (sub) T(sub, W / 2, top + (n - 1) * lh + 40, { f: subF, c: hexA(CREAM, .6), al: 'center', a: kIn });
+  ctx.restore();
+}
+
+// ---------- drawing primitives ----------
+function rect(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+function line(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+function bg(c) { ctx.fillStyle = c; ctx.fillRect(0, 0, W, H); }
+function bgGrid(c = 'rgba(237,235,228,0.035)', step = 80, ox = 0) {
+  ctx.save(); ctx.strokeStyle = c; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = (ox % step) - step; x <= W; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+  for (let y = 0; y <= H; y += step) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+  ctx.stroke(); ctx.restore();
+}
+function arena(F, { a = 1, c = '237,235,228', x0 = -400, x1 = W + 400 } = {}) {
+  ctx.save(); ctx.globalAlpha *= a;
+  ctx.strokeStyle = `rgba(${c},0.38)`; ctx.lineWidth = 2; line(x0, F, x1, F);
+  ctx.strokeStyle = `rgba(${c},0.09)`; ctx.lineWidth = 1.5; ctx.beginPath();
+  const depth = H - F + 60;
+  for (let i = 1; i <= 9; i++) { const d = Math.pow(i / 9, 1.8) * depth; ctx.moveTo(x0, F + d); ctx.lineTo(x1, F + d); }
+  const vx = W / 2, vy = F - 520;
+  for (let x = -2400; x <= W + 2400; x += 150) { const k = depth / (F - vy); ctx.moveTo(x, F); ctx.lineTo(x + (x - vx) * k, F + depth); }
+  ctx.stroke(); ctx.restore();
+}
+function check(x, y, s, c, lw = 5) { ctx.save(); ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(x - s * .5, y); ctx.lineTo(x - s * .15, y + s * .35); ctx.lineTo(x + s * .5, y - s * .38); ctx.stroke(); ctx.restore(); }
+function cross(x, y, s, c, lw = 5) { ctx.save(); ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x - s * .4, y - s * .4); ctx.lineTo(x + s * .4, y + s * .4); ctx.moveTo(x + s * .4, y - s * .4); ctx.lineTo(x - s * .4, y + s * .4); ctx.stroke(); ctx.restore(); }
+function rewindIcon(x, y, s, c) { ctx.save(); ctx.fillStyle = c; for (const dx of [0, s * .55]) { ctx.beginPath(); ctx.moveTo(x + dx, y - s * .4); ctx.lineTo(x + dx - s * .55, y); ctx.lineTo(x + dx, y + s * .4); ctx.fill(); } ctx.restore(); }
+function arrowDim(x1, x2, y, c, label, a = 1) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a; ctx.strokeStyle = c; ctx.lineWidth = 2.5; ctx.setLineDash([10, 8]); line(x1, y, x2, y); ctx.setLineDash([]);
+  ctx.lineWidth = 3; line(x1, y - 16, x1, y + 16); line(x2, y - 16, x2, y + 16);
+  if (label) { const f = MONO(22, 700), tw = MW(label, f); rect((x1 + x2) / 2 - tw / 2 - 10, y - 46, tw + 20, 32, c); T(label, (x1 + x2) / 2, y - 22, { f, c: INK, al: 'center' }); }
+  ctx.restore();
+}
+
+// hitbox wireframe
+function wire(x, y, w, h, c, { a = 1, dash = false, label = '', fill = .12, lw = 2.5, k = 1, labelBelow = false, labelRight = false, lc = INK } = {}) {
+  if (a <= 0 || k <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  const cx = x + w / 2, cy = y + h / 2; ctx.translate(cx, cy); ctx.scale(k, k); ctx.translate(-cx, -cy);
+  if (fill > 0) { ctx.fillStyle = hexA(c, fill); ctx.fillRect(x, y, w, h); }
+  ctx.strokeStyle = c; ctx.lineWidth = lw; if (dash) ctx.setLineDash([14, 9]); ctx.strokeRect(x, y, w, h); ctx.setLineDash([]);
+  const L = Math.min(26, w / 4, h / 4); ctx.lineWidth = lw * 2.4; ctx.lineCap = 'square'; ctx.beginPath();
+  for (const [px, py, sx, sy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]]) { ctx.moveTo(px + sx * L, py); ctx.lineTo(px, py); ctx.lineTo(px, py + sy * L); }
+  ctx.stroke();
+  if (label) { const f = MONO(19, 700), tw = MW(label, f, 1); const ly = labelBelow ? y + h + 6 : y - 34, lx = labelRight ? x + w - tw - 18 + lw / 2 : x - lw / 2; rect(lx, ly, tw + 18, 28, c); T(label, lx + 9, ly + 20, { f, c: lc, ls: 1 }); }
+  ctx.restore();
+}
+function stamp(str, x, y, t, t0, { c = ACC, size = 110, rot = -0.14, t1 = 1e9, back = 'rgba(11,11,16,0.6)' } = {}) {
+  if (t < t0 || t > t1) return;
+  const k = spring(t - t0, 24, .55), sc = lerp(2.3, 1, k), a = clamp((t - t0) / .05) * (1 - ease(seg(t, t1 - .2, t1)));
+  const f = FL(900, size), tw = MW(str, f, size * .04), w = tw + size * .7, h = size * 1.18;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(sc, sc); ctx.globalAlpha *= a;
+  ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, size * .14);
+  if (back) { ctx.fillStyle = back; ctx.fill(); }
+  ctx.lineWidth = size * .085; ctx.strokeStyle = c; ctx.stroke();
+  T(str, size * .02, size * .37, { f, c, al: 'center', ls: size * .04 });
+  ctx.restore();
+}
+function dmgPop(str, x, y, t, t0, c = CREAM, size = 64) {
+  if (t < t0 || t > t0 + 1.3) return;
+  const u = t - t0, k = spring(u, 18, .55), a = 1 - ease(seg(u, .9, 1.3));
+  ctx.save(); ctx.translate(x, y - eOut(u / 1.3) * 70); ctx.scale(lerp(.4, 1, k), lerp(.4, 1, k)); ctx.globalAlpha *= a;
+  T(str, 0, 0, { f: FL(900, size), c: INK, al: 'center', stroke: 12 }); T(str, 0, 0, { f: FL(900, size), c, al: 'center' });
+  ctx.restore();
+}
+function spark(x, y, t, t0, c = WHITE, r = 90) {
+  const u = t - t0; if (u < 0 || u > .35) return;
+  const k = eOut(u / .35);
+  ctx.save(); ctx.strokeStyle = c; ctx.lineCap = 'round'; ctx.globalAlpha *= 1 - k; ctx.lineWidth = 6 * (1 - k) + 1;
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + .3; line(x + Math.cos(a) * r * k * .4, y + Math.sin(a) * r * k * .4, x + Math.cos(a) * r * (.3 + k), y + Math.sin(a) * r * (.3 + k)); }
+  ctx.restore();
+}
+function hpBar(x, y, w, v, c = CREAM, a = 1) {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  rect(x - w / 2 - 3, y - 3, w + 6, 18, 'rgba(0,0,0,.55)'); rect(x - w / 2, y, w * clamp(v / 100), 12, c);
+  T(Math.round(v) + ' HP', x, y - 10, { f: MONO(18, 700), c, al: 'center' });
+  ctx.restore();
+}
+
+// blocky character. origin: feet centre. th = sword-arm angle (0 down, PI/2 forward, PI up)
+function drawChar(x, F, o = {}) {
+  const s = o.s ?? 1, f = o.face ?? 1, col = o.col ?? BLUE, hurt = o.hurt ?? 0, ghost = o.ghost, run = o.run ?? 0, th = o.th ?? .15, sword = o.sword ?? true;
+  ctx.save(); ctx.globalAlpha *= (o.a ?? 1); ctx.translate(x, F); ctx.scale(s * f, s);
+  const body = mixc(col, WHITE, hurt), dark = mixc(o.dark ?? mixc(col, '#000000', .38), WHITE, hurt), head = mixc(o.headc ?? mixc(col, WHITE, .5), WHITE, hurt);
+  const gc = o.gc ?? CREAM;
+  const P = (px, py, w, h, c, r = 5) => {
+    ctx.beginPath(); ctx.roundRect(px, py, w, h, r);
+    if (ghost) { ctx.setLineDash([11, 8]); ctx.lineWidth = 3.2 / s; ctx.strokeStyle = gc; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = hexA(gc, .06); ctx.fill(); }
+    else { ctx.fillStyle = c; ctx.fill(); }
+  };
+  if (!ghost && !o.noShadow) { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 2, 78, 11, 0, 0, Math.PI * 2); ctx.fill(); }
+  // back arm
+  ctx.save(); ctx.translate(-55, -182); ctx.rotate(run * .9); P(-17, 0, 34, 92, dark); ctx.restore();
+  // legs
+  ctx.save(); ctx.translate(-18, -94); ctx.rotate(-run); P(-17, 0, 34, 94, dark); ctx.restore();
+  ctx.save(); ctx.translate(18, -94); ctx.rotate(run); P(-17, 0, 34, 94, dark); ctx.restore();
+  // torso
+  P(-38, -192, 76, 102, body, 6);
+  // head
+  P(-29, -254, 58, 58, head, 12);
+  if (!ghost) { ctx.fillStyle = o.eye ?? INK; ctx.fillRect(3, -234, 8, 14); ctx.fillRect(18, -234, 8, 14); }
+  // front arm + sword
+  ctx.save(); ctx.translate(55, -182); ctx.rotate(-th - (sword ? 0 : run * .9));
+  if (sword) {
+    ctx.beginPath(); ctx.moveTo(-8, 100); ctx.lineTo(8, 100); ctx.lineTo(8, 248); ctx.lineTo(0, 268); ctx.lineTo(-8, 248); ctx.closePath();
+    if (ghost) { ctx.setLineDash([11, 8]); ctx.lineWidth = 3.2 / s; ctx.strokeStyle = gc; ctx.stroke(); ctx.setLineDash([]); }
+    else { ctx.fillStyle = mixc(o.blade ?? '#DCE1EA', WHITE, hurt); ctx.fill(); }
+    P(-23, 90, 46, 10, o.guard ?? '#7F8697', 3);
+  }
+  P(-17, 0, 34, 92, body);
+  ctx.restore();
+  ctx.restore();
+}
+const tipPos = (x, F, s, f, th) => [x + f * s * (55 + 268 * Math.sin(th)), F + s * (-182 + 268 * Math.cos(th))];
+function swingTrail(x, F, s, f, thNow, thPrev, c = WHITE, a = .45) {
+  if (Math.abs(thNow - thPrev) < .05) return;
+  ctx.save(); ctx.translate(x, F); ctx.scale(s * f, s); ctx.translate(55, -182);
+  const N = 10;
+  for (let i = 0; i < N; i++) {
+    const ta = lerp(thPrev, thNow, i / N), tb = lerp(thPrev, thNow, (i + 1) / N);
+    const a0 = Math.PI / 2 - ta, a1 = Math.PI / 2 - tb;
+    ctx.beginPath(); ctx.arc(0, 0, 275, a0, a1, a1 < a0); ctx.arc(0, 0, 120, a1, a0, a1 >= a0); ctx.closePath();
+    ctx.fillStyle = hexA(c, a * (i + 1) / N); ctx.fill();
+  }
+  ctx.restore();
+}
+// sword arm angle track from a list of swings: [tStart] -> windup .2 s, swing .22 s, hold, return
+function swingTh(t, starts, { up = 3.5, end = .6, rest = .15, hold = .6 } = {}) {
+  let th = rest;
+  for (const s0 of starts) {
+    if (t < s0) break;
+    th = kf([[s0, rest], [s0 + .2, up, eOut], [s0 + .42, end, eIn], [s0 + .42 + hold, end], [s0 + .42 + hold + .3, rest]])(t);
+  }
+  return th;
+}
+
+// ---------- texture: vignette + grain ----------
+const vig = document.createElement('canvas'); vig.width = W; vig.height = H;
+{ const g = vig.getContext('2d'), gr = g.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, H * 1.05); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.55)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+const grains = [];
+{ const R = rng(1234); for (let i = 0; i < 4; i++) { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), d = g.createImageData(256, 256); for (let p = 0; p < d.data.length; p += 4) { const v = R() * 255; d.data[p] = d.data[p + 1] = d.data[p + 2] = v; d.data[p + 3] = 255; } g.putImageData(d, 0, 0); grains.push(ctx.createPattern(c, 'repeat')); } }
+function grain(t) {
+  const i = Math.floor(t * 24) % 4;
+  ctx.save(); ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = .07; ctx.fillStyle = grains[i];
+  ctx.translate((i * 97) % 256, (i * 53) % 256); ctx.fillRect(-256, -256, W + 512, H + 512); ctx.restore();
+}
+
+// ---------- HUD + section header ----------
+function hud(t, idx, label, col) {
+  ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 2; const m = 40, l = 34;
+  ctx.beginPath();
+  for (const [x, y, sx, sy] of [[m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1]]) { ctx.moveTo(x + sx * l, y); ctx.lineTo(x, y); ctx.lineTo(x, y + sy * l); }
+  ctx.stroke();
+  const f = MONO(15, 500);
+  T('ROBLOX / HITBOX.DEBUG', 70, 68, { f, c: col, ls: 1.5 });
+  T(`SCENE ${String(idx).padStart(2, '0')} / 09`, W - 70, 68, { f, c: col, al: 'right', ls: 1.5 });
+  T(label, 70, H - 56, { f, c: col, ls: 1.5 });
+  const ss = Math.floor(t), tc = `00:${String(Math.floor(ss / 60)).padStart(2, '0')}:${String(ss % 60).padStart(2, '0')}:${String(Math.floor((t % 1) * 30)).padStart(2, '0')}`;
+  T(tc, W - 70, H - 56, { f, c: col, al: 'right', ls: 1.5 });
+  if ((t * 1.5) % 1 < .6) { ctx.fillStyle = '#FF3B30'; ctx.beginPath(); ctx.arc(W - 70 - MW(tc, f, 1.5) - 14, H - 61, 5, 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
+}
+function header(t, t0, tEnd, num, title, { c = CREAM, nc = ACC, dim = true } = {}) {
+  const u = t - t0; if (u < 0 || t > tEnd) return;
+  if (dim) { const da = .75 * Math.min(ease(seg(u, 0, .12)), 1 - ease(seg(u, 1.45, 1.75))); if (da > 0) rect(0, 0, W, H, `rgba(11,11,16,${da})`); }
+  if (u < 1.75) {
+    const out = ease(seg(u, 1.4, 1.72));
+    ctx.save(); ctx.globalAlpha *= 1 - out; ctx.translate(0, -out * 50);
+    const kN = spring(u, 13, .72);
+    T(num, 150 - (1 - kN) * 260, 470, { f: FL(900, 300), c: nc, stroke: 5, a: clamp(kN * 2), ls: -6 });
+    title.split('\n').forEach((ln, i) => slam(ln, 150, 640 + i * 125, 120, u, .12 + i * .14, { c }));
+    ctx.restore();
+  }
+  if (u > 1.45) {
+    const k = ease(seg(u, 1.45, 1.85)), a = 1 - ease(seg(t, tEnd - .25, tEnd));
+    ctx.save(); ctx.globalAlpha *= a; ctx.beginPath(); ctx.rect(140, 95, 1700 * k, 64); ctx.clip();
+    const fn = FL(900, 34); T(num, 150, 142, { f: fn, c: nc });
+    T(title.replace('\n', ' '), 150 + MW(num, fn) + 18, 142, { f: FL(800, 34), c });
+    ctx.restore();
+  }
+}
+
+// ============================ SCENES ============================
+// ---- S1 cold open (0-8) ----
+function S1(t) {
+  bg(INK); bgGrid();
+  const F = 800;
+  const sh = shake(t, 2.0, 12) + shake(t, 5.5, 16);
+  ctx.save(); ctx.translate(sh, sh * .4);
+  arena(F);
+  const px = kf([[.45, 560], [.85, 1000, eOut], [4.45, 1000], [4.85, 640, eOut], [5.5, 640], [5.8, 600, eOut]])(t);
+  const prun = (t > .45 && t < .85) ? .55 * Math.sin((t - .45) * 30) : (t > 4.45 && t < 4.85) ? -.4 * Math.sin((t - 4.45) * 30) : 0;
+  const pth = swingTh(t, [1.3]);
+  const ex = 1300, eth = swingTh(t, [4.9]);
+  const pHurt = t >= 5.5 ? 1 - seg(t, 5.5, 5.8) : 0;
+  swingTrail(px, F, 1, 1, pth, swingTh(t - .09, [1.3]));
+  swingTrail(ex, F, 1, -1, eth, swingTh(t - .09, [4.9]), WHITE, .35);
+  drawChar(ex, F, { col: ACC, face: -1, th: eth });
+  drawChar(px, F, { col: BLUE, face: 1, th: pth, run: prun, hurt: pHurt });
+  // dash speed lines
+  if (t > .45 && t < 1.1) { const a = 1 - seg(t, .7, 1.1); ctx.save(); ctx.strokeStyle = hexA(CREAM, .35 * a); ctx.lineWidth = 3; for (let i = 0; i < 6; i++) { const y = F - 40 - i * 38; line(px - 140 - i * 30 - 120, y, px - 120 - i * 10, y); } ctx.restore(); }
+  hpBar(ex, F - 300, 130, 100, CREAM, 1);
+  hpBar(px, F - 300, 130, t < 5.5 ? 100 : lerp(100, 75, eOut(seg(t, 5.5, 5.9))), CREAM, 1);
+  spark(1240, F - 175, t, 1.69);
+  dmgPop('0', ex + 70, F - 330, t, 2.05, CREAM, 56);
+  dmgPop('-25', px, F - 340, t, 5.5, ACC, 72);
+  arrowDim(px + 72, 1300 - 55 - 268, F - 210, CREAM, 'NI DE CERCA', win(t, 5.65, 7.0, .15, .3));
+  ctx.restore();
+  stamp('MISS', 1350, 355, t, 2.0, { t1: 4.45 });
+  // text
+  const out1 = 1 - ease(seg(t, 4.2, 4.45));
+  ctx.save(); ctx.globalAlpha *= out1;
+  const m = MONO(40, 500);
+  if (t > 2.45 && t < 4.45) {
+    const a = typed('> Le has dado.', t, 2.45, 45), b = typed('> Lo has visto.', t, 2.95, 45);
+    T(a, 150, 200, { f: m }); T(b, 150, 256, { f: m });
+    slam('Y no cuenta.', 146, 400, 124, t, 3.45, { w: 400, fam: 'Instrument Serif', st: 'italic', c: ACC, ls: 0, per: .03 });
+  }
+  ctx.restore();
+  if (t > 5.55 && t < 7.4) {
+    ctx.save(); ctx.globalAlpha *= 1 - ease(seg(t, 7.1, 7.4));
+    T(typed('> Y a ti te pegan…', t, 5.55, 45), 150, 200, { f: m });
+    slam('desde ahí.', 146, 345, 124, t, 6.0, { w: 400, fam: 'Instrument Serif', st: 'italic', c: ACC, ls: 0, per: .03 });
+    ctx.restore();
+  }
+  // the enemy's sword hitbox is revealed... and floods the screen
+  if (t >= 6.95) {
+    const k = spring(t - 6.95, 16, .62), g = ease(seg(t, 7.45, 8.0));
+    const r0 = { x: 560, y: F - 330, w: 790, h: 330 }, r1 = { x: -30, y: -30, w: W + 60, h: H + 60 };
+    const r = { x: lerp(r0.x, r1.x, g), y: lerp(r0.y, r1.y, g), w: lerp(r0.w, r1.w, g), h: lerp(r0.h, r1.h, g) };
+    wire(r.x, r.y, r.w, r.h, HIT, { k: g > 0 ? 1 : k, fill: lerp(.14, 1, ease(seg(t, 7.55, 7.98))), label: g < .15 ? 'LA HITBOX DE SU ESPADA' : '', lw: 3 });
+  }
+}
+
+// ---- S2 title (8-12) ----
+function S2(t) {
+  const u = t - 8;
+  bg(HIT); bgGrid('rgba(11,11,16,0.06)');
+  // giant character silhouette on the right with a hitbox that doesn't fit it
+  const kc = spring(u - 1.7, 11, .7);
+  if (kc > 0) {
+    ctx.save(); ctx.globalAlpha *= clamp(kc * 2);
+    drawChar(1570, 960 + (1 - kc) * 300, { s: 2.35, col: INK, dark: '#000000', headc: '#1E1E28', eye: HIT, face: -1, noShadow: true, blade: '#1E1E28', guard: '#000000' });
+    ctx.restore();
+    const wob = Math.sin(u * 7) * 6;
+    wire(1570 - 330 + wob, 960 - 640 + 90, 300, 380, INK, { k: spring(u - 2.2, 16, .6), dash: true, fill: .08, label: 'HITBOX', lc: HIT });
+  }
+  const f = MONO(26, 600);
+  T(typed('HITBOX.DEBUG — 6 RAZONES', u, 0, 50), 150, 190, { f, c: hexA(INK, .75), ls: 2 });
+  slam('POR QUÉ LAS', 146, 330, 138, u, 0, { c: INK });
+  slam('HITBOXES DE', 146, 470, 138, u, .5, { c: INK });
+  slam('ROBLOX SON', 146, 610, 138, u, 1.0, { c: INK });
+  const fBig = FL(900, 138), wUna = MW('UNA MIERDA', fBig, -2.76);
+  const bw = ease(seg(u, 1.32, 1.55)) * (wUna + 110);
+  rect(126, 650, bw, 158, INK);
+  slam('UNA MIERDA', 156, 775, 138, u, 1.5, { c: HIT });
+  // the full stop: sits after MIERDA, then detaches and floods ink
+  const dx0 = 156 + wUna + 20, dy0 = 760;
+  if (u > 1.5 + .25) {
+    const k = seg(u, 3.15, 3.5), e = ease(k);
+    const x = lerp(dx0, 1520, e), y = lerp(dy0, 520, e) - Math.sin(k * Math.PI) * 160;
+    const r = lerp(15, 15, e) + Math.pow(ease(seg(u, 3.45, 4.0)), 2) * 2400;
+    ctx.fillStyle = mixc(HIT, INK, ease(seg(u, 3.18, 3.3))); ctx.beginPath(); ctx.arc(x, y, r * spring(u - 1.75, 18, .6), 0, Math.PI * 2); ctx.fill();
+  }
+  if (u > 2.0) { const a = eOut(seg(u, 2.0, 2.3)); T('(y no, no es solo tu wifi)', 150, 900 + (1 - a) * 20, { f: SERIF(64), c: INK, a }); }
+}
+
+// ---- S3 + S4: lag world ----
+const LAG = { F: 860, s: 1.4, px: 560, D: [0, .3, .7] };
+function tauOf(t) { if (t < 22.3) return t - 12; if (t < 23.2) return 10.3 + (t - 22.3) * .35; return 10.615; }
+const Etrue = tau => 1250 + 280 * Math.sin(2 * Math.PI * (tau - .915) / 2.4);
+const Evel = tau => 280 * 2 * Math.PI / 2.4 * Math.cos(2 * Math.PI * (tau - .915) / 2.4);
+const LSW = [22.45, 23.6 + 100];   // player swing (only one)
+function lagWorld(t, i, { full = false, rewind = 0, hideMarks = false } = {}) {
+  const F = LAG.F, s = LAG.s;
+  bg(INK2); bgGrid('rgba(237,235,228,0.03)', 80);
+  arena(F);
+  const tau = tauOf(t) - LAG.D[i], ex = Etrue(tau), v = Evel(tau);
+  const face = v > 60 ? 1 : -1, run = Math.abs(v) > 40 ? .5 * Math.sin(tau * 15) * clamp(Math.abs(v) / 500) : 0;
+  const pth = i === 2 ? swingTh(t, [22.45], { hold: 99 }) : .15;
+  // ghost: where the enemy really is (server)
+  const showGhost = i === 2 && t > 22.3;
+  const gtau = tauOf(t) - .7 * rewind, gx = Etrue(gtau);
+  if (i === 2 && t > 22.45 && t < 23.3) swingTrail(LAG.px, F, s, 1, pth, swingTh(t - .09, [22.45], { hold: 99 }));
+  const hitFlash = t > 30.5 ? 1 - seg(t, 30.5, 30.8) : 0;
+  drawChar(ex, F, { col: ACC, face: i === 2 && t > 22.3 ? -1 : face, run, s, hurt: hitFlash });
+  drawChar(LAG.px, F, { col: BLUE, s, th: pth });
+  if (showGhost) {
+    const a = eOut(seg(t, 22.4, 22.8));
+    drawChar(gx, F, { ghost: true, s, face: 1, a, gc: CREAM });
+    if (!hideMarks) {
+      const lf = MONO(20, 700), lab = rewind > 0 ? 'SERVIDOR (REBOBINADO)' : 'SERVIDOR: ESTÁ AQUÍ', tw = MW(lab, lf);
+      ctx.save(); ctx.globalAlpha *= a;
+      const lx = Math.min(gx - tw / 2 - 10, W - 120 - tw);
+      rect(lx, F - s * 300 - 40, tw + 20, 32, CREAM); T(lab, lx + 10, F - s * 300 - 17, { f: lf, c: INK });
+      ctx.restore();
+    }
+  }
+  if (i === 2 && t > 22.95) {
+    const k = spring(t - 22.95, 18, .6);
+    wire(LAG.px + s * 40, F - s * 262, s * 285, s * 238, HIT, { k, label: 'TU HITBOX', fill: .14 });
+  }
+  if (i === 2 && !hideMarks) {
+    // "on your screen: yes"
+    if (t > 23.2) {
+      const a = eOut(seg(t, 23.2, 23.4)), lx = 970 - 120, ly = F - s * 300 - 40;
+      ctx.save(); ctx.globalAlpha *= a * (t > 29 ? 1 - seg(t, 29, 29.3) : 1);
+      rect(lx - 24, ly, 300, 32, HIT); T('EN TU PANTALLA', lx - 12, ly + 23, { f: MONO(20, 700), c: INK }); check(lx + 255, ly + 15, 18, INK, 4);
+      ctx.restore();
+    }
+    if (t > 23.9 && t < 27 && rewind === 0) arrowDim(LAG.px + s * 325, gx - s * 72, F - s * 120, ACC, 'FUERA', eOut(seg(t, 23.9, 24.1)));
+  }
+  return { ex, gx };
+}
+function lagPanels(t) {
+  const PW = 520, PH = 292, PY = 330, X = [90, 700, 1310];
+  const z = ease(seg(t, 21.3, 22.4));
+  const k = PW / W, A = Math.exp(lerp(0, Math.log(1 / k), z));
+  const Px = lerp(X[2], 0, z), Py = lerp(PY, 0, z);
+  const Bx = Px - A * X[2], By = Py - A * PY;
+  bg(INK); bgGrid();
+  const titles = ['SU ORDENADOR', 'SERVIDOR', 'TU PANTALLA'], subs = ['ahora mismo', '+ ping', '+ ping + buffer'];
+  for (let i = 0; i < 3; i++) {
+    if (z > .6 && i < 2) continue;
+    const kIn = spring(t - (13.5 + i * .18), 14, .75); if (kIn <= 0) continue;
+    const sx = Bx + A * X[i], sy = By + A * PY, sw = A * PW, sh = A * PH;
+    ctx.save();
+    const sc = lerp(.85, 1, clamp(kIn)), cx = sx + sw / 2, cy = sy + sh / 2;
+    ctx.translate(cx, cy); ctx.scale(sc, sc); ctx.translate(-cx, -cy); ctx.globalAlpha *= clamp(kIn * 1.5);
+    ctx.beginPath(); ctx.rect(sx, sy, sw, sh); ctx.save(); ctx.clip();
+    ctx.translate(sx, sy); ctx.scale(sw / W, sh / H);
+    lagWorld(t, i, { hideMarks: z < 1 });
+    ctx.restore();
+    const fa = 1 - z;
+    ctx.globalAlpha *= fa;
+    ctx.strokeStyle = i === 2 ? CREAM : 'rgba(237,235,228,.35)'; ctx.lineWidth = 2; ctx.strokeRect(sx, sy, sw, sh);
+    T(titles[i], sx, sy - 16, { f: MONO(22, 700), c: CREAM, ls: 2 });
+    T(subs[i], sx, sy + sh + 36, { f: MONO(20, 500), c: hexA(CREAM, .6) });
+    ctx.restore();
+  }
+  // arrows + packets between panels
+  if (z < .3) {
+    ctx.save(); ctx.globalAlpha *= (1 - z / .3) * eOut(seg(t, 13.9, 14.3));
+    for (let i = 0; i < 2; i++) {
+      const x1 = Bx + A * (X[i] + PW) + 10, x2 = Bx + A * X[i + 1] - 10, y = By + A * (PY + PH / 2);
+      ctx.strokeStyle = hexA(CREAM, .4); ctx.lineWidth = 2; line(x1, y, x2, y);
+      ctx.fillStyle = hexA(CREAM, .4); ctx.beginPath(); ctx.moveTo(x2, y); ctx.lineTo(x2 - 12, y - 7); ctx.lineTo(x2 - 12, y + 7); ctx.fill();
+      for (let p = 0; p < 8; p++) { const ph = ((t - 13.9) / .5 + p / 2.5 - i * .3) % 1; if (ph < 0 || p > 1) continue; rect(lerp(x1, x2 - 12, ph) - 6, y - 6, 12, 12, ACC); }
+    }
+    T('(retraso exagerado para que se vea)', W / 2, 760, { f: MONO(18, 500), c: hexA(CREAM, .45), al: 'center' });
+    ctx.restore();
+  }
+}
+function S3(t) {
+  if (t < 22.4) lagPanels(t); else lagWorld(t, 2);
+  if (t > 13.5 && t < 21.4) {
+    caption(t, 14.3, 16.7, ['Tu enemigo se mueve en *su* ordenador.']);
+    caption(t, 16.7, 19.3, ['El servidor se entera *tarde*. Y tú, *aún más tarde*.']);
+    caption(t, 19.3, 21.4, ['La mayoría juega con *100–300 ms* de retraso.'], { sub: 'según la documentación oficial de Roblox' });
+  }
+  stamp('MISS', 1322, 290, t, 24.0, { t1: 27.0 });
+  caption(t, 24.2, 26.95, ['Le das a donde *estaba*.', 'Cuando tu golpe llega al servidor, *ya no está ahí*.']);
+  header(t, 12, 26.95, '01', 'LO QUE VES\nYA PASÓ');
+}
+
+// ---- S4 nobody rewinds (27-36) ----
+function S4(t) {
+  const u = t - 27;
+  if (u < 4.0) {
+    const rw = ease(seg(t, 29.0, 30.3));
+    lagWorld(t, 2, { rewind: rw, hideMarks: u < 1.6 });
+    if (t > 28.8) {
+      // rewind HUD
+      const a = win(t, 28.8, 31.0, .2, .1), blink = (t * 4) % 1 < .6 || t > 30.3;
+      ctx.save(); ctx.globalAlpha *= a;
+      rect(610, 170, 700, 4, hexA(CREAM, .25));
+      const ph = lerp(1310, 610, rw); rect(ph - 3, 156, 6, 32, ACC);
+      T('AHORA', 1310, 215, { f: MONO(18, 700), c: hexA(CREAM, .7), al: 'right' });
+      T('LO QUE TÚ VISTE (−0,7 s)', 610, 215, { f: MONO(18, 700), c: hexA(CREAM, .7) });
+      if (blink) { rewindIcon(W / 2 - 150, 128, 34, ACC); T(rw < 1 ? 'REBOBINANDO' : 'COMPROBANDO', W / 2 - 112, 140, { f: MONO(32, 800), c: ACC, ls: 3 }); }
+      ctx.restore();
+    }
+    if (t > 29.0 && t < 30.35) {
+      // VHS slices
+      const R = rng(Math.floor(t * 30) + 7);
+      for (let i = 0; i < 7; i++) { const y = R() * H, h = 6 + R() * 40, dx = (R() - .5) * 90; ctx.drawImage(cv, 0, y, W, h, dx, y, W, h); }
+      ctx.fillStyle = 'rgba(237,235,228,.05)'; for (let y = (t * 900) % 6; y < H; y += 6) ctx.fillRect(0, y, W, 2);
+    }
+    if (t > 30.5) { spark(1010, LAG.F - 210, t, 30.5, HIT, 120); dmgPop('-25', 1190, LAG.F - 330, t, 30.55, HIT, 72); }
+    stamp('HIT', 970, 295, t, 30.5, { c: HIT, rot: -.1 });
+    caption(t, 28.7, 30.95, ['Muchos shooters (CS, Valorant…) *rebobinan* el tiempo', 'para comprobar tu golpe.']);
+    header(t, 27, 30.95, '02', 'NADIE\nREBOBINA');
+    return;
+  }
+  bg(INK); bgGrid();
+  const up = ease(seg(u, 6.9, 7.3));
+  ctx.save(); ctx.globalAlpha *= 1 - up; ctx.translate(0, -up * 60);
+  slam('¿Y en Roblox?', W / 2, 400, 120, u, 4.0, { al: 'center', c: CREAM });
+  slam('NO VIENE DE SERIE.', W / 2, 580, 150, u, 4.5, { al: 'center', c: ACC });
+  if (u > 5.0) {
+    const a = eOut(seg(u, 5.0, 5.3)), f = MONO(26, 500);
+    T('Roblox ya tiene "Server Authority" para predecir el movimiento,', W / 2, 700, { f, c: hexA(CREAM, .7), al: 'center', a });
+    T('pero el rebobinado para comprobar golpes aún no viene incluido.', W / 2, 742, { f, c: hexA(CREAM, .7), al: 'center', a });
+  }
+  ctx.restore();
+  if (u > 7.15) {
+    slam('Cada juego se lo programa…', W / 2, 480, 104, u, 7.15, { al: 'center', w: 400, fam: 'Instrument Serif', st: 'italic', ls: 0, per: .015 });
+    slam('…O NO.', W / 2, 700, 210, u, 7.75, { al: 'center', c: ACC });
+  }
+  // accent wipe out
+  if (u > 8.6) { const k = ease(seg(u, 8.6, 9.0)); rect(0, 0, W * k, H, ACC); }
+}
+
+// ---- S5 one-frame hitboxes (36-48) ----
+function codeLine(str, x, y, size) {
+  const f = MONO(size, 500), cw = MW('M', f);
+  const re = /(--.*$)|\b(local)\b|(\b\d+\b)|([A-Za-z_]\w*)(?=\()|(\s+)|([A-Za-z_]\w*)|(.)/g; let m, i = 0;
+  while ((m = re.exec(str))) {
+    const tok = m[0]; let c = CREAM;
+    if (m[1]) c = hexA(CREAM, .45); else if (m[2]) c = ACC; else if (m[3]) c = HIT; else if (m[4]) c = '#9EABFF';
+    if (!m[5]) T(tok, x + i * cw, y, { f, c });
+    i += tok.length;
+  }
+  return cw;
+}
+function S5(t) {
+  const u = t - 36;
+  bg(INK); bgGrid();
+  const F = 760, s = 1.15, px = 1000;
+  arena(F, { x0: 940 });
+  // enemy path
+  const ex = kf([[3.0, 1800], [4.4, 1350, x => x], [5.0, 1350], [5.8, 1600, eOut]])(u);
+  const erun = (u > 3.0 && u < 4.4) || (u > 5.0 && u < 5.8) ? .5 * Math.sin(u * 16) : 0;
+  const eFace = -1;
+  const pth = swingTh(u, [3.75, 8.4]);
+  swingTrail(px, F, s, 1, pth, swingTh(u - .09, [3.75, 8.4]));
+  const eHurt = u > 9.0 ? 1 - seg(u, 9.0, 9.3) : 0;
+  if (u > 2.6) drawChar(ex, F, { col: ACC, face: eFace, s, run: erun, hurt: eHurt, a: eOut(seg(u, 2.6, 3.0)) });
+  if (u > 1.6) drawChar(px, F, { col: BLUE, s, th: pth, a: eOut(seg(u, 1.6, 1.9)) });
+  // the one-frame box (5x5x5 studs) and the giant one (14x10)
+  const stud = 57.5, cx = px + 3 * stud, cy = F - 161;
+  if (u > 3.98 && u < 7.9) {
+    const flash = u < 4.12;
+    const a = flash ? 1 : .55 * (1 - seg(u, 7.0, 7.9));
+    wire(cx - 2.5 * stud, cy - 2.5 * stud, 5 * stud, 5 * stud, HIT, { fill: flash ? .45 : 0, dash: !flash, a, label: flash ? 'CHECK' : 'COMPROBÓ AQUÍ (Y YA)' });
+  }
+  if (u > 7.95) {
+    const k = spring(u - 7.95, 12, .62);
+    const w = lerp(5, 14, k) * stud, h = lerp(5, 10, k) * stud;
+    const g = ease(seg(u, 11.35, 12.0));
+    const r0 = { x: cx - w / 2, y: cy - h / 2, w, h }, r1 = { x: -30, y: -30, w: W + 60, h: H + 60 };
+    wire(lerp(r0.x, r1.x, g), lerp(r0.y, r1.y, g), lerp(r0.w, r1.w, g), lerp(r0.h, r1.h, g), HIT, { fill: lerp(.14, 1, ease(seg(u, 11.45, 11.98))), label: g < .1 ? 'Vector3.new(14, 10, 18)' : '', lw: 3, labelRight: true });
+  }
+  if (u > 9.0 && u < 11.4) { spark(ex - 60, F - 180, u, 9.0, HIT, 110); dmgPop('-25', ex - 150, F - 330, u, 9.05, HIT, 72); }
+  // code card
+  if (u > 1.6 && u < 11.5) {
+    const k = spring(u - 1.6, 13, .8), a = clamp(k * 1.5) * (1 - seg(u, 11.2, 11.45));
+    ctx.save(); ctx.globalAlpha *= a; ctx.translate(-(1 - k) * 80, 0);
+    const X = 90, Y = 250, CW = 800, CH = 380;
+    ctx.fillStyle = '#16161F'; ctx.beginPath(); ctx.roundRect(X, Y, CW, CH, 16); ctx.fill();
+    ctx.strokeStyle = 'rgba(237,235,228,.14)'; ctx.lineWidth = 2; ctx.stroke();
+    rect(X, Y + 52, CW, 1.5, 'rgba(237,235,228,.12)');
+    for (let i = 0; i < 3; i++) { ctx.fillStyle = hexA(CREAM, .25); ctx.beginPath(); ctx.arc(X + 28 + i * 22, Y + 27, 6, 0, Math.PI * 2); ctx.fill(); }
+    T('combate.lua', X + CW - 24, Y + 33, { f: MONO(18, 500), c: hexA(CREAM, .5), al: 'right' });
+    let L = ['-- al hacer clic', 'local caja = root.CFrame * CFrame.new(0, 0, -3)', 'local golpes = workspace:GetPartBoundsInBox(', '    caja, Vector3.new(5, 5, 5))', '-- y ya. Se comprueba UNA vez.'];
+    const total = L.join('\n'), n = Math.floor(clamp((u - 1.9) * 75, 0, total.length));
+    let shown = total.slice(0, n).split('\n');
+    if (u > 7.6) {
+      shown = L.slice(); shown[3] = '    caja, Vector3.new(' + typed('14, 10, 18', u, 7.6, 30) + '))';
+      shown[4] = '-- ' + typed('más grande, que no se quejen', u, 7.95, 40);
+    }
+    const size = 25, lh = 52, x0 = X + 34, y0 = Y + 112;
+    let cw = 15;
+    shown.forEach((ln, i) => { cw = codeLine(ln, x0, y0 + i * lh, size); });
+    if (u > 7.25 && u < 7.6) rect(x0 + 22 * cw - 2, y0 + 3 * lh - 26, 7 * cw + 4, 34, hexA(ACC, .45));
+    // line highlight on the critical call
+    if (u > 4.0 && u < 7.2) rect(X + 6, y0 + 2 * lh - 36, 4, lh * 2, HIT);
+    const last = shown.length - 1;
+    if (u < 4.2 || (u > 7.55 && u < 9.5)) caret(x0 + (shown[last] || '').length * cw, y0 + last * lh, size, u);
+    ctx.restore();
+  }
+  // frame strip
+  if (u > 3.55 && u < 7.2) {
+    const a = win(u, 3.55, 7.2, .2, .3), N = 12, X0 = 1000, Y0 = 842, cwid = 56, gap = 10;
+    ctx.save(); ctx.globalAlpha *= a;
+    T('TIEMPO →', X0, Y0 - 14, { f: MONO(16, 700), c: hexA(CREAM, .5), ls: 2 });
+    const play = clamp((u - 3.7) / (N * .075));
+    for (let i = 0; i < N; i++) {
+      const x = X0 + i * (cwid + gap), on = play * N > i;
+      const isCheck = i === 4, inside = i >= 8;
+      ctx.strokeStyle = hexA(CREAM, .3); ctx.lineWidth = 2; ctx.strokeRect(x, Y0, cwid, 30);
+      if (on && isCheck) rect(x + 2, Y0 + 2, cwid - 4, 26, HIT);
+      if (on && inside) rect(x + 2, Y0 + 2, cwid - 4, 26, hexA(ACC, .85));
+    }
+    if (play * N > 4) T('comprueba', X0 + 4 * (cwid + gap) + cwid / 2, Y0 + 56, { f: MONO(17, 700), c: HIT, al: 'center' });
+    if (play * N > 8) T('el enemigo ya está dentro', X0 + 8 * (cwid + gap), Y0 + 56, { f: MONO(17, 700), c: ACC });
+    ctx.restore();
+  }
+  stamp('MISS', 1560, 340, u, 4.5, { t1: 7.0 });
+  stamp('HIT', 1715, 385, u, 9.0, { c: HIT, t1: 11.4, rot: -.1, size: 96 });
+  caption(u, 4.7, 7.0, ['Se comprueba *una sola vez*. Si llegas tarde, *no existe*.']);
+  caption(u, 7.0, 9.2, ['La «solución» de muchos devs: *hacerla enorme*.']);
+  caption(u, 9.2, 11.4, ['Y así te pegan *desde 3 metros*.']);
+  // accent bar leaving (from S4 wipe)
+  if (u < .45) { const k = ease(seg(u, 0, .45)); rect(W * k, 0, W * (1 - k), H, ACC); }
+  header(t, 36.0, 47.3, '03', 'HITBOXES DE\nUN SOLO FRAME', { dim: false });
+}
+
+// ---- S6 your hitbox is behind you (48-58) ----
+function S6(t) {
+  const u = t - 48;
+  bg(INK); bgGrid();
+  const F = 800, s = 1.2, stud = 60;
+  arena(F);
+  const pxF = uu => kf([[2.0, 260], [3.0, 1240], [9.0, 1240], [9.6, 2400, eIn]])(uu);
+  const px = pxF(u), gx = pxF(u - .35);
+  const pth = swingTh(u, [2.45]);
+  const prun = (u > 2.0 && u < 3.0) || u > 9.0 ? .6 * Math.sin(u * 22) : 0;
+  const ex = 1560;
+  // speed lines + afterimages
+  if ((u > 2.0 && u < 3.2) || u > 9.0) {
+    const a = u > 9 ? 1 : 1 - seg(u, 2.9, 3.2);
+    ctx.save(); ctx.strokeStyle = hexA(CREAM, .3 * a); ctx.lineWidth = 3;
+    for (let i = 0; i < 7; i++) { const y = F - 30 - i * 42; line(px - 360 + i * 20, y, px - 110, y); } ctx.restore();
+    for (let k = 3; k >= 1; k--) drawChar(pxF(u - .035 * k), F, { col: BLUE, s, a: .18 / k * a, th: swingTh(u - .035 * k, [2.45]), run: prun, noShadow: true });
+  }
+  if (u > 2.0 && u < 9.0) {
+    const a = eOut(seg(u, 2.05, 2.3)) * (1 - seg(u, 3.25, 3.55));
+    drawChar(gx, F, { ghost: true, s, a, th: swingTh(u - .35, [2.45]), run: prun });
+    const lf = MONO(20, 700), lab = 'TÚ, SEGÚN EL SERVIDOR', tw = MW(lab, lf);
+    ctx.save(); ctx.globalAlpha *= a; rect(gx - tw / 2 - 10, F - s * 300 - 40, tw + 20, 32, CREAM); T(lab, gx - tw / 2, F - s * 300 - 17, { f: lf, c: INK }); ctx.restore();
+  }
+  swingTrail(px, F, s, 1, pth, swingTh(u - .09, [2.45]));
+  drawChar(ex, F, { col: ACC, face: -1, s });
+  drawChar(px, F, { col: BLUE, s, th: pth, run: prun });
+  // the server spawns the box at the ghost's position
+  const spawnX = pxF(2.9 - .35);
+  if (u > 2.9 && u < 9.0) {
+    const k = spring(u - 2.9, 18, .6), a = 1 - seg(u, 8.6, 9.0);
+    wire(spawnX + 3 * stud - 2.5 * stud, F - 168 - 2.5 * stud, 5 * stud, 5 * stud, HIT, { k, a, label: 'HITBOX (SERVIDOR)' });
+    arrowDim(spawnX + 5.5 * stud, ex - 86, F - 360, ACC, 'LLEGA TARDE', win(u, 3.6, 8.9, .2, .3));
+  }
+  stamp('MISS', ex, 300, u, 3.5, { t1: 8.6 });
+  caption(u, 3.75, 6.3, ['El servidor crea tu hitbox donde *estabas*, no donde *estás*.']);
+  caption(u, 6.3, 8.9, ['Por eso los ataques con *dash* fallan tanto.'], { sub: 'truco de los buenos devs: adelantar la hitbox según tu velocidad' });
+  // green collapse from S5
+  if (u < .5) { const k = ease(seg(u, 0, .5)); const w = W * (1 - k); rect(W / 2 - w / 2, 0, w, H, HIT); }
+  header(t, 48.0, 57.3, '04', 'TU HITBOX VA\nDETRÁS DE TI', { dim: u < 2 });
+  // streak wipe out
+  if (u > 9.0) streaks(seg(u, 9.0, 10.0), true);
+}
+function streaks(p, cover) {
+  const N = 14, h = H / N;
+  for (let i = 0; i < N; i++) {
+    const d = (i * 37 % N) / N * .35, k = ease(seg(p, d, d + .65));
+    if (cover) rect(0, i * h, W * k, h + 1, i % 3 === 0 ? ACC : CREAM);
+    else rect(W * k, i * h, W * (1 - k), h + 1, i % 3 === 0 ? ACC : CREAM);
+  }
+}
+
+// ---- S7 checks in jumps (58-68) ----
+function S7(t) {
+  const u = t - 58;
+  bg(INK); bgGrid();
+  const z = Math.min(ease(seg(u, 4.0, 4.5)), 1 - ease(seg(u, 6.6, 7.1)));
+  const Z = lerp(1, 2.6, z), fx = 1245, fy = 730;
+  ctx.save(); ctx.translate(lerp(W / 2, W / 2, z), lerp(H / 2, H / 2 + 40, z)); ctx.scale(Z, Z); ctx.translate(-lerp(W / 2, fx, z), -lerp(H / 2, fy, z));
+  const lanes = [{ F: 520, step: 50, u0: 2.0, hz: '60', note: 'comprobaciones / s  (PC a 60 FPS)' }, { F: 820, step: 150, u0: 3.0, hz: '20', note: 'comprobaciones / s  (móvil a 20 FPS)' }];
+  const EX = 1240, es = .8, half = 72 * es, x0 = 420, speed = 3000;
+  lanes.forEach((L, li) => {
+    const kIn = spring(u - (1.6 + li * .2), 14, .8); if (kIn <= 0) return;
+    ctx.save(); ctx.globalAlpha *= clamp(kIn * 1.5) * (li === 0 ? 1 - z : 1);
+    ctx.strokeStyle = 'rgba(237,235,228,.35)'; ctx.lineWidth = 2; line(x0 - 40, L.F, 1840, L.F);
+    T(L.hz, 110, L.F - 60, { f: FL(900, 96), c: CREAM }); T(L.note, 112, L.F - 18, { f: MONO(19, 500), c: hexA(CREAM, .6) });
+    const hitU = L.u0 + 16 / 60;
+    const hurt = li === 0 && u > hitU ? 1 - seg(u, hitU, hitU + .3) : 0;
+    drawChar(EX, L.F, { col: ACC, face: -1, s: es, sword: false, hurt });
+    wire(EX - half, L.F - 254 * es, half * 2, 254 * es, HIT, { fill: .1, a: .9, label: li === 0 ? 'HITBOX' : '' });
+    // projectile + samples
+    if (u > L.u0) {
+      const ut = u - L.u0, xe = li === 0 ? Math.min(x0 + ut * speed, 1220) : x0 + ut * speed;
+      const nS = Math.floor(ut * speed / L.step + 1e-6);
+      for (let k = 0; k <= nS; k++) {
+        const sx = x0 + k * L.step; if (li === 0 && sx > 1220) break; if (sx > 1900) break;
+        const inside = sx >= EX - half && sx <= EX + half;
+        ctx.fillStyle = inside ? HIT : hexA(CREAM, .55); ctx.fillRect(sx - 6, L.F - 120 - 6, 12, 12);
+        ctx.strokeStyle = inside ? HIT : hexA(CREAM, .2); ctx.lineWidth = 1.5; line(sx, L.F - 110, sx, L.F);
+      }
+      const pa = li === 0 ? 1 - seg(u, hitU + .2, hitU + .5) : 1 - seg(xe, 1700, 1900);
+      if (pa > 0) {
+        ctx.save(); ctx.globalAlpha *= pa;
+        const g = ctx.createLinearGradient(xe - 260, 0, xe, 0); g.addColorStop(0, hexA(CREAM, 0)); g.addColorStop(1, hexA(CREAM, .6));
+        ctx.fillStyle = g; ctx.fillRect(xe - 260, L.F - 124, 260, 8);
+        ctx.fillStyle = WHITE; ctx.beginPath(); ctx.roundRect(xe - 34, L.F - 128, 40, 16, 8); ctx.fill();
+        ctx.restore();
+      }
+      if (li === 0) {
+        spark(1220, L.F - 120, u, hitU, HIT, 80);
+        if (u > hitU) { const a = eOut(seg(u, hitU, hitU + .2)); rect(1330, L.F - 150, 230, 40, hexA(HIT, a)); check(1352, L.F - 130, 20, INK, 4); T('DETECTADO', 1374, L.F - 121, { f: MONO(22, 800), c: INK, a }); }
+      } else if (u > 3.5) {
+        const a = eOut(seg(u, 3.5, 3.7)); rect(1330, L.F - 150, 250, 40, hexA(ACC, a)); cross(1352, L.F - 130, 20, INK, 4); T('ATRAVIESA', 1374, L.F - 121, { f: MONO(22, 800), c: INK, a });
+      }
+    }
+    ctx.restore();
+  });
+  // blind gap bracket (lane 2)
+  if (z > 0) {
+    const L = lanes[1], a = z * eOut(seg(u, 4.4, 4.7)), xA = x0 + 5 * 150, xB = x0 + 6 * 150;
+    ctx.save(); ctx.globalAlpha *= a; ctx.strokeStyle = ACC; ctx.lineWidth = 3 / Z * 1.4;
+    const y = L.F - 254 * es - 34; line(xA, y, xB, y); line(xA, y, xA, y + 12); line(xB, y, xB, y + 12);
+    T('aquí el juego está ciego', (xA + xB) / 2, y - 14, { f: MONO(14, 700), c: ACC, al: 'center' });
+    T('comprobación 5', xA, L.F + 26, { f: MONO(11, 600), c: hexA(CREAM, .7), al: 'center' });
+    T('comprobación 6', xB, L.F + 26, { f: MONO(11, 600), c: hexA(CREAM, .7), al: 'center' });
+    ctx.restore();
+  }
+  ctx.restore();
+  caption(u, 4.6, 6.6, ['Entre comprobación y comprobación, el juego está *ciego*.']);
+  caption(u, 7.0, 9.3, ['Con *.Touched* pasa igual: lo que va rápido *atraviesa sin tocar*.']);
+  if (u < .45) streaks(seg(u, 0, .45), false);
+  header(t, 58.0, 67.3, '05', 'SE COMPRUEBA\nA SALTOS', { dim: false });
+  // blue dot flood
+  if (u > 9.3) { const k = seg(u, 9.3, 10.0), r = 10 + Math.pow(ease(k), 2) * 2300; ctx.fillStyle = BLUE; ctx.beginPath(); ctx.arc(W / 2, H / 2, r * spring(u - 9.3, 20, .6), 0, Math.PI * 2); ctx.fill(); }
+}
+
+// ---- S8 who decides (68-80) ----
+function row(u, t0, x, y, ok, text, c) {
+  if (u < t0) return;
+  const k = spring(u - t0, 15, .78), a = clamp(k * 1.6);
+  ctx.save(); ctx.globalAlpha *= a; ctx.translate(-(1 - k) * 40, 0);
+  ctx.fillStyle = INK; ctx.beginPath(); ctx.roundRect(x, y - 34, 44, 44, 8); ctx.fill();
+  if (ok) check(x + 22, y - 12, 22, HIT, 5); else cross(x + 22, y - 12, 22, ACC, 5);
+  T(text, x + 64, y, { f: FL(650, 36), c });
+  ctx.restore();
+}
+function S8(t) {
+  const u = t - 68;
+  bg(BLUE); bgGrid('rgba(255,255,255,0.05)');
+  const k = spring(u - 1.6, 13, .8), ox = lerp(W + 40, 960, k);
+  rect(ox, 0, W - ox + 80, H, ACC);
+  // left: client decides
+  if (u > 1.9) {
+    slam('TU ORDENADOR', 110, 300, 76, u, 1.9, { c: WHITE });
+    T('decide el cliente', 113, 350, { f: MONO(24, 600), c: 'rgba(255,255,255,.75)', a: eOut(seg(u, 2.1, 2.4)) });
+  }
+  row(u, 2.3, 110, 450, true, 'Lo que ves es lo que das', WHITE);
+  row(u, 3.0, 110, 530, false, 'Al otro le pegan tras una pared', WHITE);
+  row(u, 3.7, 110, 610, false, 'Los tramposos inflan hitboxes', WHITE);
+  if (u > 3.9) {
+    const a = eOut(seg(u, 3.9, 4.2)), F = 830, es = .5, ex = 640;
+    ctx.save(); ctx.globalAlpha *= a;
+    drawChar(260, F, { col: CREAM, s: es, th: swingTh(u, [5.25]), dark: '#B9B6AC' });
+    drawChar(ex, F, { col: ACC, s: es, face: -1, sword: false });
+    const g = spring(u - 4.4, 10, .6), w = lerp(80, 400, g), h = lerp(130, 175, g);
+    wire(ex - w / 2, F - 65 - h / 2, w, h, HIT, { fill: .18, label: g > .2 ? 'HITBOX EXPANDER' : 'HITBOX' });
+    if (u > 5.5) { const ka = eOut(seg(u, 5.5, 5.7)); rect(ex + 40, F - 230, 92, 34, hexA(HIT, ka)); T('HIT', ex + 86, F - 205, { f: MONO(22, 800), c: INK, al: 'center', a: ka }); }
+    ctx.restore();
+  }
+  // right: server decides
+  if (u > 5.2) {
+    slam('EL SERVIDOR', 1070, 300, 76, u, 5.2, { c: INK });
+    T('decide el servidor', 1073, 350, { f: MONO(24, 600), c: hexA(INK, .75), a: eOut(seg(u, 5.4, 5.7)) });
+  }
+  row(u, 5.6, 1070, 450, true, 'Es más difícil hacer trampas', INK);
+  row(u, 6.3, 1070, 530, false, 'Vuelve el lag: fallas lo que veías', INK);
+  row(u, 7.0, 1070, 610, false, 'Y sin rebobinado no hay arreglo', INK);
+  if (u > 7.1) {
+    const a = eOut(seg(u, 7.1, 7.4)), F = 830, es = .5;
+    ctx.save(); ctx.globalAlpha *= a;
+    const th = swingTh(u, [7.4]);
+    drawChar(1260, F, { col: INK, s: es, th, dark: '#000000', headc: '#2A2A35', eye: ACC, blade: '#2A2A35', guard: '#000000' });
+    drawChar(1460, F, { col: CREAM, s: es, face: -1, sword: false, dark: '#B9B6AC' });
+    drawChar(1640, F, { ghost: true, gc: INK, s: es, face: 1, sword: false });
+    ctx.restore();
+    stamp('MISS', 1560, 680, u, 7.9, { c: INK, size: 60, back: hexA(ACC, .7) });
+  }
+  // bottom bar + punchline
+  if (u > 8.6) {
+    const kb = spring(u - 8.6, 14, .8), g = ease(seg(u, 11.4, 12.0));
+    const y = lerp(1100, 870, kb), y2 = lerp(y, -20, g), hh = lerp(140, H + 60, g);
+    rect(0, y2, W, hh, INK);
+    if (g < .5) {
+      ctx.save(); ctx.globalAlpha *= 1 - g * 2;
+      const f = FL(800, 52), s1 = 'Elijas lo que elijas, ', s2 = 'alguien se come el lag.';
+      const w1 = MW(s1, f), w2 = MW(s2, f), x = W / 2 - (w1 + w2) / 2;
+      slam(s1, x, y + 88, 52, u, 9.0, { w: 800, ls: 0, per: .01 }); slam(s2, x + w1, y + 88, 52, u, 9.2, { w: 800, ls: 0, c: ACC, per: .012 });
+      ctx.restore();
+    }
+  }
+  header(t, 68, 79.4, '06', '¿QUIÉN DECIDE\nSI HAS DADO?', { c: WHITE, nc: WHITE, dim: false });
+}
+
+// ---- S9 recap + end (80-90) ----
+function S9(t) {
+  const u = t - 80;
+  bg(INK); bgGrid();
+  const rows = ['Ves a los demás en el pasado', 'Nadie rebobina para comprobar', 'Hitboxes que duran un frame', 'Tu hitbox va detrás de ti', 'Se comprueba a saltos', 'Cliente o servidor: alguien pierde'];
+  if (u < 5.0) {
+    T('RESUMEN', 150, 142, { f: FL(900, 34), c: ACC, a: eOut(seg(u, 0, .3)) * (1 - seg(u, 4.6, 4.9)) });
+    rows.forEach((r, i) => {
+      const t0 = .4 + i * .45, k = spring(u - t0, 15, .75); if (k <= 0) return;
+      const out = ease(seg(u, 4.4 + i * .05, 4.75 + i * .05));
+      const y = 260 + i * 100 - out * 60;
+      ctx.save(); ctx.globalAlpha *= clamp(k * 1.5) * (1 - out); ctx.translate(-(1 - k) * 60, 0);
+      T(String(i + 1).padStart(2, '0'), 200, y, { f: MONO(36, 700), c: ACC });
+      const f = FL(850, 58); T(r, 290, y, { f });
+      const fl = 1 - seg(u, t0 + .05, t0 + .5);
+      if (fl > 0) wire(180, y - 62, MW(r, f) + 140, 84, HIT, { a: fl, fill: .08 });
+      ctx.restore();
+    });
+  }
+  if (u > 4.95) {
+    slam('No es solo tu wifi.', W / 2, 500, 140, u, 5.0, { al: 'center' });
+    slam('Es cómo están hechas.', W / 2, 650, 104, u, 6.0, { al: 'center', w: 400, fam: 'Instrument Serif', st: 'italic', c: ACC, ls: 0, per: .015 });
+    if (u > 7.45) {
+      const tw = MW('No es solo tu wifi.', FL(900, 140), -2.8), wob = Math.sin(u * 6) * 5;
+      wire(W / 2 - tw / 2 + 80 + wob, 330, tw, 160, HIT, { k: spring(u - 7.45, 16, .6), dash: true, fill: .06, label: 'HITBOX' });
+    }
+    stamp('MISS', 1560, 300, u, 8.0, {});
+  }
+}
+
+const SCENES = [
+  { a: 0, b: 8, fn: S1, label: 'COLD OPEN', hud: 'rgba(237,235,228,.5)' },
+  { a: 8, b: 12, fn: S2, label: 'TITULO', hud: 'rgba(11,11,16,.55)', vig: .45 },
+  { a: 12, b: 27, fn: S3, label: '01 / LAG', hud: 'rgba(237,235,228,.5)' },
+  { a: 27, b: 36, fn: S4, label: '02 / REBOBINAR', hud: 'rgba(237,235,228,.5)' },
+  { a: 36, b: 48, fn: S5, label: '03 / UN FRAME', hud: 'rgba(237,235,228,.5)' },
+  { a: 48, b: 58, fn: S6, label: '04 / DASH', hud: 'rgba(237,235,228,.5)' },
+  { a: 58, b: 68, fn: S7, label: '05 / A SALTOS', hud: 'rgba(237,235,228,.5)' },
+  { a: 68, b: 80, fn: S8, label: '06 / AUTORIDAD', hud: 'rgba(255,255,255,.6)', vig: .5 },
+  { a: 80, b: 90, fn: S9, label: 'RESUMEN', hud: 'rgba(237,235,228,.5)' },
+];
+window.seek = function (t) {
+  t = ((t % DUR) + DUR) % DUR;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.setLineDash([]); ctx.letterSpacing = '0px';
+  let si = SCENES.findIndex(s => t >= s.a && t < s.b); if (si < 0) si = SCENES.length - 1;
+  const sc = SCENES[si];
+  ctx.save(); sc.fn(t); ctx.restore();
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = sc.vig ?? 1; ctx.drawImage(vig, 0, 0); ctx.globalAlpha = 1;
+  grain(t);
+  hud(t, si + 1, sc.label, sc.hud);
+  if (t < .3) rect(0, 0, W, H, `rgba(0,0,0,${1 - seg(t, 0, .3)})`);
+  if (t > 89.2) rect(0, 0, W, H, `rgba(0,0,0,${ease(seg(t, 89.2, 89.95))})`);
+};
+
+// ============================ MUSIC (synth bed, 120 BPM, Am F C G) ============================
+window.buildAudio = async function (ctxA, total = DUR) {
+  const R = rng(99), sr = ctxA.sampleRate;
+  const nb = ctxA.createBuffer(1, sr * 2, sr), nd = nb.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = R() * 2 - 1;
+  const master = ctxA.createGain(); master.gain.value = .55;
+  const comp = ctxA.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4; comp.attack.value = .005; comp.release.value = .15;
+  const lp = ctxA.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 18000; lp.Q.value = .7;
+  master.connect(lp); lp.connect(comp); comp.connect(ctxA.destination);
+  const drums = ctxA.createGain(); drums.connect(master);
+  const tonal = ctxA.createGain(); tonal.connect(master);   // sidechained bus
+  const hz = n => 440 * Math.pow(2, (n - 69) / 12);
+  const chords = [[57, 60, 64], [53, 57, 60], [55, 60, 64], [55, 59, 62]];   // Am F C G (voiced around C4)
+  const roots = [33, 29, 36, 31];
+  const noise = (t, dur, type, f, q, g0) => { const s = ctxA.createBufferSource(); s.buffer = nb; const b = ctxA.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; const g = ctxA.createGain(); g.gain.setValueAtTime(g0, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur); s.connect(b); b.connect(g); g.connect(drums); s.start(t, (R() * 1.5)); s.stop(t + dur + .02); };
+  const kick = (t, v = 1) => { const o = ctxA.createOscillator(), g = ctxA.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .12); g.gain.setValueAtTime(.95 * v, t); g.gain.exponentialRampToValueAtTime(.001, t + .38); o.connect(g); g.connect(drums); o.start(t); o.stop(t + .4); };
+  const clap = (t, v = 1) => { for (let i = 0; i < 3; i++) noise(t + i * .012, .16, 'bandpass', 1400, 1.2, .5 * v); };
+  const hat = (t, v = 1) => noise(t, .045, 'highpass', 8000, .7, .22 * v);
+  const synth = (t, n, dur, type, g0, cutoff, out = tonal, a = .005, sus = false) => { const o = ctxA.createOscillator(), f = ctxA.createBiquadFilter(), g = ctxA.createGain(); o.type = type; o.frequency.value = hz(n); f.type = 'lowpass'; f.frequency.value = cutoff; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(g0, t + a); if (sus) { g.gain.setValueAtTime(g0, t + dur - .25); g.gain.linearRampToValueAtTime(0, t + dur); } else g.gain.exponentialRampToValueAtTime(.0008, t + dur); o.connect(f); f.connect(g); g.connect(out); o.start(t); o.stop(t + dur + .05); };
+  // sections: energy level per bar (bar = 2 s)
+  const level = t => t < 8 ? 1 : t < 12 ? 3 : t < 80 ? 2 : t < 88 ? 3 : 0;
+  const silent = t => (t >= 2.0 && t < 2.5) || (t >= 29.0 && t < 30.4) || (t >= 31.0 && t < 31.5) || t >= 88.6;
+  const headers = [12, 27, 36, 48, 58, 68];
+  for (let b = 0; b * BEAT < total - .01; b++) {
+    const t = b * BEAT, lv = level(t), bar = Math.floor(t / 2), beatIn = b % 4, ch = bar % 4;
+    if (beatIn === 0) { let ps = t; while (silent(ps) && ps < t + 2) ps += .05; const pd = t + 2.05 - ps; if (pd > .4) for (const n of chords[ch]) { const cut = lv >= 2 ? 1600 : 1000, g0 = lv >= 2 ? .04 : .05; synth(ps, n, pd, 'sawtooth', g0, cut, tonal, .2, true); synth(ps, n + .08, pd, 'sawtooth', g0 * .9, cut, tonal, .2, true); } }
+    if (silent(t)) continue;
+    const hdr = headers.some(h => t >= h && t < h + 1.0);
+    // drums
+    if (lv >= 2 || (lv === 1 && (beatIn === 0 || t >= 6))) if (!hdr) kick(t, lv === 1 ? .7 : 1);
+    if (lv >= 2 && (beatIn === 1 || beatIn === 3) && (t >= 36 || lv === 3)) clap(t, .8);
+    if (lv >= 1 && !silent(t + BEAT / 2)) hat(t + BEAT / 2, lv === 1 ? .5 : 1);
+    if (lv >= 2) { hat(t + BEAT * .25, .35); hat(t + BEAT * .75, .35); }
+    // sidechain pump
+    tonal.gain.setValueAtTime(lv >= 2 ? .35 : .7, t); tonal.gain.linearRampToValueAtTime(1, t + .22);
+    // bass: 8ths on root
+    if (lv >= 2) for (const off of [0, .25]) { const tt = t + off; if (!silent(tt)) synth(tt, roots[ch] + (off ? 12 : 0), .22, 'sawtooth', .32, 420); }
+    else if (lv === 1 && beatIn === 0) synth(t, roots[ch], 1.8, 'sawtooth', .25, 300, tonal, .05);
+    // pad: once per bar
+    // arp: 16ths over chord tones
+    if (lv >= 2) for (let q = 0; q < 4; q++) { const tt = t + q * BEAT / 4; if (silent(tt)) continue; const n = chords[ch][(b * 4 + q) % 3] + 12 + ((q === 3) ? 12 : 0); synth(tt, n, .14, 'square', .035, 2600); }
+  }
+  // final hit
+  kick(88, 1); for (const n of chords[0]) synth(88, n, 2.2, 'sawtooth', .07, 1400, master, .01);
+  // filter breaths on section headers + tape-ish dip on the rewind
+  for (const h of headers) { lp.frequency.setValueAtTime(18000, h - .01); lp.frequency.exponentialRampToValueAtTime(700, h + .05); lp.frequency.exponentialRampToValueAtTime(18000, h + 1.4); }
+  lp.frequency.setValueAtTime(18000, 28.9); lp.frequency.exponentialRampToValueAtTime(260, 29.3); lp.frequency.setValueAtTime(260, 30.35); lp.frequency.exponentialRampToValueAtTime(18000, 30.6);
+};
+
+// ============================ preview player ============================
+function fit() { if (RENDER) return; const s = Math.min(innerWidth / W, (innerHeight - 50) / H); document.getElementById('stage').style.transform = `scale(${s})`; }
+addEventListener('resize', fit); fit();
+if (!RENDER) {
+  let buf, ac, src, startAt = 0, offset = 0, playing = false;
+  const pp = document.getElementById('pp'), sc = document.getElementById('scrub'), tc = document.getElementById('tc');
+  async function play() {
+    ac ??= new AudioContext();
+    if (!buf) { pp.textContent = '…'; const off = new OfflineAudioContext(2, Math.ceil(48000 * DUR), 48000); await buildAudio(off); buf = await off.startRendering(); }
+    src = ac.createBufferSource(); src.buffer = buf; src.connect(ac.destination);
+    src.start(0, offset % DUR); startAt = ac.currentTime; playing = true; pp.textContent = 'PAUSE';
+  }
+  function pause() { if (!playing) return; offset += ac.currentTime - startAt; src.stop(); playing = false; pp.textContent = 'PLAY'; }
+  const now = () => playing ? (offset + ac.currentTime - startAt) % DUR : offset;
+  pp.onclick = () => playing ? pause() : play();
+  sc.oninput = () => { const was = playing; pause(); offset = +sc.value; if (was) play(); };
+  document.fonts.ready.then(() => (function loop() { const t = now(); seek(t); sc.value = t; tc.textContent = t.toFixed(2); requestAnimationFrame(loop); })());
+}
+</script>
+</body>
+</html>

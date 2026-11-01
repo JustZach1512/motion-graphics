@@ -1,0 +1,480 @@
+[
+ {
+  "t": 0.45,
+  "type": "movement",
+  "desc": "player dashes in"
+ },
+ {
+  "t": 1.4,
+  "type": "movement",
+  "desc": "player swing"
+ },
+ {
+  "t": 2.0,
+  "type": "reveal",
+  "desc": "MISS stamp"
+ },
+ {
+  "t": 2.0,
+  "type": "error_or_tech",
+  "desc": "MISS glitch"
+ },
+ {
+  "t": 2.45,
+  "type": "typing",
+  "desc": "> Le has dado.",
+  "dur": 0.32
+ },
+ {
+  "t": 2.95,
+  "type": "typing",
+  "desc": "> Lo has visto.",
+  "dur": 0.34
+ },
+ {
+  "t": 3.45,
+  "type": "appear",
+  "desc": "Y no cuenta."
+ },
+ {
+  "t": 4.45,
+  "type": "movement",
+  "desc": "player steps back"
+ },
+ {
+  "t": 4.92,
+  "type": "movement",
+  "desc": "enemy swing"
+ },
+ {
+  "t": 5.5,
+  "type": "reveal",
+  "desc": "you get hit from far away"
+ },
+ {
+  "t": 5.55,
+  "type": "typing",
+  "desc": "> Y a ti te pegan",
+  "dur": 0.4
+ },
+ {
+  "t": 6.0,
+  "type": "appear",
+  "desc": "desde ahí."
+ },
+ {
+  "t": 6.95,
+  "type": "appear",
+  "desc": "sword hitbox revealed"
+ },
+ {
+  "t": 6.5,
+  "type": "build_up",
+  "desc": "hitbox grows to fill screen",
+  "dur": 1.5
+ },
+ {
+  "t": 8.0,
+  "type": "reveal",
+  "desc": "hitbox floods -> title"
+ },
+ {
+  "t": 8.5,
+  "type": "appear",
+  "desc": "HITBOXES DE"
+ },
+ {
+  "t": 9.0,
+  "type": "appear",
+  "desc": "ROBLOX SON"
+ },
+ {
+  "t": 9.5,
+  "type": "reveal",
+  "desc": "UNA MIERDA."
+ },
+ {
+  "t": 10.2,
+  "type": "error_or_tech",
+  "desc": "misaligned hitbox"
+ },
+ {
+  "t": 11.15,
+  "type": "movement",
+  "desc": "full stop detaches"
+ },
+ {
+  "t": 11.5,
+  "type": "scene_cut",
+  "desc": "dot floods ink"
+ },
+ {
+  "t": 12.0,
+  "type": "reveal",
+  "desc": "header 01"
+ },
+ {
+  "t": 13.5,
+  "type": "appear",
+  "desc": "three panels"
+ },
+ {
+  "t": 21.3,
+  "type": "movement",
+  "desc": "camera pushes into your screen"
+ },
+ {
+  "t": 22.45,
+  "type": "movement",
+  "desc": "swing at the past"
+ },
+ {
+  "t": 22.95,
+  "type": "appear",
+  "desc": "your hitbox"
+ },
+ {
+  "t": 23.2,
+  "type": "success",
+  "desc": "on your screen: yes"
+ },
+ {
+  "t": 24.0,
+  "type": "reveal",
+  "desc": "server: MISS"
+ },
+ {
+  "t": 24.0,
+  "type": "error_or_tech",
+  "desc": "MISS glitch"
+ },
+ {
+  "t": 27.0,
+  "type": "reveal",
+  "desc": "header 02"
+ },
+ {
+  "t": 29.0,
+  "type": "error_or_tech",
+  "desc": "rewind 0.7 s"
+ },
+ {
+  "t": 30.5,
+  "type": "success",
+  "desc": "HIT after rewind"
+ },
+ {
+  "t": 30.5,
+  "type": "reveal",
+  "desc": "HIT impact"
+ },
+ {
+  "t": 31.0,
+  "type": "scene_cut",
+  "desc": "hard cut to text"
+ },
+ {
+  "t": 31.5,
+  "type": "reveal",
+  "desc": "NO VIENE DE SERIE"
+ },
+ {
+  "t": 34.15,
+  "type": "appear",
+  "desc": "Cada juego se lo programa"
+ },
+ {
+  "t": 34.75,
+  "type": "reveal",
+  "desc": "...O NO."
+ },
+ {
+  "t": 35.6,
+  "type": "scene_cut",
+  "desc": "accent wipe"
+ },
+ {
+  "t": 36.0,
+  "type": "reveal",
+  "desc": "header 03"
+ },
+ {
+  "t": 37.9,
+  "type": "typing",
+  "desc": "code typing",
+  "dur": 2.2
+ },
+ {
+  "t": 39.75,
+  "type": "movement",
+  "desc": "swing"
+ },
+ {
+  "t": 40.0,
+  "type": "click",
+  "desc": "one-frame check"
+ },
+ {
+  "t": 40.5,
+  "type": "reveal",
+  "desc": "MISS"
+ },
+ {
+  "t": 40.5,
+  "type": "error_or_tech",
+  "desc": "MISS glitch"
+ },
+ {
+  "t": 43.25,
+  "type": "click",
+  "desc": "select 5, 5, 5"
+ },
+ {
+  "t": 43.6,
+  "type": "typing",
+  "desc": "retype size",
+  "dur": 0.4
+ },
+ {
+  "t": 43.95,
+  "type": "typing",
+  "desc": "retype comment",
+  "dur": 0.7
+ },
+ {
+  "t": 44.0,
+  "type": "movement",
+  "desc": "box becomes enormous"
+ },
+ {
+  "t": 44.4,
+  "type": "movement",
+  "desc": "swing"
+ },
+ {
+  "t": 45.0,
+  "type": "reveal",
+  "desc": "HIT from 3 metres"
+ },
+ {
+  "t": 47.3,
+  "type": "build_up",
+  "desc": "giant box floods",
+  "dur": 0.7
+ },
+ {
+  "t": 48.0,
+  "type": "reveal",
+  "desc": "header 04"
+ },
+ {
+  "t": 48.02,
+  "type": "scene_cut",
+  "desc": "green collapses"
+ },
+ {
+  "t": 50.0,
+  "type": "movement",
+  "desc": "dash"
+ },
+ {
+  "t": 50.45,
+  "type": "movement",
+  "desc": "swing"
+ },
+ {
+  "t": 50.9,
+  "type": "appear",
+  "desc": "server spawns box behind"
+ },
+ {
+  "t": 51.5,
+  "type": "reveal",
+  "desc": "MISS"
+ },
+ {
+  "t": 51.5,
+  "type": "error_or_tech",
+  "desc": "MISS glitch"
+ },
+ {
+  "t": 57.0,
+  "type": "movement",
+  "desc": "dash out"
+ },
+ {
+  "t": 57.4,
+  "type": "scene_cut",
+  "desc": "streak wipe"
+ },
+ {
+  "t": 58.0,
+  "type": "reveal",
+  "desc": "header 05"
+ },
+ {
+  "t": 60.0,
+  "type": "movement",
+  "desc": "shot 60/s"
+ },
+ {
+  "t": 60.27,
+  "type": "success",
+  "desc": "detected"
+ },
+ {
+  "t": 61.0,
+  "type": "movement",
+  "desc": "shot 20/s"
+ },
+ {
+  "t": 61.5,
+  "type": "error_or_tech",
+  "desc": "goes straight through"
+ },
+ {
+  "t": 62.0,
+  "type": "movement",
+  "desc": "zoom in"
+ },
+ {
+  "t": 64.6,
+  "type": "movement",
+  "desc": "zoom out"
+ },
+ {
+  "t": 67.3,
+  "type": "scene_cut",
+  "desc": "blue flood"
+ },
+ {
+  "t": 68.0,
+  "type": "reveal",
+  "desc": "header 06"
+ },
+ {
+  "t": 69.55,
+  "type": "scene_cut",
+  "desc": "orange half slides in"
+ },
+ {
+  "t": 70.3,
+  "type": "appear",
+  "desc": "row 1"
+ },
+ {
+  "t": 71.0,
+  "type": "appear",
+  "desc": "row 2"
+ },
+ {
+  "t": 71.7,
+  "type": "appear",
+  "desc": "row 3"
+ },
+ {
+  "t": 72.4,
+  "type": "appear",
+  "desc": "hitbox expander inflates"
+ },
+ {
+  "t": 73.5,
+  "type": "success",
+  "desc": "HIT (expander)"
+ },
+ {
+  "t": 73.6,
+  "type": "appear",
+  "desc": "row 4"
+ },
+ {
+  "t": 74.3,
+  "type": "appear",
+  "desc": "row 5"
+ },
+ {
+  "t": 75.0,
+  "type": "appear",
+  "desc": "row 6"
+ },
+ {
+  "t": 75.9,
+  "type": "hover_or_small_ui",
+  "desc": "mini MISS"
+ },
+ {
+  "t": 76.6,
+  "type": "movement",
+  "desc": "bar slides up"
+ },
+ {
+  "t": 77.0,
+  "type": "reveal",
+  "desc": "punchline"
+ },
+ {
+  "t": 79.4,
+  "type": "scene_cut",
+  "desc": "bar floods ink"
+ },
+ {
+  "t": 80.4,
+  "type": "hover_or_small_ui",
+  "desc": "recap row 1"
+ },
+ {
+  "t": 80.85,
+  "type": "hover_or_small_ui",
+  "desc": "recap row 2"
+ },
+ {
+  "t": 81.3,
+  "type": "hover_or_small_ui",
+  "desc": "recap row 3"
+ },
+ {
+  "t": 81.75,
+  "type": "hover_or_small_ui",
+  "desc": "recap row 4"
+ },
+ {
+  "t": 82.2,
+  "type": "hover_or_small_ui",
+  "desc": "recap row 5"
+ },
+ {
+  "t": 82.65,
+  "type": "hover_or_small_ui",
+  "desc": "recap row 6"
+ },
+ {
+  "t": 84.4,
+  "type": "movement",
+  "desc": "rows out"
+ },
+ {
+  "t": 85.0,
+  "type": "reveal",
+  "desc": "No es solo tu wifi."
+ },
+ {
+  "t": 86.0,
+  "type": "appear",
+  "desc": "Es cómo están hechas."
+ },
+ {
+  "t": 87.45,
+  "type": "appear",
+  "desc": "hitbox of the sentence"
+ },
+ {
+  "t": 88.0,
+  "type": "reveal",
+  "desc": "final MISS"
+ },
+ {
+  "t": 88.0,
+  "type": "error_or_tech",
+  "desc": "MISS glitch"
+ }
+]

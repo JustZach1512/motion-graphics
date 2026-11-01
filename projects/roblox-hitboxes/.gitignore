@@ -1,0 +1,9 @@
+node_modules/
+.sound-effects/
+out/
+cache/
+checks/
+manifest.local.json
+fonts/*.woff2
+fonts/fonts.css
+swaps.json
