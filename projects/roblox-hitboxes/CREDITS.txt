@@ -1,0 +1,30 @@
+Sound effects
+"Whoosh" by qubodup (Freesound), CC0 1.0 - https://freesound.org/people/qubodup/sounds/60013/
+"Fast simple chop 5 aif" by dave.des (Freesound), CC0 1.0 - https://freesound.org/people/dave.des/sounds/127197/
+"soft_impact3" by peoplearehappy (Freesound), CC0 1.0 - https://freesound.org/people/peoplearehappy/sounds/841274/
+"Glitch 0s5" by brktkrgll (Freesound), CC0 1.0 - https://freesound.org/people/brktkrgll/sounds/856168/
+"Digital typing wav" by Sky_Motion (Freesound), CC0 1.0 - https://freesound.org/people/Sky_Motion/sounds/416777/
+"POP SFX Neutral" by ethernel0 (Freesound), CC0 1.0 - https://freesound.org/people/ethernel0/sounds/776016/
+"Impact impactpunch heavy 000" by Kenney (kenney.nl), CC0 1.0 - https://kenney.nl/assets/impact-sounds
+"Interface pluck 001" by Kenney (kenney.nl), CC0 1.0 - https://kenney.nl/assets/interface-sounds
+"Interface maximize 001" by Kenney (kenney.nl), CC0 1.0 - https://kenney.nl/assets/interface-sounds
+"Cinematic Riser #3 subtle" by BeaconStudio (Freesound), CC0 1.0 - https://freesound.org/people/BeaconStudio/sounds/859482/
+"Cinematic impact" by deleted_user_3277771 (Freesound), CC0 1.0 - https://freesound.org/people/deleted_user_3277771/sounds/177242/
+"Interface pluck 002" by Kenney (kenney.nl), CC0 1.0 - https://kenney.nl/assets/interface-sounds
+"Impact impactsoft heavy 000" by Kenney (kenney.nl), CC0 1.0 - https://kenney.nl/assets/impact-sounds
+"Quick woosh" by florianreichelt (Freesound), CC0 1.0 - https://freesound.org/people/florianreichelt/sounds/683101/
+"Impact impactsoft heavy 001" by Kenney (kenney.nl), CC0 1.0 - https://kenney.nl/assets/impact-sounds
+"Interface maximize 002" by Kenney (kenney.nl), CC0 1.0 - https://kenney.nl/assets/interface-sounds
+"Interface confirmation 001" by Kenney (kenney.nl), CC0 1.0 - https://kenney.nl/assets/interface-sounds
+"Rewind 1s3" by plasterbrain (Freesound), CC0 1.0 - https://freesound.org/people/plasterbrain/sounds/402451/
+"Interface confirmation 002" by Kenney (kenney.nl), CC0 1.0 - https://kenney.nl/assets/interface-sounds
+"Impact impactpunch heavy 001" by Kenney (kenney.nl), CC0 1.0 - https://kenney.nl/assets/impact-sounds
+"Keyboard typing" by Breviceps (Freesound), CC0 1.0 - https://freesound.org/people/Breviceps/sounds/447909/
+"Classic Click" by adh.dreaming (Freesound), CC0 1.0 - https://freesound.org/people/adh.dreaming/sounds/671105/
+"Riser sound effect short wav" by syntheffects (Freesound), CC0 1.0 - https://freesound.org/people/syntheffects/sounds/685256/
+"Swipe wav" by LilMati (Freesound), CC0 1.0 - https://freesound.org/people/LilMati/sounds/702773/
+"Interface confirmation 003" by Kenney (kenney.nl), CC0 1.0 - https://kenney.nl/assets/interface-sounds
+"Click / Tick" by Squirrel_404 (Freesound), CC0 1.0 - https://freesound.org/people/Squirrel_404/sounds/683048/
+
+Music
+Synthesised in code for this video (buildAudio in video.html), Original, made for this video (no third-party licence)
