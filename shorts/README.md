@@ -6,6 +6,7 @@ Cada carpeta es un vídeo. Todos comparten motor, personajes y herramientas.
 |---|---|
 | [`agloe/`](agloe/README.md) | *El pueblo que no existía* / *The Town That Didn't Exist* |
 | [`el-turco/`](el-turco/README.md) | *La máquina que venció a Napoleón* |
+| [`fantasma/`](fantasma/README.md) | *El ejército de goma* |
 
 ## Qué hay en el kit
 

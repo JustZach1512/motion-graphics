@@ -3,7 +3,10 @@
 usage: python music.py <story>/music.json <out_dir>
 writes <out_dir>/music.mid and <out_dir>/music.wav (48 kHz stereo)
 
-Style: a mischievous "period" piece (harpsichord + pizzicato strings + bassoon + woodblock),
+Two kits (music.json "kit"):
+  period  harpsichord + pizzicato strings + bassoon + woodblock (default)
+  march   1940s sneaky march: piccolo + clarinet lead, tuba, pizzicato, snare and bass drum,
+          trombone "wah wah wah" for the comic beat
 D minor, with sections placed on story beats (times in seconds, from music.json):
   theme    the sneaky main tune, looping its 8 bars
   stop     everything stops (one timpani hit) - the comic freeze
@@ -23,7 +26,10 @@ SPB = 60 / BPM                     # seconds per beat
 TPB = 480
 SF2 = P.get('soundfont', '/usr/share/sounds/sf2/FluidR3_GM.sf2')
 
-CH = {'harpsi': (0, 6), 'pizz': (1, 45), 'bassoon': (2, 70), 'clar': (3, 71), 'timp': (4, 47), 'glock': (5, 9), 'pad': (6, 48), 'drums': (9, None)}
+KIT = P.get('kit', 'period')
+CH = {'harpsi': (0, 6), 'pizz': (1, 45), 'bassoon': (2, 70), 'clar': (3, 71), 'timp': (4, 47), 'glock': (5, 9), 'pad': (6, 48), 'comic': (7, 70), 'drums': (9, None)}
+if KIT == 'march':
+    CH.update({'harpsi': (0, 72), 'bassoon': (2, 58), 'comic': (7, 57)})   # piccolo lead, tuba bass, trombone gag
 events = []  # (time_s, channel, note, dur_s, vel)
 
 
@@ -60,18 +66,29 @@ def theme(t0, t1, bright=False, final=False, vel=1.0):
         b = i % 8; ch = CHORDS[b]
         def at(beat): return tb + beat * SPB
         for k, (beat, n, d) in enumerate(MEL[b]):
-            if at(beat) < t1: note(at(beat), 'harpsi', n, d, int((86 if k == 0 else 74) * vel))
+            if at(beat) < t1: note(at(beat), 'harpsi', n + (12 if KIT == 'march' else 0), d * (.8 if KIT == 'march' else 1), int((86 if k == 0 else 74) * vel * (.8 if KIT == 'march' else 1)))
+            if KIT == 'march' and at(beat) < t1: note(at(beat), 'clar', n, d, int(60 * vel))
             if bright and at(beat) < t1: note(at(beat), 'glock', n + 12, d, int(52 * vel))
         for beat in (0, 2):
             if at(beat) < t1: note(at(beat), 'pizz', BASS[ch][beat] - 12 if beat == 0 else BASS[ch][beat] - 12, .35, int(92 * vel))
         for beat in (1, 3):
             if at(beat) < t1:
                 for n in VOICE[ch]: note(at(beat), 'pizz', n, .3, int(58 * vel))
-        if i >= 8 or final:  # second pass: bassoon joins on the bass line
+        if KIT == 'march':  # tuba oom on 1 and 3, every bar
+            for beat in (0, 2):
+                if at(beat) < t1: note(at(beat), 'bassoon', BASS[ch][beat] - 12, .5, int(80 * vel))
+        elif i >= 8 or final:  # second pass: bassoon joins on the bass line
             for beat in (0, 1, 2, 3):
                 if at(beat) < t1: note(at(beat), 'bassoon', BASS[ch][beat] - 12, .4, int(62 * vel))
-        for beat in (0, 1, 2, 3):  # tick-tock woodblock
-            if at(beat) < t1: note(at(beat), 'drums', 76 if beat % 2 == 0 else 77, .1, int(34 * vel))
+        if KIT == 'march':  # snare on the eighths with accents, bass drum on 1 and 3
+            for e in range(8):
+                if at(e * .5) < t1: note(at(e * .5), 'drums', 38, .1, int([62, 22, 38, 22, 58, 22, 38, 30][e] * vel))
+            for beat in (0, 2):
+                if at(beat) < t1: note(at(beat), 'drums', 36, .2, int(64 * vel))
+            if i % 4 == 0 and at(0) < t1: note(at(0), 'drums', 49, 1, int(46 * vel))
+        else:
+            for beat in (0, 1, 2, 3):  # tick-tock woodblock
+                if at(beat) < t1: note(at(beat), 'drums', 76 if beat % 2 == 0 else 77, .1, int(34 * vel))
         if bright:
             for e in range(8):
                 if at(e * .5) < t1: note(at(e * .5), 'drums', 42, .1, 30)
@@ -95,9 +112,9 @@ def mystery(t0, t1):
         if i % 2 == 1 and at(3.5) < t1: note(at(3.5), 'glock', 81, .5, 38)
 
 
-def comic(t):  # sad bassoon "wah wah wah"
-    for k, n in enumerate([50, 49, 48]): note(t + k * .5 * SPB * 2, 'bassoon', n, .9, 80)
-    note(t + 3 * SPB, 'bassoon', 47, 2.5, 76)
+def comic(t):  # sad "wah wah wah" (bassoon in the period kit, trombone in the march kit)
+    for k, n in enumerate([50, 49, 48]): note(t + k * .5 * SPB * 2, 'comic', n, .9, 84)
+    note(t + 3 * SPB, 'comic', 47, 2.5, 80)
 
 
 for s in P['sections']:
@@ -107,6 +124,7 @@ for s in P['sections']:
     elif st == 'final': theme(a, b, final=True)
     elif st == 'mystery': mystery(a, b)
     elif st == 'stop': note(a, 'timp', 38, 2, 110); note(a, 'drums', 49, 1, 70)
+    elif st == 'quiet': theme(a, b, vel=.7)
     elif st == 'end':
         t = s['at']
         for n in [38, 50, 62, 65, 69, 74]: note(t, 'pizz', n, 1, 100)

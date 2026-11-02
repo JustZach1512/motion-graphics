@@ -1,0 +1,17 @@
+hook1    N       3.15s  heard 8/8 words  | Cuatro soldados levantaron un tanque de treinta toneladas.
+hook2    N       0.78s  heard 3/3 words  | Con las manos.
+place    N       2.26s  heard 1/6 words  | Francia 1944.
+setup    N       5.75s  heard 17/18 words  | Los franceses van en bici por el campo y se encuentran a cuatro soldados americanos levantando un tanque.
+farmer   FARMER  1.19s  heard 4/4 words  | Pero ¿cómo es posible?
+soldier  SOLDIER  2.46s  heard 8/8 words  | Bueno, es que los americanos somos muy fuertes.
+reveal   N       2.41s  heard 8/9 words  | El truco aquel tanque era de goma, era insable.
+army     N       4.47s  heard 13/14 words  | Ellos soldados eran el ejército fantasma y su misión era engañar a los alemanes.
+inflate  N       2.80s  heard 8/9 words  | De noche hinchaban tanques, camion y cañones de goma.
+sound    N       3.88s  heard 11/11 words  | Ponían altavoces con ruido de motores, de cadenas, de soldados trabajando.
+radio    N       3.69s  heard 12/13 words  | llenaban la radio de mensajes falsos de tropas que no estaban allí.
+bars     N       4.49s  heard 16/17 words  | Hasta se iban a los bares del pueblo a contar mentiras por si había espías escuchando.
+plane    N       4.50s  heard 14/15 words  | Desde el aire, los aleman veían un ejército enorme y movían sus tropas para frenarlo.
+artists  N       4.62s  heard 11/11 words  | ¿Y quiénes eran estos soldados? Muchos eran artistas, pintores, diseñadores, decoradores.
+pay1     N       2.46s  heard 8/8 words  | Engañaron al ejército alemán una y otra vez.
+pay2     N       3.82s  heard 13/14 words  | Los únicos que estuvieron a punto de pillarles fueron dos señores en bici.
+button   SOLDIER  2.18s  heard 6/6 words  | Muy fuertes somos muy muy fuertes.

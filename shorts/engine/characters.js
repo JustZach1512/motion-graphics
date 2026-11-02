@@ -115,6 +115,22 @@ function outfitSVG(o) {
       <path d="M400 0 L500 240 L460 512 L380 512Z M624 0 L524 240 L564 512 L644 512Z" fill="#00000030" stroke="${INK}" stroke-width="5"/>
       ${[260, 330, 400].map(y => `<circle cx="470" cy="${y}" r="10" fill="#f3d27a" stroke="${INK}" stroke-width="4"/><circle cx="554" cy="${y}" r="10" fill="#f3d27a" stroke="${INK}" stroke-width="4"/>`).join('')}
       ${bowtie('#1c1411', '#555')}`;
+  } else if (o.outfit === 'army') {      // olive field jacket: collar, chest pockets, belt
+    s += `<path d="M440 0 L512 110 L584 0Z" fill="#c9b98a" stroke="${INK}" stroke-width="6"/>
+      <path d="M512 110 L512 512" stroke="${INK}" stroke-width="6" opacity=".6"/>
+      ${[[400, 150], [540, 150]].map(([x, y]) => `<rect x="${x}" y="${y}" width="84" height="80" rx="6" fill="#00000018" stroke="${INK}" stroke-width="5"/><path d="M${x - 4} ${y} L${x + 88} ${y} L${x + 84} ${y + 26} L${x} ${y + 26}Z" fill="#00000022" stroke="${INK}" stroke-width="5"/><circle cx="${x + 42}" cy="${y + 18}" r="6" fill="#3a3a2a"/>`).join('')}
+      ${[200, 280, 360].map(y => `<circle cx="512" cy="${y}" r="8" fill="#3a3a2a"/>`).join('')}
+      <rect x="0" y="392" width="1024" height="40" fill="#5a4a2a" stroke="${INK}" stroke-width="5"/><rect x="490" y="388" width="44" height="48" rx="4" fill="#c9a14a" stroke="${INK}" stroke-width="4"/>`;
+  } else if (o.outfit === 'farmer') {    // blue work shirt, red neckerchief, brown trousers
+    s += `<path d="M450 0 L512 70 L574 0Z" fill="#9fc0e0" stroke="${INK}" stroke-width="6"/>
+      <path d="M420 6 L604 6 L512 120Z" fill="#c0392b" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>
+      ${[170, 240, 310].map(y => `<circle cx="512" cy="${y}" r="7" fill="#e8e0d0" stroke="${INK}" stroke-width="3"/>`).join('')}
+      <rect x="0" y="400" width="1024" height="112" fill="#6b4a33"/><path d="M0 400 L1024 400" stroke="${INK}" stroke-width="5"/>`;
+  } else if (o.outfit === 'trench') {    // beige trench coat: lapels, double buttons, belt
+    s += `<path d="M430 0 L512 160 L594 0Z" fill="#3a3a3a" stroke="${INK}" stroke-width="6"/>
+      <path d="M380 0 L500 190 L470 230 L380 120Z M644 0 L524 190 L554 230 L644 120Z" fill="#00000020" stroke="${INK}" stroke-width="5"/>
+      ${[230, 300].map(y => `<circle cx="470" cy="${y}" r="9" fill="#5a4a3a"/><circle cx="554" cy="${y}" r="9" fill="#5a4a3a"/>`).join('')}
+      <rect x="0" y="360" width="1024" height="36" fill="#a8916a" stroke="${INK}" stroke-width="5"/><rect x="494" y="354" width="36" height="48" fill="none" stroke="${INK}" stroke-width="5"/>`;
   } else if (o.outfit === 'overalls') {
     s += `<rect x="0" y="220" width="1024" height="292" fill="#4f7fc4"/>
       <rect x="400" y="140" width="224" height="140" rx="14" fill="#4f7fc4" stroke="${INK}" stroke-width="7"/>
@@ -163,6 +179,15 @@ function makeHat(type, color, parent) {
     const sh = new THREE.Shape(); sh.moveTo(-1.15, 0); sh.quadraticCurveTo(-1.05, .55, -.55, .62); sh.quadraticCurveTo(0, .95, .55, .62); sh.quadraticCurveTo(1.05, .55, 1.15, 0); sh.quadraticCurveTo(0, .12, -1.15, 0);
     const hm = mesh(new THREE.ExtrudeGeometry(sh, { depth: .7, bevelEnabled: true, bevelThickness: .08, bevelSize: .06, bevelSegments: 3 }), m, { p: [0, .48, -.35], parent: g });
     [['#1f3a8a', .17], ['#ffffff', .12], ['#c0392b', .07]].forEach(([c, r], i) => mesh(cyl(r, r, .03, 24), toon(c, { g: G3, outline: i === 0 }), { p: [.62, .86, .44 + i * .012], r: [90, 0, 0], parent: g }));
+  } else if (type === 'helmet') {    // M1-style steel helmet
+    const hm = toon(color, { g: G3, ol: .008 });
+    mesh(new THREE.SphereGeometry(.88, 40, 20, 0, Math.PI * 2, 0, Math.PI * .5), hm, { p: [0, .06, 0], s: [1, .95, 1.04], parent: g });
+    mesh(new THREE.LatheGeometry([new THREE.Vector2(.84, 0), new THREE.Vector2(.98, -.04), new THREE.Vector2(1.0, -.08)], 40), toon(color, { g: G3, side: THREE.DoubleSide, ol: .006 }), { p: [0, .06, 0], parent: g });
+    mesh(new THREE.TorusGeometry(.6, .02, 4, 24), toon('#3a3a2a', { g: G3, outline: false }), { p: [0, -.25, .2], r: [70, 0, 0], parent: g });
+  } else if (type === 'beret') {
+    const bm = toon(color, { g: G3, ol: .008 });
+    mesh(sphere(.82, 32, 16), bm, { p: [.12, .62, 0], s: [1, .32, 1], r: [0, 0, -12], parent: g });
+    mesh(cyl(.03, .05, .12, 8), bm, { p: [.14, .9, 0], parent: g });
   } else if (type === 'turban') {
     const w = toon(color, { g: G3, ol: .007 });
     [[.0, 1.0], [.2, .92], [.38, .78]].forEach(([y, sc]) => mesh(new THREE.TorusGeometry(.66 * sc, .24, 14, 36), w, { p: [0, .3 + y, 0], r: [90, 0, 0], parent: g }));
@@ -202,6 +227,13 @@ export const CAST = {
   OWNER: { color: '#b3312a', outfit: 'coat', hat: 'top', hatColor: '#1c1a22', mustache: '#3a2a20' },
   HIDDEN: { color: '#8a6a4a', outfit: 'suspenders', acc: '#4a3a2a', hat: 'cap', hatColor: '#6a5a4a', mustache: '#4a3020', glasses: true },
   TURK: { color: '#8e2a2a', outfit: 'robe', hat: 'turban', hatColor: '#f4ecd8', mustache: '#1c1411', headColor: '#c99a62', limbColor: '#a8743f', limbR: .075, handR: .13, arm: 1.5 },
+  SOLDIER: { color: '#6b7a3a', outfit: 'army', hat: 'helmet', hatColor: '#5f6b38' },
+  SOLDIER2: { color: '#6b7a3a', outfit: 'army', hat: 'helmet', hatColor: '#5f6b38', mustache: '#4a3020' },
+  SOLDIER3: { color: '#6b7a3a', outfit: 'army', hat: 'helmet', hatColor: '#5f6b38', glasses: true },
+  ARTIST: { color: '#6b7a3a', outfit: 'army', hat: 'beret', hatColor: '#2a2a3a', mustache: '#2a1d14' },
+  FARMER1: { color: '#5f8fc4', outfit: 'farmer', hat: 'beret', hatColor: '#1c1a22', mustache: '#3a2a20' },
+  FARMER2: { color: '#d8c89a', outfit: 'vest', acc: '#3b6b3a', plaid: '#8a7a4a', hat: 'cap', hatColor: '#5a4a3a' },
+  SPY: { color: '#c9b089', outfit: 'trench', hat: 'fedora', hatColor: '#3a3a3a' },
   NOBLE1: { color: '#5a7a4a', outfit: 'coat', hat: 'bicorne', hatColor: '#2a2a2a' },
   NOBLE2: { color: '#c9a0d0', outfit: 'suit', acc: '#e8b13c', hat: 'top', hatColor: '#3a2a4a' },
   NOBLE3: { color: '#e0c060', outfit: 'vest', acc: '#2f5d8a', plaid: '#8a6a1c', hat: 'boater', hatColor: '#f0cf6d', mustache: '#6a4a2a' },

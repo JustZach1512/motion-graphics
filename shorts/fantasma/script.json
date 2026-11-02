@@ -1,0 +1,127 @@
+{
+  "title": "El ejército de goma",
+  "speakers": {
+    "N": {
+      "engine": "kokoro",
+      "voice": "em_santa",
+      "speed": 1.2,
+      "pitch": 6.0
+    },
+    "FARMER": {
+      "engine": "piper",
+      "voice": "es_ES-davefx-medium",
+      "speed": 1.05,
+      "pitch": 0.0
+    },
+    "SOLDIER": {
+      "engine": "kokoro",
+      "voice": "em_alex",
+      "speed": 1.0,
+      "pitch": -2.0
+    }
+  },
+  "lines": [
+    {
+      "id": "hook1",
+      "who": "N",
+      "text": "Cuatro soldados levantaron un tanque de treinta toneladas...",
+      "gap": 0.1
+    },
+    {
+      "id": "hook2",
+      "who": "N",
+      "text": "¡con las manos!",
+      "gap": 0.35
+    },
+    {
+      "id": "place",
+      "who": "N",
+      "text": "Francia, mil novecientos cuarenta y cuatro.",
+      "gap": 0.12
+    },
+    {
+      "id": "setup",
+      "who": "N",
+      "text": "Dos franceses van en bici por el campo, y se encuentran a cuatro soldados americanos levantando un tanque.",
+      "gap": 0.2
+    },
+    {
+      "id": "farmer",
+      "who": "FARMER",
+      "text": "¿Pero cómo es posible?",
+      "gap": 0.2
+    },
+    {
+      "id": "soldier",
+      "who": "SOLDIER",
+      "text": "Bueno... es que los americanos somos muy fuertes.",
+      "gap": 0.35
+    },
+    {
+      "id": "reveal",
+      "who": "N",
+      "text": "¿El truco? Aquel tanque era de goma. ¡Era hinchable!",
+      "gap": 0.3
+    },
+    {
+      "id": "army",
+      "who": "N",
+      "text": "Aquellos soldados eran el Ejército Fantasma, y su misión era engañar a los alemanes.",
+      "gap": 0.15
+    },
+    {
+      "id": "inflate",
+      "who": "N",
+      "text": "De noche, hinchaban tanques, camiones y cañones de goma.",
+      "gap": 0.12
+    },
+    {
+      "id": "sound",
+      "who": "N",
+      "text": "Ponían altavoces con ruido de motores, de cadenas, de soldados trabajando.",
+      "gap": 0.12
+    },
+    {
+      "id": "radio",
+      "who": "N",
+      "text": "Y llenaban la radio de mensajes falsos, de tropas que no estaban allí.",
+      "gap": 0.15
+    },
+    {
+      "id": "bars",
+      "who": "N",
+      "text": "Y hasta se iban a los bares del pueblo a contar mentiras, por si había espías escuchando.",
+      "gap": 0.2
+    },
+    {
+      "id": "plane",
+      "who": "N",
+      "text": "Desde el aire, los alemanes veían un ejército enorme... y movían sus tropas para frenarlo.",
+      "gap": 0.2
+    },
+    {
+      "id": "artists",
+      "who": "N",
+      "text": "¿Y quiénes eran estos soldados? Muchos eran artistas: pintores, diseñadores, decoradores.",
+      "gap": 0.2
+    },
+    {
+      "id": "pay1",
+      "who": "N",
+      "text": "Engañaron al ejército alemán una y otra vez...",
+      "gap": 0.15
+    },
+    {
+      "id": "pay2",
+      "who": "N",
+      "text": "y los únicos que estuvieron a punto de pillarles... fueron dos señores en bici.",
+      "gap": 0.4
+    },
+    {
+      "id": "button",
+      "who": "SOLDIER",
+      "text": "Muy fuertes. Somos muy, muy fuertes.",
+      "gap": 0.9
+    }
+  ]
+}

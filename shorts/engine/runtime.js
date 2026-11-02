@@ -69,7 +69,7 @@ export function run(build) {
   window.init = async () => {
     for (const f of ['900 96px Montserrat', '40px Rye', '40px "Special Elite"', '40px "Alfa Slab One"']) await document.fonts.load(f);
     WORLD = await build({ camera, talking, TL, LANG });
-    SHOTS = WORLD.shots;
+    SHOTS = WORLD.shots; window.WORLD = WORLD;
     await Promise.all(pending);
     window.DURATION = TL.duration + .5;
   };
