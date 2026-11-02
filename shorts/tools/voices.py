@@ -43,6 +43,8 @@ def process(a, sr, sp):
         chain.append(f"rubberband=pitch={ratio:.4f}:formant=preserved:transients=smooth")
     chain += ["highpass=f=75", "equalizer=f=220:t=q:w=1:g=1.5", "equalizer=f=3200:t=q:w=1.2:g=2.5", "deesser=i=0.4",
               "acompressor=threshold=-20dB:ratio=3:attack=8:release=120:makeup=2"]
+    if sp.get("fx"):  # per-character colour, e.g. muffled "inside a box" voice
+        chain.append(sp["fx"])
     r = subprocess.run(["ffmpeg", "-v", "error", "-f", "f32le", "-ar", str(sr), "-ac", "1", "-i", "-", "-af", ",".join(chain), "-f", "f32le", "-"],
                        input=a.tobytes(), capture_output=True, check=True)
     return np.frombuffer(r.stdout, np.float32).copy()

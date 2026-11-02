@@ -41,36 +41,36 @@ Cada frase generada se transcribe con el reconocedor de voz Parakeet:
 | Archivo | Qué hace |
 |---|---|
 | `script.json` | El guion con quién dice cada frase, y la voz, velocidad y tono de cada personaje. |
-| `tools/voices.py` | Genera las voces (Kokoro y Piper), las procesa y las alinea palabra a palabra con Parakeet. |
-| `src/engine.js` | Motor three.js: sombreado toon, contorno de tinta, profundidad de campo, resplandor, desenfoque de movimiento y etalonaje. |
-| `src/characters.js` | Personajes 3D: cabeza esférica con la cara pintada encima (ojos, cejas, bocas que hablan), cuerpo con la ropa pintada, extremidades de palo, sombreros 3D y poses. |
-| `src/textures.js` | Texturas pintadas por código: madera, papel pintado, hierba, campos de cultivo, ladrillo, el cartel de la tienda y el mapa de carreteras. |
-| `src/props.js` | Objetos: tienda, coche de los años 30, vacas, mesa de dibujo, lámparas, ratonera, lupa, billetes y letras 3D. |
+| `../tools/voices.py` | Genera las voces (Kokoro y Piper), las procesa y las alinea palabra a palabra con Parakeet. |
+| `../engine/engine.js` | Motor three.js: sombreado toon, contorno de tinta, profundidad de campo, resplandor, desenfoque de movimiento y etalonaje. |
+| `../engine/characters.js` | Personajes 3D: cabeza esférica con la cara pintada encima (ojos, cejas, bocas que hablan), cuerpo con la ropa pintada, extremidades de palo, sombreros 3D y poses. |
+| `../engine/textures.js` | Texturas pintadas por código: madera, papel pintado, hierba, campos de cultivo, ladrillo, el cartel de la tienda y el mapa de carreteras. |
+| `../engine/props.js` | Objetos: tienda, coche de los años 30, vacas, mesa de dibujo, lámparas, ratonera, lupa, billetes y letras 3D. |
 | `src/sets.js` | Escenarios: oficina, oficina rival, calle de Nueva York, cruce en el campo, mapa sobre la mesa, sueño de billetes y mesa con la ratonera. |
 | `src/shots.js` | Lista de planos. Cada plano empieza en una palabra de la narración. |
 | `src/main.js` | Monta cada fotograma: posa el plano, renderiza el 3D y dibuja los subtítulos encima. |
-| `tools/render.js` | Render con Chromium headless (WebGL) y codificación con ffmpeg. |
-| `tools/mix.py` | Mezcla la voz con efectos CC0 de `skills/sound-effects/sfx` a −16 LUFS. |
+| `../tools/render.js` | Render con Chromium headless (WebGL) y codificación con ffmpeg. |
+| `../tools/mix.py` | Mezcla la voz con efectos CC0 de `skills/sound-effects/sfx` a −16 LUFS. |
 
 ### Volver a generarlo
 
 ```bash
-cd shorts/agloe
+cd shorts            # the shared kit (engine/, tools/, node_modules) lives here; see ../README.md
 npm install
-# modelos (desde GitHub releases), en una carpeta MODELS:
-#   kokoro-v1.0.onnx y voices-v1.0.bin        github.com/thewh1teagle/kokoro-onnx/releases (model-files-v1.0)
+# models (from GitHub releases), in a MODELS folder:
+#   kokoro-v1.0.onnx and voices-v1.0.bin        github.com/thewh1teagle/kokoro-onnx/releases (model-files-v1.0)
 #   vits-piper-es_ES-davefx-medium, vits-piper-es_MX-claude-high,
-#   sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8 github.com/k2-fsa/sherpa-onnx/releases (tts-models, asr-models)
-python3 -m venv .venv && .venv/bin/pip install kokoro-onnx piper-tts sherpa-onnx soundfile
-.venv/bin/python tools/voices.py script.json MODELS build     # ya están en build/ si no cambias el guion
-python3 tools/timings_js.py build
-node tools/render.js build/silent.mp4 4                      # unos 35 min con CPU (sin GPU)
-python3 tools/mix.py build/vo.wav build/cues.json ../../skills/sound-effects/sfx build
-ffmpeg -i build/silent.mp4 -i build/mix.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -shortest \
-  -movflags +faststart build/el-pueblo-que-no-existia.mp4
+#   sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8  github.com/k2-fsa/sherpa-onnx/releases (tts-models, asr-models)
+python3 -m venv .venv && .venv/bin/pip install kokoro-onnx piper-tts sherpa-onnx soundfile mido
+.venv/bin/python tools/voices.py agloe/script.json MODELS agloe/build     # already in build/ unless you change the script
+python3 tools/timings_js.py agloe/build
+node tools/render.js agloe agloe/build/silent.mp4 4                        # about 35 min on CPU (no GPU)
+python3 tools/mix.py agloe/build/vo.wav agloe/build/cues.json ../skills/sound-effects/sfx agloe/build
+ffmpeg -i agloe/build/silent.mp4 -i agloe/build/mix.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -shortest \
+  -movflags +faststart agloe/build/el-pueblo-que-no-existia.mp4
 ```
 
-Para revisar planos sueltos: `node tools/stills.js index.html <carpeta> 1.5 12.3 …` saca fotogramas en esos segundos.
+To check single shots: `node tools/stills.js agloe/index.html <folder> 1.5 12.3 …` saves frames at those seconds (from `shorts/`).
 
 ## English version (for the English channel)
 
@@ -93,11 +93,11 @@ The shots are written against the Spanish narration. `ANCHORS` in `src/shots.js`
   > In the 1930s, two New York mapmakers drew a town that didn't exist to catch anyone copying their maps. It didn't go as planned. #history #historyfacts #shorts #maps
 
 ```bash
-.venv/bin/python tools/voices.py script.en.json MODELS build/en && python3 tools/timings_js.py build/en
-SHORT_LANG=en node tools/render.js build/en/silent.mp4 4
-python3 tools/mix.py build/en/vo.wav build/en/cues.json ../../skills/sound-effects/sfx build/en
-ffmpeg -i build/en/silent.mp4 -i build/en/mix.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -shortest \
-  -movflags +faststart build/en/the-town-that-didnt-exist.mp4
+.venv/bin/python tools/voices.py agloe/script.en.json MODELS agloe/build/en && python3 tools/timings_js.py agloe/build/en
+SHORT_LANG=en node tools/render.js agloe agloe/build/en/silent.mp4 4
+python3 tools/mix.py agloe/build/en/vo.wav agloe/build/en/cues.json ../skills/sound-effects/sfx agloe/build/en
+ffmpeg -i agloe/build/en/silent.mp4 -i agloe/build/en/mix.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -shortest \
+  -movflags +faststart agloe/build/en/the-town-that-didnt-exist.mp4
 ```
 
 ### Grabar tu propia voz

@@ -6,12 +6,12 @@
   html,body{margin:0;background:#000}#stage{position:relative;width:2560px;height:1440px;overflow:hidden}#gl,#ov{position:absolute;inset:0;width:2560px;height:1440px}
 </style></head>
 <body><div id="stage"><canvas id="gl" width="720" height="1280"></canvas><svg id="ov" width="2560" height="1440" viewBox="0 0 2560 1440"></svg></div>
-<script src="/build/timings.js"></script>
+<script src="/agloe/build/timings.js"></script>
 <script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
 <script type="module">
 // Channel banner 2560x1440. Faces and title sit inside YouTube's 1546x423 safe area (x 507-2053, y 508-931).
-import { THREE, renderer, outline, D2R } from '../src/engine.js';
-import { makeChar, CAST, pending } from '../src/characters.js';
+import { THREE, renderer, outline, D2R } from '../../engine/engine.js';
+import { makeChar, CAST, pending } from '../../engine/characters.js';
 import * as SETS from '../src/sets.js';
 const q = new URLSearchParams(location.search), lang = q.get('lang') || 'es';
 const TXT = { es: ['PASÓ DE', 'VERDAD', 'HISTORIAS REALES QUE PARECEN INVENTADAS'], en: ['IT ACTUALLY', 'HAPPENED', 'TRUE STORIES THAT SOUND MADE UP'] }[lang];

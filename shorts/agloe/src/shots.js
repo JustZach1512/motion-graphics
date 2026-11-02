@@ -1,7 +1,7 @@
 // Shot list for the 3D version. Every shot starts on a word of the narration.
-import { THREE, k, seg, E, pop, clamp, lerp, hash, noise1, D2R } from './engine.js';
-import * as P from './props.js';
-import * as T from './textures.js';
+import { THREE, k, seg, E, pop, clamp, lerp, hash, noise1, D2R } from '../../engine/engine.js';
+import * as P from '../../engine/props.js';
+import * as T from '../../engine/textures.js';
 
 const TL = window.TIMINGS;
 const LN = id => TL.lines.find(l => l.id === id);

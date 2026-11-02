@@ -97,6 +97,24 @@ function outfitSVG(o) {
       <path d="M380 0 L500 230 L440 200 L400 240Z M644 0 L524 230 L584 200 L624 240Z" fill="#00000040" stroke="${INK}" stroke-width="5"/>
       ${[300, 370].map(y => `<circle cx="540" cy="${y}" r="10" fill="#2a1d2a" stroke="${INK}" stroke-width="4"/>`).join('')}
       <path d="M600 260 L660 260" stroke="#fff" stroke-width="10"/><path d="M600 252 L620 230 L640 252" fill="#e84a5f"/>`;
+  } else if (o.outfit === 'uniform') {   // Napoleon: blue coat, white waistcoat, red collar, gold buttons
+    s += `<path d="M396 0 L512 0 L628 0 L600 512 L424 512Z" fill="#f6f1e6" stroke="${INK}" stroke-width="6"/>
+      <path d="M396 0 L452 0 L470 512 L420 512Z M628 0 L572 0 L554 512 L604 512Z" fill="#1f2f63" stroke="${INK}" stroke-width="6"/>
+      <path d="M380 0 L644 0 L620 46 L404 46Z" fill="#c0392b" stroke="${INK}" stroke-width="6"/>
+      ${[110, 190, 270, 350, 430].map(y => `<circle cx="438" cy="${y}" r="11" fill="#f3d27a" stroke="${INK}" stroke-width="4"/><circle cx="586" cy="${y}" r="11" fill="#f3d27a" stroke="${INK}" stroke-width="4"/><circle cx="512" cy="${y}" r="7" fill="#d9c9a6"/>`).join('')}
+      <rect x="0" y="440" width="1024" height="72" fill="#f6f1e6"/><path d="M0 440 L1024 440" stroke="${INK}" stroke-width="5"/>`;
+  } else if (o.outfit === 'robe') {      // the Turk automaton: ottoman robe with gold trim and a sash
+    s += `<path d="M440 0 L512 120 L584 0Z" fill="#f2e6c8" stroke="${INK}" stroke-width="6"/>
+      <path d="M430 0 L512 140 L594 0" fill="none" stroke="#e2b33f" stroke-width="18"/>
+      <path d="M512 140 L512 512" stroke="#e2b33f" stroke-width="16"/>
+      <rect x="0" y="300" width="1024" height="54" fill="#2f7d4a" stroke="${INK}" stroke-width="5"/>
+      ${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<circle cx="${i * 128 + 64}" cy="327" r="8" fill="#e2b33f"/>`).join('')}
+      <rect x="0" y="470" width="1024" height="42" fill="#e2b33f" opacity=".9"/>`;
+  } else if (o.outfit === 'coat') {      // showman: red tailcoat, white shirt, black bow tie
+    s += `<path d="M440 0 L512 210 L584 0Z" fill="#fbf7ee" stroke="${INK}" stroke-width="7"/>
+      <path d="M400 0 L500 240 L460 512 L380 512Z M624 0 L524 240 L564 512 L644 512Z" fill="#00000030" stroke="${INK}" stroke-width="5"/>
+      ${[260, 330, 400].map(y => `<circle cx="470" cy="${y}" r="10" fill="#f3d27a" stroke="${INK}" stroke-width="4"/><circle cx="554" cy="${y}" r="10" fill="#f3d27a" stroke="${INK}" stroke-width="4"/>`).join('')}
+      ${bowtie('#1c1411', '#555')}`;
   } else if (o.outfit === 'overalls') {
     s += `<rect x="0" y="220" width="1024" height="292" fill="#4f7fc4"/>
       <rect x="400" y="140" width="224" height="140" rx="14" fill="#4f7fc4" stroke="${INK}" stroke-width="7"/>
@@ -141,6 +159,16 @@ function makeHat(type, color, parent) {
     mesh(cyl(.5, .56, .4, 40), sm, { p: [0, .6, 0], parent: g });
     mesh(cyl(.565, .57, .1, 40), toon('#3d6fb6', { g: G3 }), { p: [0, .47, 0], parent: g });
     g.rotation.x = -5 * D2R;
+  } else if (type === 'bicorne') {   // worn sideways, with a tricolour cockade
+    const sh = new THREE.Shape(); sh.moveTo(-1.15, 0); sh.quadraticCurveTo(-1.05, .55, -.55, .62); sh.quadraticCurveTo(0, .95, .55, .62); sh.quadraticCurveTo(1.05, .55, 1.15, 0); sh.quadraticCurveTo(0, .12, -1.15, 0);
+    const hm = mesh(new THREE.ExtrudeGeometry(sh, { depth: .7, bevelEnabled: true, bevelThickness: .08, bevelSize: .06, bevelSegments: 3 }), m, { p: [0, .48, -.35], parent: g });
+    [['#1f3a8a', .17], ['#ffffff', .12], ['#c0392b', .07]].forEach(([c, r], i) => mesh(cyl(r, r, .03, 24), toon(c, { g: G3, outline: i === 0 }), { p: [.62, .86, .44 + i * .012], r: [90, 0, 0], parent: g }));
+  } else if (type === 'turban') {
+    const w = toon(color, { g: G3, ol: .007 });
+    [[.0, 1.0], [.2, .92], [.38, .78]].forEach(([y, sc]) => mesh(new THREE.TorusGeometry(.66 * sc, .24, 14, 36), w, { p: [0, .3 + y, 0], r: [90, 0, 0], parent: g }));
+    mesh(sphere(.5, 24, 16), w, { p: [0, .72, 0], s: [1, .8, 1], parent: g });
+    mesh(sphere(.13, 14, 10), toon('#c0392b', { g: G3, emissive: '#5a0a0a' }), { p: [0, .6, .78], parent: g });
+    mesh(new THREE.ConeGeometry(.06, .9, 8), toon('#ffffff', { g: G3, ol: .004 }), { p: [0, 1.05, .62], r: [-20, 0, 0], parent: g });
   } else if (type === 'top') {
     mesh(cyl(.5, .5, 1.0, 40), m, { p: [0, .95, 0], parent: g });
     mesh(cyl(.82, .82, .05, 40), m, { p: [0, .45, 0], parent: g });
@@ -157,6 +185,8 @@ export const POSES = {
   wave: [V(1, .35, 0), V(.2, 1, 0)], think: [V(.35, -1, .7), V(-.55, .85, .45)], phone: [V(.55, -.55, .45), V(-.45, 1, .05)],
   write: [V(.3, -1, .35), V(-.25, -.35, 1)], present: [V(.3, -.3, 1), V(-.15, .45, 1)], scared: [V(.85, -.5, .35), V(-.35, 1, .45)],
   pump: [V(.7, -.6, .35), V(.1, 1, .3)], armsUp: [V(.7, .75, 0), V(.3, 1, 0)], cup: [V(.3, -1, .35), V(-.1, .9, .7)],
+  napoleon: [V(.62, -.75, .4), V(-.95, .25, .35)], behind: [V(.3, -.9, -.45), V(-.5, -.25, -.8)], laugh: [V(.75, -.6, .3), V(-.65, -.25, .75)],
+  lever: [V(.3, -.45, .9), V(-.05, .3, 1)], fan: [V(.6, -.35, .6), V(-.25, .9, .45)], sweep: [V(1, .1, .45), V(1, .05, .2)], present2: [V(1, -.1, .35), V(.6, .55, .5)],
   down: [V(.05, -1, 0), V(.02, -1, .05)], fist: [V(.6, -.6, .5), V(-.2, .7, .7)], brush: [V(.6, .9, .25), V(.25, 1, .2)], reach: [V(.4, -.4, .9), V(.1, -.2, 1)],
 };
 const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3(), tmpD = new THREE.Vector3();
@@ -168,6 +198,13 @@ export const CAST = {
   GROCER: { color: '#f2efe6', outfit: 'overalls', hat: 'straw', hatColor: '#f0cf6d', mustache: '#d0d0d0' },
   EXTRA1: { color: '#c96f4a', outfit: 'suspenders', acc: '#3b4a6b', hat: 'cap', hatColor: '#5a4a3a' },
   EXTRA2: { color: '#6f8fc9', outfit: 'suit', acc: '#c0392b', hat: 'fedora', hatColor: '#4a4a4a' },
+  NAPO: { color: '#24356f', outfit: 'uniform', hat: 'bicorne', hatColor: '#1c1a22', epaulettes: true },
+  OWNER: { color: '#b3312a', outfit: 'coat', hat: 'top', hatColor: '#1c1a22', mustache: '#3a2a20' },
+  HIDDEN: { color: '#8a6a4a', outfit: 'suspenders', acc: '#4a3a2a', hat: 'cap', hatColor: '#6a5a4a', mustache: '#4a3020', glasses: true },
+  TURK: { color: '#8e2a2a', outfit: 'robe', hat: 'turban', hatColor: '#f4ecd8', mustache: '#1c1411', headColor: '#c99a62', limbColor: '#a8743f', limbR: .075, handR: .13, arm: 1.5 },
+  NOBLE1: { color: '#5a7a4a', outfit: 'coat', hat: 'bicorne', hatColor: '#2a2a2a' },
+  NOBLE2: { color: '#c9a0d0', outfit: 'suit', acc: '#e8b13c', hat: 'top', hatColor: '#3a2a4a' },
+  NOBLE3: { color: '#e0c060', outfit: 'vest', acc: '#2f5d8a', plaid: '#8a6a1c', hat: 'boater', hatColor: '#f0cf6d', mustache: '#6a4a2a' },
 };
 
 export function makeChar(spec, seed = 0) {
@@ -179,26 +216,36 @@ export function makeChar(spec, seed = 0) {
   mesh(lathe, bodyMat, { parent: body });
   const headPivot = group(body, [0, 2.3, 0]);
   const head = group(headPivot, [0, .76, 0]);
-  mesh(sphere(.78, 48, 32), toon('#ffffff', { g: GH, ol: .011, emissive: '#4a4640' }), { parent: head });
+  mesh(sphere(.78, 48, 32), toon(spec.headColor || '#ffffff', { g: GH, ol: .011, emissive: spec.headColor ? '#2a1a0a' : '#4a4640' }), { parent: head });
   const faceMat = basic({ map: blankTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
   const face = mesh(new THREE.SphereGeometry(.786, 48, 32, Math.PI / 2 - 1.309, 2.618, 35 * D2R, 100 * D2R), faceMat, { parent: head, cast: false, receive: false });
   face.renderOrder = 2;
   if (spec.hat) makeHat(spec.hat, spec.hatColor || '#7a4b2a', head);
-  const limbM = toon(INK, { g: G3, outline: false });
+  const limbM = toon(spec.limbColor || INK, { g: G3, outline: !!spec.limbColor, ol: .004 });
+  const LR = spec.limbR || .045, HR = spec.handR || .085, AS = spec.arm || 1;   // AS: arm length scale
+  if (spec.epaulettes) [-1, 1].forEach(sd => { const ep = mesh(cyl(.2, .22, .08, 20), toon('#e2b33f', { g: G3, ol: .005 }), { p: [sd * .36, 2.2, 0], r: [0, 0, sd * -28], parent: body }); for (let i = 0; i < 9; i++) mesh(cyl(.02, .02, .14, 5), toon('#e2b33f', { g: G3, outline: false }), { p: [Math.cos(i / 9 * 6.28) * .2, -.08, Math.sin(i / 9 * 6.28) * .2], parent: ep }); });
   const parts = {};
   for (const n of ['uaL', 'faL', 'uaR', 'faR', 'thL', 'shL', 'thR', 'shR']) parts[n] = mesh(unitCyl, limbM, { parent: body });
-  for (const n of ['hL', 'hR']) parts[n] = mesh(sphere(.085, 16, 10), limbM, { parent: body });
+  for (const n of ['hL', 'hR']) parts[n] = mesh(sphere(HR, 16, 10), limbM, { parent: body });
   for (const n of ['fL', 'fR']) parts[n] = mesh(sphere(1, 16, 10), limbM, { parent: body, s: [.12, .075, .21] });
   const items = { L: group(body), R: group(body) };
   const shadowBlob = null;
   let faceKey = '';
 
-  function arm(side, dirs, swing) {
+  function arm(side, dirs, target) {
     const sh = tmpA.set(side * .4, 2.12, 0);
-    const e = tmpB.copy(dirs[0]); e.x *= side; const el = tmpC.copy(sh).addScaledVector(e, .62);
-    const h = tmpD.copy(dirs[1]); h.x *= side; const hand = new THREE.Vector3().copy(el).addScaledVector(h, .58);
+    let el, hand;
+    if (target) {   // two-bone IK towards a point in body space, elbow pointing out and down
+      const L1 = .62 * AS, L2 = .58 * AS, d = Math.min(target.distanceTo(sh), L1 + L2 - 1e-3), dir = target.clone().sub(sh).normalize();
+      const a = (L1 * L1 - L2 * L2 + d * d) / (2 * d), hgt = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+      const pole = new THREE.Vector3(side, -1, -.3).normalize(); pole.sub(dir.clone().multiplyScalar(pole.dot(dir))).normalize();
+      el = sh.clone().addScaledVector(dir, a).addScaledVector(pole, hgt); hand = sh.clone().addScaledVector(dir, d);
+    } else {
+      const e = tmpB.copy(dirs[0]); e.x *= side; el = tmpC.copy(sh).addScaledVector(e, .62 * AS);
+      const h = tmpD.copy(dirs[1]); h.x *= side; hand = new THREE.Vector3().copy(el).addScaledVector(h, .58 * AS);
+    }
     const s = side < 0 ? 'L' : 'R';
-    placeBetween(parts['ua' + s], sh, el, .045); placeBetween(parts['fa' + s], el, hand, .042);
+    placeBetween(parts['ua' + s], sh, el, LR); placeBetween(parts['fa' + s], el, hand, LR * .93);
     parts['h' + s].position.copy(hand); items[s].position.copy(hand);
   }
   function leg(side, mode, ph) {
@@ -230,11 +277,13 @@ export function makeChar(spec, seed = 0) {
       const sq = s.squash || 1; root.scale.set((s.s || 1) * (2 - sq), (s.s || 1) * sq, (s.s || 1) * (2 - sq));
       const breathe = s.still ? 0 : Math.sin(t * 2.3 + seed) * .025;
       body.position.y = (s.bob || 0) + breathe * .5;
+      body.rotation.x = s.lean || 0;
       // arms
       const A = s.arms || [POSES[s.poseL || s.pose || 'idle'], POSES[s.poseR || s.pose || 'idle']];
       let aL = A[0], aR = A[1];
       if (s.blend) { aL = mix(POSES[s.blend[0]], aL, s.blend[1]); aR = mix(POSES[s.blend[0]], aR, s.blend[1]); }
-      arm(-1, aL); arm(1, aR);
+      const ik = w => { if (!w) return null; root.updateMatrixWorld(true); return body.worldToLocal(w.clone()); };
+      arm(-1, aL, ik(s.ikL)); arm(1, aR, ik(s.ikR));
       leg(-1, s.legs, s.walk || 0); leg(1, s.legs, s.walk || 0);
       // head
       const look = s.look || [0, 0];

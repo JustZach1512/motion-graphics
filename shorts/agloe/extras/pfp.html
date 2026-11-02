@@ -3,9 +3,9 @@
 <script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
 <script type="module">
 // Profile picture: a character close-up on a flat brand colour (rendered with the same engine as the short)
-import { THREE, renderFrame, W, H, D2R } from '../src/engine.js';
-import { makeChar, CAST, pending } from '../src/characters.js';
-import * as P from '../src/props.js';
+import { THREE, renderFrame, W, H, D2R } from '../../engine/engine.js';
+import { makeChar, CAST, pending } from '../../engine/characters.js';
+import * as P from '../../engine/props.js';
 const who = new URLSearchParams(location.search).get('who') || 'otto';
 const sc = new THREE.Scene(); sc.background = new THREE.Color(who === 'cow' ? '#3fa9e0' : '#ffc23d');
 sc.add(new THREE.HemisphereLight('#fff4e0', '#8a6a3a', .9));

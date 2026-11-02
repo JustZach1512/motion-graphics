@@ -1,0 +1,152 @@
+{
+  "title": "La máquina que venció a Napoleón",
+  "speakers": {
+    "N": {
+      "engine": "kokoro",
+      "voice": "em_santa",
+      "speed": 1.2,
+      "pitch": 6.0
+    },
+    "NAPO": {
+      "engine": "piper",
+      "voice": "es_ES-davefx-medium",
+      "speed": 1.0,
+      "pitch": -2.0
+    },
+    "OWNER": {
+      "engine": "kokoro",
+      "voice": "em_alex",
+      "speed": 1.05,
+      "pitch": 1.0
+    },
+    "HIDDEN": {
+      "engine": "kokoro",
+      "voice": "em_alex",
+      "speed": 1.15,
+      "pitch": 3.0,
+      "fx": "lowpass=f=2400,aecho=0.8:0.6:18:0.35"
+    }
+  },
+  "lines": [
+    {
+      "id": "hook1",
+      "who": "N",
+      "text": "Esta máquina le ganó al ajedrez a Napoleón.",
+      "gap": 0.12
+    },
+    {
+      "id": "hook2",
+      "who": "N",
+      "text": "¡Y Napoleón intentó hacerle trampas!",
+      "gap": 0.35
+    },
+    {
+      "id": "vienna",
+      "who": "N",
+      "text": "Viena, mil ochocientos nueve.",
+      "gap": 0.12
+    },
+    {
+      "id": "turk",
+      "who": "N",
+      "text": "Todo el mundo habla del Turco: un muñeco con turbante, sentado sobre un armario lleno de engranajes,",
+      "gap": 0.08
+    },
+    {
+      "id": "wins",
+      "who": "N",
+      "text": "que juega al ajedrez. ¡Y le gana a todo el mundo!",
+      "gap": 0.2
+    },
+    {
+      "id": "doors",
+      "who": "N",
+      "text": "Antes de cada partida, su dueño abre las puertecitas: ruedas, palancas, engranajes. Nada más.",
+      "gap": 0.15
+    },
+    {
+      "id": "owner",
+      "who": "OWNER",
+      "text": "¡Damas y caballeros, ni trucos ni trampas!",
+      "gap": 0.25
+    },
+    {
+      "id": "napo",
+      "who": "N",
+      "text": "Napoleón se sienta, mueve... y el Turco contesta.",
+      "gap": 0.15
+    },
+    {
+      "id": "cheat",
+      "who": "N",
+      "text": "Así que Napoleón hace un movimiento ilegal.",
+      "gap": 0.12
+    },
+    {
+      "id": "fix",
+      "who": "N",
+      "text": "El Turco coge la pieza... y la devuelve a su sitio.",
+      "gap": 0.2
+    },
+    {
+      "id": "cheat2",
+      "who": "N",
+      "text": "Napoleón lo intenta otra vez.",
+      "gap": 0.12
+    },
+    {
+      "id": "sweep",
+      "who": "N",
+      "text": "¡Y el Turco, de un manotazo, barre todas las piezas del tablero!",
+      "gap": 0.25
+    },
+    {
+      "id": "napoline",
+      "who": "NAPO",
+      "text": "¡Ja! ¡Esta máquina tiene más genio que mis generales!",
+      "gap": 0.3
+    },
+    {
+      "id": "reveal",
+      "who": "N",
+      "text": "Verás: el Turco no era una máquina.",
+      "gap": 0.15
+    },
+    {
+      "id": "inside",
+      "who": "N",
+      "text": "Dentro del armario había un hombre: un maestro de ajedrez, escondido entre los engranajes, a la luz de una vela.",
+      "gap": 0.15
+    },
+    {
+      "id": "slide",
+      "who": "N",
+      "text": "Cuando abrían las puertas, se deslizaba en su asiento para que no le vieran. Y movía el brazo del Turco con una palanca.",
+      "gap": 0.2
+    },
+    {
+      "id": "hidden",
+      "who": "HIDDEN",
+      "text": "Uf... ¿Cuánto queda? Aquí dentro hace un calor...",
+      "gap": 0.3
+    },
+    {
+      "id": "pay1",
+      "who": "N",
+      "text": "Napoleón conquistó media Europa...",
+      "gap": 0.15
+    },
+    {
+      "id": "pay2",
+      "who": "N",
+      "text": "pero perdió al ajedrez contra un señor metido en un mueble.",
+      "gap": 0.35
+    },
+    {
+      "id": "button",
+      "who": "N",
+      "text": "Un mueble muy, muy apretado.",
+      "gap": 0.7
+    }
+  ]
+}

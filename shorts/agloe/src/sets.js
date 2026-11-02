@@ -1,7 +1,7 @@
 // The sets. Each builder returns { scene, ...named objects } ready for shots to pose.
-import { THREE, toon, basic, G3, G5, GH, mesh, group, sphere, box, cyl, D2R, hash, rnd, ctex, INK } from './engine.js';
-import * as T from './textures.js';
-import * as P from './props.js';
+import { THREE, toon, basic, G3, G5, GH, mesh, group, sphere, box, cyl, D2R, hash, rnd, ctex, INK } from '../../engine/engine.js';
+import * as T from '../../engine/textures.js';
+import * as P from '../../engine/props.js';
 
 function sky(top, bottom, horizonGlow) {
   return ctex(16, 512, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, top); g.addColorStop(.75, bottom); g.addColorStop(1, horizonGlow || bottom); x.fillStyle = g; x.fillRect(0, 0, w, h); });

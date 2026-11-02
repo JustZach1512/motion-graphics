@@ -1,0 +1,20 @@
+hook1    N       2.32s  heard 6/8 words  | Esta máquina le ganó a la ajedresa Napoleón.
+hook2    N       2.09s  heard 5/5 words  | Y Napoleón intentó hacerle trampas.
+vienna   N       1.53s  heard 0/4 words  | Viene a 1809.
+turk     N       5.30s  heard 16/17 words  | Todo el mundo habla del turco, un muñeco con turbantes sentado sobre un armario lleno de engranajes.
+wins     N       2.33s  heard 10/11 words  | Le juega al ajedrez y le gana a todo el mundo.
+doors    N       4.85s  heard 14/14 words  | Antes de cada partida, su dueño abre las puertecitas, ruedas, palancas, engranajes, nada más.
+owner    OWNER   2.51s  heard 7/7 words  | Damas y caballeros, ni trucos ni trampas.
+napo     N       2.60s  heard 8/8 words  | Napoleón se sienta a mueve y el turco contesta.
+cheat    N       2.24s  heard 6/7 words  | Sí que Napoleón hace un movimiento ilegal.
+fix      N       2.65s  heard 10/11 words  | El turco cog la pieza y la devuelve a su sitio.
+cheat2   N       1.65s  heard 5/5 words  | Napoleón lo intenta otra vez.
+sweep    N       3.11s  heard 11/12 words  | El turco de un manotazo barre todas las piezas del tablero.
+napoline NAPO    3.25s  heard 8/9 words  | Esta máquina tiene más genio que mis generales.
+reveal   N       1.75s  heard 7/7 words  | Verás el turco no era una máquina.
+inside   N       5.64s  heard 20/20 words  | Dentro del armario había un hombre, un maestro de ajedrez escondido entre los engranajes a la luz de una vela.
+slide    N       6.08s  heard 23/23 words  | Cuando abrían las puertas, se deslizaba en su asiento para que no le vieran, y movía el brazo del turco con una palanca.
+hidden   HIDDEN  2.25s  heard 7/8 words  | Uf, cuanto queda, aquí dentro hace un calor.
+pay1     N       1.79s  heard 4/4 words  | Napoleón conquistó media Europa.
+pay2     N       3.04s  heard 11/11 words  | Pero perdió al ajedrez contra un señor metido en un mueble.
+button   N       1.51s  heard 5/5 words  | Un mueble muy, muy apretado.
