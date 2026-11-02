@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><title>El pueblo que no existía</title>
+<html><head><meta charset="utf-8"><title>El pueblo que no existía</title>
 <style>
   @font-face { font-family: 'Montserrat'; font-weight: 900; src: url(node_modules/@fontsource/montserrat/files/montserrat-latin-900-normal.woff2) format('woff2'); }
   @font-face { font-family: 'Rye'; src: url(node_modules/@fontsource/rye/files/rye-latin-400-normal.woff2) format('woff2'); }
@@ -10,7 +10,11 @@
   #gl, #ov { position: absolute; inset: 0; width: 1080px; height: 1920px; }
 </style></head>
 <body><div id="stage"><canvas id="gl" width="720" height="1280"></canvas><svg id="ov" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg"></svg></div>
-<script src="build/timings.js"></script>
+<script>
+  // ?lang=en loads build/en/timings.js; Spanish is the default (build/timings.js)
+  window.LANG = new URLSearchParams(location.search).get('lang') || 'es';
+  document.write('<script src="build/' + (window.LANG === 'es' ? '' : window.LANG + '/') + 'timings.js"><\/script>');
+</script>
 <script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
 <script type="module" src="src/main.js"></script>
 </body></html>

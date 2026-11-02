@@ -53,7 +53,10 @@ export async function office(maps) {
   const dustFn = dust(s, 70, [-1.5, 4.5, .5, 5, -3, 3]);
   // wall map and poster
   const wallMap = P.frameWithTexture(s, [-2.6, 4.1, -3.88], 2.4, 3.12, maps.plain);
-  P.frameWithTexture(s, [.55, 4.6, -3.88], 1.1, 1.54, T.poster([['MAPAS', '74px "Alfa Slab One"', 150], ['DE', '50px "Alfa Slab One"', 220], ['CARRETERAS', '50px "Alfa Slab One"', 290], ['· 1931 ·', '40px "Special Elite"', 380, '#2d2016'], ['OTTO & ERNEST', '34px "Special Elite"', 470, '#2d2016']]), { frame: '#5a3418' });
+  const posterLines = window.LANG === 'en'
+    ? [['ROAD', '84px "Alfa Slab One"', 160], ['MAPS', '84px "Alfa Slab One"', 260], ['· 1931 ·', '40px "Special Elite"', 380, '#2d2016'], ['OTTO & ERNEST', '34px "Special Elite"', 470, '#2d2016']]
+    : [['MAPAS', '74px "Alfa Slab One"', 150], ['DE', '50px "Alfa Slab One"', 220], ['CARRETERAS', '50px "Alfa Slab One"', 290], ['· 1931 ·', '40px "Special Elite"', 380, '#2d2016'], ['OTTO & ERNEST', '34px "Special Elite"', 470, '#2d2016']];
+  P.frameWithTexture(s, [.55, 4.6, -3.88], 1.1, 1.54, T.poster(posterLines), { frame: '#5a3418' });
   P.shelf(s, [-5.3, 0, -3.4]);
   const cab = group(s, [6.2, 0, -3.3]); mesh(box(1.4, 3.2, 1.2), toon('#6a6f78', { g: G3, ol: .005 }), { p: [0, 1.6, 0], parent: cab }); [.6, 1.6, 2.6].forEach(y => mesh(box(.5, .1, .1), toon('#c9a14a'), { p: [0, y, .62], parent: cab }));
   P.plant(s, [5.2, 0, -3.2]);

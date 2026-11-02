@@ -72,6 +72,34 @@ ffmpeg -i build/silent.mp4 -i build/mix.wav -map 0:v -map 1:a -c:v copy -c:a aac
 
 Para revisar planos sueltos: `node tools/stills.js index.html <carpeta> 1.5 12.3 …` saca fotogramas en esos segundos.
 
+## English version (for the English channel)
+
+`script.en.json` holds the English script: same structure and same shots, with American voices from Kokoro, which sound noticeably more natural than the Spanish ones.
+
+| Character | Voice |
+|---|---|
+| Narrator | `am_fenrir` (+1.5 semitones) |
+| Otto | `am_puck` |
+| Ernest | `am_michael` (+3, younger) |
+| The competition | `bm_george` (a posh Brit, −2) |
+| The grocer | `am_santa` (old country fellow) |
+
+The shots are written against the Spanish narration. `ANCHORS` in `src/shots.js` maps each anchor word to its English counterpart, and the on-screen text (title, stamp, poster, map credit) switches with `?lang=en`.
+
+**Final video:** `build/en/the-town-that-didnt-exist.mp4`
+
+- **Title:** `They invented a fake town… then someone opened a store there 🐄`
+- **Description:**
+  > In the 1930s, two New York mapmakers drew a town that didn't exist to catch anyone copying their maps. It didn't go as planned. #history #historyfacts #shorts #maps
+
+```bash
+.venv/bin/python tools/voices.py script.en.json MODELS build/en && python3 tools/timings_js.py build/en
+SHORT_LANG=en node tools/render.js build/en/silent.mp4 4
+python3 tools/mix.py build/en/vo.wav build/en/cues.json ../../skills/sound-effects/sfx build/en
+ffmpeg -i build/en/silent.mp4 -i build/en/mix.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -shortest \
+  -movflags +faststart build/en/the-town-that-didnt-exist.mp4
+```
+
 ### Grabar tu propia voz
 
 Si la grabas tú, como hace el canal de referencia:

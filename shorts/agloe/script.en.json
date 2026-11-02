@@ -1,0 +1,198 @@
+{
+  "title": "The Town That Didn't Exist",
+  "speakers": {
+    "N": {
+      "engine": "kokoro",
+      "voice": "am_fenrir",
+      "lang": "en-us",
+      "speed": 1.08,
+      "pitch": 1.5
+    },
+    "OTTO": {
+      "engine": "kokoro",
+      "voice": "am_puck",
+      "lang": "en-us",
+      "speed": 1.08,
+      "pitch": 1.0
+    },
+    "ERNEST": {
+      "engine": "kokoro",
+      "voice": "am_michael",
+      "lang": "en-us",
+      "speed": 1.12,
+      "pitch": 3.0
+    },
+    "RIVAL": {
+      "engine": "kokoro",
+      "voice": "bm_george",
+      "lang": "en-gb",
+      "speed": 0.98,
+      "pitch": -2.0
+    },
+    "GROCER": {
+      "engine": "kokoro",
+      "voice": "am_santa",
+      "lang": "en-us",
+      "speed": 0.95,
+      "pitch": -1.0
+    }
+  },
+  "lines": [
+    {
+      "id": "hook1",
+      "who": "N",
+      "text": "These two invented an entire town.",
+      "gap": 0.12
+    },
+    {
+      "id": "hook2",
+      "who": "N",
+      "text": "And years later, somebody opened a store in it!",
+      "gap": 0.35
+    },
+    {
+      "id": "ny",
+      "who": "N",
+      "text": "New York, the nineteen-thirties.",
+      "gap": 0.12
+    },
+    {
+      "id": "maps",
+      "who": "N",
+      "text": "Otto and Ernest make road maps, and they have a problem:",
+      "gap": 0.1
+    },
+    {
+      "id": "copy",
+      "who": "N",
+      "text": "the competition keeps copying them. Every single line!",
+      "gap": 0.15
+    },
+    {
+      "id": "rival1",
+      "who": "RIVAL",
+      "text": "Thanks for the map, boys!",
+      "gap": 0.25
+    },
+    {
+      "id": "prove",
+      "who": "N",
+      "text": "And good luck proving it.",
+      "gap": 0.1
+    },
+    {
+      "id": "road",
+      "who": "N",
+      "text": "What are you gonna say? That you own the road?",
+      "gap": 0.25
+    },
+    {
+      "id": "idea",
+      "who": "N",
+      "text": "Until Otto has an idea.",
+      "gap": 0.15
+    },
+    {
+      "id": "otto1",
+      "who": "OTTO",
+      "text": "What if we just... invent a town?",
+      "gap": 0.15
+    },
+    {
+      "id": "ernest1",
+      "who": "ERNEST",
+      "text": "A town... that doesn't exist?",
+      "gap": 0.25
+    },
+    {
+      "id": "cows",
+      "who": "N",
+      "text": "At a lost crossroads, where there's nothing but cows, they draw a town that isn't there:",
+      "gap": 0.15
+    },
+    {
+      "id": "name",
+      "who": "N",
+      "text": "Agloe. Their initials, scrambled.",
+      "gap": 0.45
+    },
+    {
+      "id": "trap",
+      "who": "N",
+      "text": "It's a trap. If Agloe ever shows up on someone else's map, they copied it.",
+      "gap": 0.25
+    },
+    {
+      "id": "oneday",
+      "who": "N",
+      "text": "And then one day...",
+      "gap": 0.3
+    },
+    {
+      "id": "zas",
+      "who": "N",
+      "text": "Bam! Agloe shows up on the competition's map.",
+      "gap": 0.2
+    },
+    {
+      "id": "rich",
+      "who": "N",
+      "text": "Otto can already see himself swimming in cash.",
+      "gap": 0.12
+    },
+    {
+      "id": "otto2",
+      "who": "OTTO",
+      "text": "Ernest, call the lawyers! All of them!",
+      "gap": 0.2
+    },
+    {
+      "id": "calm",
+      "who": "N",
+      "text": "But the competition doesn't even blink.",
+      "gap": 0.15
+    },
+    {
+      "id": "reply",
+      "who": "RIVAL",
+      "text": "We didn't copy anything. Agloe is real. It even has a store!",
+      "gap": 0.3
+    },
+    {
+      "id": "true",
+      "who": "N",
+      "text": "And it's true. At that crossroads, where there used to be only cows, someone has opened the Agloe General Store.",
+      "gap": 0.25
+    },
+    {
+      "id": "why",
+      "who": "N",
+      "text": "See, the owner saw Agloe on Otto's map, and thought:",
+      "gap": 0.15
+    },
+    {
+      "id": "thought",
+      "who": "GROCER",
+      "text": "Well, if the map says this is Agloe... then Agloe it is.",
+      "gap": 0.35
+    },
+    {
+      "id": "pay1",
+      "who": "N",
+      "text": "Otto invented a town to catch a cheater.",
+      "gap": 0.12
+    },
+    {
+      "id": "pay2",
+      "who": "N",
+      "text": "And his own map made it real.",
+      "gap": 0.45
+    },
+    {
+      "id": "button",
+      "who": "N",
+      "text": "The cows still can't believe it.",
+      "gap": 0.7
+    }
+  ]
+}

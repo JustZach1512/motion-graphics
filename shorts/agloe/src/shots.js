@@ -7,7 +7,27 @@ const TL = window.TIMINGS;
 const LN = id => TL.lines.find(l => l.id === id);
 const Ls = id => LN(id).start, Le = id => LN(id).end;
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, '');
+// shots are written against the Spanish narration; other languages map each anchor word to theirs
+export const LANG = window.LANG || 'es';
+const ANCHORS = {
+  en: {
+    'hook1:pueblo': 'town', 'hook2:tienda': 'store', 'maps:problema': 'problem', 'copy:enteros': 'every', 'road:que:1': ['that', 0],
+    'idea:ocurre': 'idea', 'cows:donde': 'where', 'cows:dibujan': 'they', 'cows:pueblo': 'town', 'name:sus': 'their', 'name:revueltas': 'scrambled',
+    'trap:trampa': 'trap', 'trap:si': 'if', 'trap:agloe': 'agloe', 'trap:copiado': 'copied', 'zas:competencia': 'competition',
+    'otto2:llama': 'call', 'otto2:a:1': ['all', 0], 'reply:agloe': 'agloe', 'reply:si': 'it', 'true:donde': 'where', 'true:alguien': 'someone',
+    'true:tienda': 'agloe', 'why:penso': 'thought', 'thought:pues': 'then', 'pay2:real': 'real', 'button:creerselo': 'believe',
+  },
+};
+export const TXT = {
+  es: { ny: ['NUEVA YORK', 'AÑOS 30'], copied: 'COPIADO' },
+  en: { ny: ['NEW YORK', 'THE 1930s'], copied: 'COPIED!' },
+}[LANG];
 function Wt(id, word, n = 0, end = false) {
+  if (LANG !== 'es') {
+    const m = ANCHORS[LANG][`${id}:${word}:${n}`] ?? ANCHORS[LANG][`${id}:${word}`];
+    if (m === undefined) throw new Error(`no ${LANG} anchor for ${id}:${word}`);
+    [word, n] = Array.isArray(m) ? m : [m, n];
+  }
   const ws = LN(id).words.filter(w => norm(w.w).startsWith(norm(word)));
   if (!ws.length) throw new Error(`"${word}" not in ${id}`);
   const w = ws[Math.min(n, ws.length - 1)]; return end ? w.end : w.start;
@@ -85,8 +105,8 @@ export function makeShots(W) {
     cam: (t, lt) => ({ pos: [k(lt, [[0, -26], [1.7, -22]]), k(lt, [[0, 2.2], [1.7, 3.2]]), 3.5], look: [40, k(lt, [[0, 9], [1.7, 7]]), -2], fov: 44 }),
     fx: () => ({ warm: .9, sub: 2 }),
     overlay(t, lt) { const st = clamp(lt / .25), sc = lerp(1.7, 1, E.out5(st)); return `<g opacity="${st.toFixed(2)}" transform="translate(540 430) scale(${sc.toFixed(3)})">
-      <text text-anchor="middle" font-family="Rye" font-size="128" fill="#fff4dc" stroke="${INK}" stroke-width="14" paint-order="stroke">NUEVA YORK</text>
-      <text y="100" text-anchor="middle" font-family="Alfa Slab One" font-size="66" fill="#ffcf5a" stroke="${INK}" stroke-width="10" paint-order="stroke" letter-spacing="8">AÑOS 30</text></g>`; } });
+      <text text-anchor="middle" font-family="Rye" font-size="128" fill="#fff4dc" stroke="${INK}" stroke-width="14" paint-order="stroke">${TXT.ny[0]}</text>
+      <text y="100" text-anchor="middle" font-family="Alfa Slab One" font-size="66" fill="#ffcf5a" stroke="${INK}" stroke-width="10" paint-order="stroke" letter-spacing="8">${TXT.ny[1]}</text></g>`; } });
   // 4. they make road maps... and have a problem
   S.push({ at: Ls('maps'), set: 'office', cast: ['OTTO', 'ERNEST'], sfx: [{ t: Wt('maps', 'problema'), type: 'hit' }],
     pose(t) { const al = t > Wt('maps', 'problema'); O.pin.visible = false;
@@ -197,7 +217,7 @@ export function makeShots(W) {
     pose(t) { const ta = Wt('trap', 'agloe'); resetMap({ rival: true, circle: seg(t, ta, ta + .5, E.out) }); },
     cam: (t, lt) => { const tc = Wt('trap', 'copiado'); return { pos: [A.x + .9, k(lt, [[0, 3.6], [2.9, 3.0]]), A.z + 3.2], look: [A.x + .6, 0, A.z - .1], fov: 34, shake: t > tc && t < tc + .3 ? 1.5 : 0 }; },
     fx: () => ({ dof: { focus: 4.4, aperture: .002, maxblur: .01 } }),
-    overlay(t) { const tc = Wt('trap', 'copiado'); const ss = pop(t, tc, .3); return ss ? stamp(540, 1120, ss * 1.0 + (1 - clamp((t - tc) / .2)) * .6, 'COPIADO', -10, clamp((t - tc) / .1).toFixed(2)) : ''; } });
+    overlay(t) { const tc = Wt('trap', 'copiado'); const ss = pop(t, tc, .3); return ss ? stamp(540, 1120, ss * 1.0 + (1 - clamp((t - tc) / .2)) * .6, TXT.copied, -10, clamp((t - tc) / .1).toFixed(2)) : ''; } });
   // 15. and one fine day...
   S.push({ at: Ls('oneday'), set: 'office', cast: ['OTTO', 'ERNEST'], sfx: [{ t: Ls('oneday'), type: 'riser', end: Ls('zas') }],
     pose(t, lt) { const ex = lerp(4.5, 1.0, seg(lt, 0, 1.1, E.out));

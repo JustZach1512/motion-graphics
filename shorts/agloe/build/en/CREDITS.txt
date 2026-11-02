@@ -1,0 +1,24 @@
+Sound effects (all CC0 1.0 - no credit required; listed as proof of source):
+- fs-349504-triangle-open-04.ogg - cabled_mess via Freesound (CC0; credit optional) - https://freesound.org/people/cabled_mess/sounds/349504/
+- fs-571513-soft-notifications-bell-ding-d.ogg - LegitCheese via Freesound (CC0; credit optional) - https://freesound.org/people/LegitCheese/sounds/571513/
+- fs-347561-micheal-bay-hit.ogg - Kinoton via Freesound (CC0; credit optional) - https://freesound.org/people/Kinoton/sounds/347561/
+- kenney-impact-impactpunch-heavy-000.ogg - Kenney (kenney.nl), CC0; credit optional - https://kenney.nl/assets/impact-sounds
+- kenney-impact-impactpunch-heavy-001.ogg - Kenney (kenney.nl), CC0; credit optional - https://kenney.nl/assets/impact-sounds
+- kenney-impact-impactsoft-heavy-000.ogg - Kenney (kenney.nl), CC0; credit optional - https://kenney.nl/assets/impact-sounds
+- soft_impact3 - "soft_impact3" by peoplearehappy (https://freesound.org/people/peoplearehappy/sounds/841274/), CC0 - https://freesound.org/people/peoplearehappy/sounds/841274/
+- POP SFX Neutral - "POP SFX Neutral" by ethernel0 (https://freesound.org/people/ethernel0/sounds/776016/), CC0 - https://freesound.org/people/ethernel0/sounds/776016/
+- Whoosh - "Whoosh" by qubodup (https://freesound.org/people/qubodup/sounds/60013/), CC0 - https://freesound.org/people/qubodup/sounds/60013/
+- fs-258269-mouth-pop.ogg - jcallison via Freesound (CC0; credit optional) - https://freesound.org/people/jcallison/sounds/258269/
+- fs-824189-pop-in-sfx.ogg - Sadiquecat via Freesound (CC0; credit optional) - https://freesound.org/people/Sadiquecat/sounds/824189/
+- fs527522.ogg - Narjara via Freesound (CC0; credit given voluntarily) - https://freesound.org/people/Narjara/sounds/527522/
+- kenney-interface-pluck-001.ogg - Kenney (kenney.nl), CC0; credit optional - https://kenney.nl/assets/interface-sounds
+- fs-685256-riser-sound-effect-short-wav.ogg - syntheffects via Freesound (CC0; credit optional) - https://freesound.org/people/syntheffects/sounds/685256/
+- fs-702773-swipe-wav.ogg - LilMati via Freesound (CC0; credit optional) - https://freesound.org/people/LilMati/sounds/702773/
+- fs-786514-swoosh-v2.ogg - migoreng1 via Freesound (CC0; credit optional) - https://freesound.org/people/migoreng1/sounds/786514/
+- kenney-digital-twotone1.ogg - Kenney (kenney.nl), CC0; credit optional - https://kenney.nl/assets/digital-audio
+- fs-127197-fast-simple-chop-5-aif.ogg - dave.des via Freesound (CC0; credit optional) - https://freesound.org/people/dave.des/sounds/127197/
+- fs-169867-swoosh.ogg - Halgrimm via Freesound (CC0; credit optional) - https://freesound.org/people/Halgrimm/sounds/169867/
+- fs-683101-quick-woosh.ogg - florianreichelt via Freesound (CC0; credit optional) - https://freesound.org/people/florianreichelt/sounds/683101/
+- fs393811.ogg - deleted_user_6479820 via Freesound (CC0; credit given voluntarily) - https://freesound.org/people/deleted_user_6479820/sounds/393811/
+
+Voice: synthetic narration generated with Kokoro TTS (Apache-2.0 model weights).

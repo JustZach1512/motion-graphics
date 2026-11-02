@@ -1,22 +1,24 @@
 // node tools/render.js build/silent.mp4 [workers=4] [fromSec] [toSec]   (workers=0: just re-encode saved frames)
+// SHORT_LANG=en renders the English version (build/en/: timings in, frames + cues out).
 // Each worker is its own headless Chromium on a local static server; frames are interleaved between workers.
 // Motion blur and post effects happen inside WebGL, so one screenshot = one frame. Also writes build/cues.json.
 const { chromium } = require('playwright'); const path = require('path'); const fs = require('fs'); const { execFileSync } = require('child_process');
 const serve = require('./serve.js');
 const [out, wArg, fromArg, toArg] = process.argv.slice(2);
 const WORKERS = wArg === undefined ? 4 : +wArg, FPS = 30;
-const FR = path.resolve('build/frames'); fs.mkdirSync(FR, { recursive: true });
+const LANG = process.env.SHORT_LANG || 'es', BD = LANG === 'es' ? 'build' : `build/${LANG}`;
+const FR = path.resolve(`${BD}/frames`); fs.mkdirSync(FR, { recursive: true });
 (async () => {
   const srv = await serve(path.resolve('.'));
   const open = async () => {
     const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });
     const errs = []; p.on('pageerror', e => errs.push(e.message));
-    await p.goto(srv.url + '/index.html'); await p.waitForFunction(() => window.ready, null, { timeout: 120000 }); await p.evaluate(() => window.init());
+    await p.goto(`${srv.url}/index.html?lang=${LANG}`); await p.waitForFunction(() => window.ready, null, { timeout: 120000 }); await p.evaluate(() => window.init());
     return { b, p, errs };
   };
   const first = await open();
   const T = await first.p.evaluate(() => window.DURATION);
-  fs.writeFileSync('build/cues.json', JSON.stringify(await first.p.evaluate(() => window.cues()), null, 1));
+  fs.writeFileSync(`${BD}/cues.json`, JSON.stringify(await first.p.evaluate(() => window.cues()), null, 1));
   await first.b.close();
   const f0 = Math.round((+fromArg || 0) * FPS), f1 = Math.round((toArg ? +toArg : T) * FPS);
   const t0 = Date.now(); let done = 0;

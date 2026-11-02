@@ -1,0 +1,26 @@
+hook1    N       1.71s  heard 6/6 words  | These two invented an entire town.
+hook2    N       2.10s  heard 8/9 words  | Years later, somebody opened a store in it.
+ny       N       1.35s  heard 3/4 words  | New York The 1930s.
+maps     N       2.88s  heard 11/11 words  | Otto and Ernest make road maps and they have a problem.
+copy     N       3.05s  heard 8/8 words  | The competition keeps copying them, every single line.
+rival1   RIVAL   1.79s  heard 4/5 words  | Thanks the map, boys.
+prove    N       1.13s  heard 5/5 words  | And good luck proving it.
+road     N       1.95s  heard 10/10 words  | What are you gonna say that you own the road?
+idea     N       1.31s  heard 4/5 words  | Until Auto has an idea.
+otto1    OTTO    1.61s  heard 7/7 words  | What if we just invent a town?
+ernest1  ERNEST  1.54s  heard 5/5 words  | A town that doesn't exist.
+cows     N       4.41s  heard 16/16 words  | At a lost crossroads where there's nothing but cows, they draw a town that isn't there.
+name     N       1.62s  heard 3/4 words  | Glow their initials scrambled.
+trap     N       3.91s  heard 14/15 words  | It's a trap, if a glow ever shows up on someone else's map, they copied it.
+oneday   N       0.93s  heard 4/4 words  | And then one day.
+zas      N       2.26s  heard 7/8 words  | Bam, a glow shows up on the competitions map.
+rich     N       2.29s  heard 7/8 words  | Otto can already see himself swimming in cache.
+otto2    OTTO    1.54s  heard 7/7 words  | Ernest call the lawyers, all of them.
+calm     N       1.92s  heard 6/6 words  | But the competition doesn't even blink.
+reply    RIVAL   4.15s  heard 11/12 words  | We didn't copy anything. A glow is real, it even has a store.
+true     N       5.90s  heard 19/20 words  | And it's true, at that crossroads where there used to be only cows, someone has opened the Aglo General store.
+why      N       2.33s  heard 9/10 words  | See the owner saw a glow on Otto's map and thought.
+thought  GROCER  3.78s  heard 10/12 words  | Well, if the map says this is a glow, then a glow it is.
+pay1     N       2.00s  heard 8/8 words  | Otto invented a town to catch a cheater.
+pay2     N       1.39s  heard 7/7 words  | And his own map made it real.
+button   N       1.40s  heard 5/6 words  | The cow still can't believe it.

@@ -11,3 +11,7 @@ build/render3d.log
 .venv/
 *.onnx
 voices-v1.0.bin
+build/*/frames/
+build/*/silent.mp4
+build/*/mix.wav
+build/*/render.log

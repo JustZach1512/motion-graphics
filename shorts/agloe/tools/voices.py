@@ -28,7 +28,7 @@ asr = sherpa_onnx.OfflineRecognizer.from_transducer(encoder=f"{P}/encoder.int8.o
 
 def synth(sp, text):
     if sp["engine"] == "kokoro":
-        a, sr = kok.create(text, voice=sp["voice"], speed=sp.get("speed", 1.0), lang="es")
+        a, sr = kok.create(text, voice=sp["voice"], speed=sp.get("speed", 1.0), lang=sp.get("lang", "es"))
         return np.asarray(a, np.float32), sr
     v = pipers.get(sp["voice"]) or pipers.setdefault(sp["voice"], PiperVoice.load(f"{M}/vits-piper-{sp['voice']}/{sp['voice']}.onnx"))
     ch = list(v.synthesize(text, syn_config=SynthesisConfig(length_scale=1 / sp.get("speed", 1.0))))

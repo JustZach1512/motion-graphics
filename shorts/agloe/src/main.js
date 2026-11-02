@@ -37,7 +37,7 @@ async function init() {
   for (const f of ['900 96px Montserrat', '40px Rye', '40px "Special Elite"', '40px "Alfa Slab One"']) await document.fonts.load(f);
   const maps = {
     plain: await T.mapTexture({}), agloe: await T.mapTexture({ agloe: true }),
-    rival: await T.mapTexture({ tint: '#b9d0f2', agloe: true, publisher: 'LA COMPETENCIA' }), copy: await T.mapTexture({ publisher: 'TOTALMENTE ORIGINAL' }),
+    rival: await T.mapTexture({ tint: '#b9d0f2', agloe: true, publisher: window.LANG === 'en' ? 'THE COMPETITION' : 'LA COMPETENCIA' }), copy: await T.mapTexture({ publisher: window.LANG === 'en' ? 'TOTALLY ORIGINAL' : 'TOTALMENTE ORIGINAL' }),
   };
   const sets = {
     office: await SETS.office(maps), rival: await SETS.rivalOffice(maps), city: await SETS.city(), country: await SETS.country(),
