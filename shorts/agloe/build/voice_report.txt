@@ -1,0 +1,26 @@
+hook1    N       2.22s  heard 7/7 words  | Estos dos se inventaron un pueblo entero.
+hook2    N       2.50s  heard 9/9 words  | Y años después, alguien abrió una tienda en él.
+ny       N       1.51s  heard 3/4 words  | Nueva York, años 30.
+maps     N       3.38s  heard 11/11 words  | Otto y Ernest dibujan mapas de carreteras y tienen un problema.
+copy     N       2.04s  heard 6/6 words  | La competencia se los copia enteros.
+rival1   RIVAL   1.75s  heard 5/5 words  | Gracias por el mapa chicos.
+prove    N       1.78s  heard 4/4 words  | Y demostrarlo es imposible.
+road     N       2.29s  heard 8/9 words  | Te vas a decir que esa carretera es tuya.
+idea     N       1.79s  heard 8/8 words  | Hasta que a Otto se le ocurre algo.
+otto1    OTTO    1.54s  heard 6/6 words  | Y si nos inventamos un pueblo.
+ernest1  ERNEST  1.17s  heard 3/3 words  | Un pueblo falso.
+cows     N       4.07s  heard 14/14 words  | En un cruce perdido donde solo hay vacas, dibujan un pueblo que no existe.
+name     N       1.83s  heard 3/4 words  | Habló de sus iniciales revueltas.
+trap     N       3.43s  heard 15/16 words  | Es una trampa. Si a Gloe sale en el mapa de otro, es que lo han copiado.
+oneday   N       1.06s  heard 3/4 words  | Es un buen día.
+zas      N       2.45s  heard 7/9 words  | Tash a Gloe aparece en el mapa de la competencia.
+rich     N       1.88s  heard 4/7 words  | Oto ya se ven adando en billetes.
+otto2    OTTO    2.86s  heard 7/7 words  | Ernest, llama a los abogados a todos.
+calm     N       1.81s  heard 6/6 words  | Pero la competencia ni se inmuta.
+reply    RIVAL   3.54s  heard 9/10 words  | No hemos copiado nada, Aglo existe, si hasta tiene tienda.
+true     N       5.03s  heard 18/18 words  | Y es verdad, en ese cruce donde solo había vacas, alguien ha abierto la tienda general de Agloe.
+why      N       2.72s  heard 11/12 words  | Verás, el dueño vio a Glo en el mapa de Otto y pensó.
+thought  GROCER  3.17s  heard 9/11 words  | Si el mapa dice que esto es hablo pues será habloe.
+pay1     N       2.71s  heard 9/10 words  | Otro se inventó un pueblo para pillar a un tramposo.
+pay2     N       1.82s  heard 7/7 words  | Y su propio mapa lo hizo real.
+button   N       1.81s  heard 5/5 words  | Las vacas siguen sin creérselo.

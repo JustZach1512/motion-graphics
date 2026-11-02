@@ -3,9 +3,10 @@
   "private": true,
   "description": "9:16 animated story short: El pueblo que no existía",
   "dependencies": {
+    "@fontsource/alfa-slab-one": "5.1.0",
     "@fontsource/montserrat": "5.1.0",
     "@fontsource/rye": "5.1.0",
     "@fontsource/special-elite": "5.1.0",
-    "@fontsource/alfa-slab-one": "5.1.0"
+    "three": "0.169.0"
   }
 }

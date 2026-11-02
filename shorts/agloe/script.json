@@ -1,118 +1,193 @@
 {
   "title": "El pueblo que no existía",
-  "voice": "em_alex",
-  "speed": 1.12,
+  "speakers": {
+    "N": {
+      "engine": "kokoro",
+      "voice": "em_santa",
+      "speed": 1.15,
+      "pitch": 2.0
+    },
+    "OTTO": {
+      "engine": "piper",
+      "voice": "es_ES-davefx-medium",
+      "speed": 1.08,
+      "pitch": 1.0
+    },
+    "ERNEST": {
+      "engine": "kokoro",
+      "voice": "em_alex",
+      "speed": 1.12,
+      "pitch": 4.0
+    },
+    "RIVAL": {
+      "engine": "kokoro",
+      "voice": "em_alex",
+      "speed": 0.96,
+      "pitch": -3.0
+    },
+    "GROCER": {
+      "engine": "piper",
+      "voice": "es_MX-claude-high",
+      "speed": 0.92,
+      "pitch": -4.0
+    }
+  },
   "lines": [
     {
       "id": "hook1",
-      "text": "Estos dos se inventaron un pueblo.",
-      "gap": 0.15
+      "who": "N",
+      "text": "Estos dos se inventaron un pueblo entero.",
+      "gap": 0.12
     },
     {
       "id": "hook2",
-      "text": "Y años después, alguien abrió una tienda en él.",
+      "who": "N",
+      "text": "¡Y años después, alguien abrió una tienda en él!",
       "gap": 0.35
     },
     {
       "id": "ny",
+      "who": "N",
       "text": "Nueva York, años treinta.",
-      "gap": 0.15
+      "gap": 0.12
     },
     {
       "id": "maps",
+      "who": "N",
       "text": "Otto y Ernest dibujan mapas de carreteras, y tienen un problema:",
       "gap": 0.1
     },
     {
       "id": "copy",
-      "text": "la competencia se los copia. Enteros.",
-      "gap": 0.2
+      "who": "N",
+      "text": "la competencia se los copia. ¡Enteros!",
+      "gap": 0.15
+    },
+    {
+      "id": "rival1",
+      "who": "RIVAL",
+      "text": "¡Gracias por el mapa, chicos!",
+      "gap": 0.25
     },
     {
       "id": "prove",
+      "who": "N",
       "text": "Y demostrarlo es imposible.",
       "gap": 0.1
     },
     {
       "id": "road",
+      "who": "N",
       "text": "¿Qué vas a decir? ¿Que esa carretera es tuya?",
       "gap": 0.25
     },
     {
       "id": "idea",
-      "text": "Así que a Otto se le ocurre algo.",
-      "gap": 0.12
+      "who": "N",
+      "text": "Hasta que a Otto se le ocurre algo.",
+      "gap": 0.15
+    },
+    {
+      "id": "otto1",
+      "who": "OTTO",
+      "text": "¿Y si nos inventamos un pueblo?",
+      "gap": 0.15
+    },
+    {
+      "id": "ernest1",
+      "who": "ERNEST",
+      "text": "¿Un pueblo... falso?",
+      "gap": 0.25
     },
     {
       "id": "cows",
-      "text": "En un cruce perdido, donde solo hay vacas, dibujan un pueblo que no existe.",
+      "who": "N",
+      "text": "En un cruce perdido, donde solo hay vacas, dibujan un pueblo que no existe:",
       "gap": 0.15
     },
     {
       "id": "name",
+      "who": "N",
       "text": "Agloe. Sus iniciales, revueltas.",
       "gap": 0.45
     },
     {
       "id": "trap",
+      "who": "N",
       "text": "Es una trampa. Si Agloe sale en el mapa de otro, es que lo han copiado.",
       "gap": 0.25
     },
     {
       "id": "oneday",
-      "text": "Y un día...",
+      "who": "N",
+      "text": "Y un buen día...",
       "gap": 0.3
     },
     {
       "id": "zas",
+      "who": "N",
       "text": "¡Zas! Agloe aparece en el mapa de la competencia.",
       "gap": 0.2
     },
     {
       "id": "rich",
-      "text": "Otto ya se ve nadando en billetes. Llama a los abogados.",
+      "who": "N",
+      "text": "Otto ya se ve nadando en billetes.",
+      "gap": 0.12
+    },
+    {
+      "id": "otto2",
+      "who": "OTTO",
+      "text": "¡Ernest, llama a los abogados! ¡A todos!",
       "gap": 0.2
     },
     {
       "id": "calm",
+      "who": "N",
       "text": "Pero la competencia ni se inmuta.",
       "gap": 0.15
     },
     {
       "id": "reply",
+      "who": "RIVAL",
       "text": "No hemos copiado nada. Agloe existe. ¡Si hasta tiene tienda!",
-      "voice": "em_santa",
       "gap": 0.3
     },
     {
       "id": "true",
+      "who": "N",
       "text": "Y es verdad. En ese cruce, donde solo había vacas, alguien ha abierto la Tienda General de Agloe.",
       "gap": 0.25
     },
     {
       "id": "why",
+      "who": "N",
       "text": "Verás: el dueño vio Agloe en el mapa de Otto, y pensó:",
-      "gap": 0.1
+      "gap": 0.15
     },
     {
       "id": "thought",
-      "text": "si el mapa dice que esto es Agloe... pues será Agloe.",
+      "who": "GROCER",
+      "text": "Si el mapa dice que esto es Agloe... pues será Agloe.",
       "gap": 0.35
     },
     {
       "id": "pay1",
+      "who": "N",
       "text": "Otto se inventó un pueblo para pillar a un tramposo.",
       "gap": 0.12
     },
     {
       "id": "pay2",
+      "who": "N",
       "text": "Y su propio mapa lo hizo real.",
       "gap": 0.45
     },
     {
       "id": "button",
+      "who": "N",
       "text": "Las vacas siguen sin creérselo.",
-      "gap": 0.6
+      "gap": 0.7
     }
   ]
 }
