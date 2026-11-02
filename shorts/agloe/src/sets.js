@@ -146,13 +146,13 @@ export async function country() {
   P.fence(s, [-2.4, 0, 2.4], [-2.4, 0, 40]); P.fence(s, [2.4, 0, 2.4], [2.4, 0, 40]);
   for (let px = -48; px <= 48; px += 12) P.pole(s, [px, 0, -3.4]);
   for (let px = -48; px < 48; px += 12) for (const dx of [-.8, .8]) P.wire(s, [px + dx, 6.75, -3.4], [px + 12 + dx, 6.75, -3.4], .7);
-  P.signpost(s, [-3.2, 0, 3.4], [['ROSCOE 4 MI', 3.3, 1], ['ROCKLAND 2 MI', 2.6, -1]], -20);
+  const sign = P.signpost(s, [-3.2, 0, 3.4], [['ROSCOE 4 MI', 3.3, 1], ['ROCKLAND 2 MI', 2.6, -1]], -20);
   [[-60, 34, -150, 4], [10, 40, -170, 3.6], [70, 30, -140, 3.2], [-20, 26, -110, 2.4], [40, 48, -200, 4.5]].forEach(([x, y, z, sc]) => P.cloud(s, [x, y, z], sc));
   const shop = P.store(s, [7.6, 0, -7.4], 0);
   const cows = [P.cow(s, [-6, 0, -8], .9), P.cow(s, [-10, 0, -10.5], .9), P.cow(s, [5, 0, 7], .9)];
   cows[0].root.rotation.y = 20 * D2R; cows[1].root.rotation.y = -30 * D2R; cows[2].root.rotation.y = 160 * D2R;
   const carP = P.car(s, [-7, 0, 4.6], '#9b2f2f', 0);
-  return { scene: s, key, shop, cows, car: carP };
+  return { scene: s, key, shop, cows, car: carP, sign };
 }
 
 // ---------- top-down map on a desk ----------

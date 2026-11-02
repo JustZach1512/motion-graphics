@@ -58,10 +58,12 @@ export function signpost(parent, p, labels, rotY = 0) {
   labels.forEach(([txt, y, dir], i) => {
     const b = group(g, [dir * 1.05, y, 0]);
     const m = toon('#ffffff', { map: T.textBoard(txt, { w: 512, h: 128, font: '62px "Special Elite"' }) });
-    const shape = new THREE.Shape(); shape.moveTo(-1, -.25); shape.lineTo(.8, -.25); shape.lineTo(1.05, 0); shape.lineTo(.8, .25); shape.lineTo(-1, .25); shape.closePath();
+    // arrow shape mirrored in its coordinates (not with a negative scale), so the text never reads backwards
+    const pts = [[-1, -.25], [.8, -.25], [1.05, 0], [.8, .25], [-1, .25]].map(([x, y]) => [x * dir, y]);
+    const shape = new THREE.Shape(); shape.moveTo(...pts[0]); pts.slice(1).forEach(p2 => shape.lineTo(...p2)); shape.closePath();
     const geo = new THREE.ExtrudeGeometry(shape, { depth: .08, bevelEnabled: false });
-    const uv = geo.attributes.uv; const pos = geo.attributes.position; for (let j = 0; j < uv.count; j++) uv.setXY(j, (pos.getX(j) + 1) / 2.05, (pos.getY(j) + .25) / .5);
-    const ms = mesh(geo, m, { parent: b }); ms.scale.x = dir;
+    const uv = geo.attributes.uv; const pos = geo.attributes.position; for (let j = 0; j < uv.count; j++) uv.setXY(j, (pos.getX(j) + 1.05) / 2.1, (pos.getY(j) + .25) / .5);
+    mesh(geo, m, { parent: b });
   });
   return g;
 }

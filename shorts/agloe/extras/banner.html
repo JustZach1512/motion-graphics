@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  @font-face { font-family: 'Rye'; src: url(/node_modules/@fontsource/rye/files/rye-latin-400-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Alfa Slab One'; src: url(/node_modules/@fontsource/alfa-slab-one/files/alfa-slab-one-latin-400-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Special Elite'; src: url(/node_modules/@fontsource/special-elite/files/special-elite-latin-400-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Montserrat'; font-weight: 900; src: url(/node_modules/@fontsource/montserrat/files/montserrat-latin-900-normal.woff2) format('woff2'); }
+  html,body{margin:0;background:#000}#stage{position:relative;width:2560px;height:1440px;overflow:hidden}#gl,#ov{position:absolute;inset:0;width:2560px;height:1440px}
+</style></head>
+<body><div id="stage"><canvas id="gl" width="720" height="1280"></canvas><svg id="ov" width="2560" height="1440" viewBox="0 0 2560 1440"></svg></div>
+<script src="/build/timings.js"></script>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+// Channel banner 2560x1440. Faces and title sit inside YouTube's 1546x423 safe area (x 507-2053, y 508-931).
+import { THREE, renderer, outline, D2R } from '../src/engine.js';
+import { makeChar, CAST, pending } from '../src/characters.js';
+import * as SETS from '../src/sets.js';
+const q = new URLSearchParams(location.search), lang = q.get('lang') || 'es';
+const TXT = { es: ['PASÓ DE', 'VERDAD', 'HISTORIAS REALES QUE PARECEN INVENTADAS'], en: ['IT ACTUALLY', 'HAPPENED', 'TRUE STORIES THAT SOUND MADE UP'] }[lang];
+window.go = async () => {
+  for (const f of ['40px Rye', '40px "Alfa Slab One"', '40px "Special Elite"', '900 40px Montserrat']) await document.fonts.load(f);
+  const C = await SETS.country(); const sc = C.scene;
+  C.car.root.visible = false; C.sign.visible = false;
+  const chars = { OTTO: makeChar(CAST.OTTO, 1), ERNEST: makeChar(CAST.ERNEST, 2), GROCER: makeChar(CAST.GROCER, 4), RIVAL: makeChar(CAST.RIVAL, 3) };
+  Object.values(chars).forEach(c => sc.add(c.root));
+  const cow = C.cows[0]; cow.root.position.set(6.5, 0, -.6); cow.root.scale.setScalar(1.42); cow.root.rotation.y = -100 * D2R;
+  C.cows[1].root.position.set(-9, 0, -9); C.cows[2].root.visible = false;
+  const pose = () => {
+    chars.OTTO.set({ t: 0, still: true, x: -.05, z: 1, ry: 18, pose: 'hips', eyes: 'smug', brows: 'smug', mouth: 'smirk', look: [.1, 0], blink: 0 });
+    chars.ERNEST.set({ t: 0, still: true, x: -1.55, z: .6, ry: 22, pose: 'idle', poseR: 'wave', eyes: 'happy', mouth: 'grin', blink: 0 });
+    chars.RIVAL.set({ t: 0, still: true, x: 7.75, z: .6, ry: -22, pose: 'hips', eyes: 'smug', brows: 'raise', mouth: 'smirk', blink: 0 });
+    chars.GROCER.set({ t: 0, still: true, x: 9.0, z: 0, ry: -25, pose: 'idle', poseR: 'wave', eyes: 'happy', mouth: 'smile', blink: 0 });
+    cow.set({ t: 0, eyes: 'smug', chew: false, roll: 5 }); C.cows[1].set({ t: 1 });
+  };
+  pose(); await Promise.all(pending.splice(0)); pose(); await Promise.all(pending.splice(0)); pose();
+  const cam = new THREE.PerspectiveCamera(26, 16 / 9, .1, 600); cam.position.set(3, 3.25, 17); cam.lookAt(3, 3.22, 0);
+  renderer.setSize(3840, 2160, false); renderer.setRenderTarget(null); renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.NoToneMapping;
+  outline.render(sc, cam);
+  // title on a wooden sign, like the store's
+  const W = lang === 'es' ? 760 : 900, Hh = 372, cx = 1280, cy = 720, fs = lang === 'es' ? 128 : 112;
+  document.getElementById('ov').innerHTML = `
+    <defs><radialGradient id="v" cx="50%" cy="50%" r="75%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#1a0e05" stop-opacity=".35"/></radialGradient>
+      <filter id="sh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#000" flood-opacity=".45"/></filter></defs>
+    <rect width="2560" height="1440" fill="url(#v)"/>
+    <g filter="url(#sh)">
+      <rect x="${cx - W / 2}" y="${cy - Hh / 2}" width="${W}" height="${Hh}" rx="22" fill="#b97845" stroke="#1c1411" stroke-width="10"/>
+      <rect x="${cx - W / 2 + 24}" y="${cy - Hh / 2 + 24}" width="${W - 48}" height="${Hh - 48}" rx="12" fill="#f4ead2" stroke="#7a4a2a" stroke-width="12"/>
+      ${[-1, 1].map(s => `<circle cx="${cx + s * (W / 2 - 12)}" cy="${cy - Hh / 2 + 12}" r="9" fill="#5a3418"/><circle cx="${cx + s * (W / 2 - 12)}" cy="${cy + Hh / 2 - 12}" r="9" fill="#5a3418"/>`).join('')}
+      <text x="${cx}" y="${cy - 40}" text-anchor="middle" font-family="Rye" font-size="${fs}" fill="#b8322a">${TXT[0]}</text>
+      <text x="${cx}" y="${cy + 80}" text-anchor="middle" font-family="Rye" font-size="${fs}" fill="#b8322a">${TXT[1]}</text>
+      <text x="${cx}" y="${cy + 138}" text-anchor="middle" font-family="Special Elite" font-size="${lang === 'es' ? 28 : 33}" fill="#2d2016" textLength="${W - 110}" lengthAdjust="spacing">${TXT[2]}</text>
+    </g>`;
+  return true;
+};
+window.ready = true;
+</script></body></html>
