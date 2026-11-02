@@ -1,0 +1,14 @@
+Sound effects (all CC0 1.0 - no credit required; listed as proof of source):
+- kenney-impact-impactpunch-heavy-000.ogg - Kenney (kenney.nl), CC0; credit optional - https://kenney.nl/assets/impact-sounds
+- soft_impact3 - "soft_impact3" by peoplearehappy (https://freesound.org/people/peoplearehappy/sounds/841274/), CC0 - https://freesound.org/people/peoplearehappy/sounds/841274/
+- Whoosh - "Whoosh" by qubodup (https://freesound.org/people/qubodup/sounds/60013/), CC0 - https://freesound.org/people/qubodup/sounds/60013/
+- kenney-interface-pluck-001.ogg - Kenney (kenney.nl), CC0; credit optional - https://kenney.nl/assets/interface-sounds
+- fs-786514-swoosh-v2.ogg - migoreng1 via Freesound (CC0; credit optional) - https://freesound.org/people/migoreng1/sounds/786514/
+- fs-127197-fast-simple-chop-5-aif.ogg - dave.des via Freesound (CC0; credit optional) - https://freesound.org/people/dave.des/sounds/127197/
+- fs-169867-swoosh.ogg - Halgrimm via Freesound (CC0; credit optional) - https://freesound.org/people/Halgrimm/sounds/169867/
+- fs-683101-quick-woosh.ogg - florianreichelt via Freesound (CC0; credit optional) - https://freesound.org/people/florianreichelt/sounds/683101/
+- fs393811.ogg - deleted_user_6479820 via Freesound (CC0; credit given voluntarily) - https://freesound.org/people/deleted_user_6479820/sounds/393811/
+
+Voice: synthetic narration generated with Kokoro TTS (Apache-2.0 model weights) and Piper (voices under their model-card licences).
+
+Music: original composition written for this video, rendered with the FluidR3 GM soundfont by Frank Wen (MIT licence).
