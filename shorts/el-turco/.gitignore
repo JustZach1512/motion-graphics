@@ -16,3 +16,4 @@ build/*/silent.mp4
 build/*/mix.wav
 build/*/render.log
 build/music_raw.wav
+build/*/music_raw.wav
