@@ -1,0 +1,130 @@
+{
+  "title": "The Rubber Army",
+  "speakers": {
+    "N": {
+      "engine": "kokoro",
+      "voice": "am_fenrir",
+      "lang": "en-us",
+      "speed": 1.15,
+      "pitch": 5.0
+    },
+    "FARMER": {
+      "engine": "kokoro",
+      "voice": "bm_lewis",
+      "lang": "en-gb",
+      "speed": 1.0,
+      "pitch": 1.0
+    },
+    "SOLDIER": {
+      "engine": "kokoro",
+      "voice": "am_michael",
+      "lang": "en-us",
+      "speed": 1.0,
+      "pitch": -1.0
+    }
+  },
+  "lines": [
+    {
+      "id": "hook1",
+      "who": "N",
+      "text": "These four soldiers lifted a thirty-ton tank...",
+      "gap": 0.1
+    },
+    {
+      "id": "hook2",
+      "who": "N",
+      "text": "with their bare hands!",
+      "gap": 0.35
+    },
+    {
+      "id": "place",
+      "who": "N",
+      "text": "France, nineteen forty-four.",
+      "gap": 0.12
+    },
+    {
+      "id": "setup",
+      "who": "N",
+      "text": "Two Frenchmen are riding their bikes through the countryside, when they run into four American soldiers lifting a tank.",
+      "gap": 0.2
+    },
+    {
+      "id": "farmer",
+      "who": "FARMER",
+      "text": "Mon Dieu! How is that possible?",
+      "gap": 0.2
+    },
+    {
+      "id": "soldier",
+      "who": "SOLDIER",
+      "text": "Well... we Americans are very strong.",
+      "gap": 0.35
+    },
+    {
+      "id": "reveal",
+      "who": "N",
+      "text": "The trick? That tank was made of rubber. It was inflatable!",
+      "gap": 0.3
+    },
+    {
+      "id": "army",
+      "who": "N",
+      "text": "Those soldiers were the Ghost Army, and their mission was to fool the Germans.",
+      "gap": 0.15
+    },
+    {
+      "id": "inflate",
+      "who": "N",
+      "text": "At night, they blew up rubber tanks, trucks and cannons.",
+      "gap": 0.12
+    },
+    {
+      "id": "sound",
+      "who": "N",
+      "text": "They set up speakers blasting the sound of engines, tank tracks, and soldiers at work.",
+      "gap": 0.12
+    },
+    {
+      "id": "radio",
+      "who": "N",
+      "text": "They filled the radio with fake messages, from troops that were never there.",
+      "gap": 0.15
+    },
+    {
+      "id": "bars",
+      "who": "N",
+      "text": "They even went to the village bars to tell lies, in case spies were listening.",
+      "gap": 0.2
+    },
+    {
+      "id": "plane",
+      "who": "N",
+      "text": "From the air, the Germans saw a huge army... and moved their troops to stop it.",
+      "gap": 0.2
+    },
+    {
+      "id": "artists",
+      "who": "N",
+      "text": "And who were these soldiers? Many of them were artists: painters, designers, decorators.",
+      "gap": 0.2
+    },
+    {
+      "id": "pay1",
+      "who": "N",
+      "text": "They fooled the German army again and again...",
+      "gap": 0.15
+    },
+    {
+      "id": "pay2",
+      "who": "N",
+      "text": "and the only ones who nearly caught them... were two guys on bikes.",
+      "gap": 0.4
+    },
+    {
+      "id": "button",
+      "who": "SOLDIER",
+      "text": "Very strong. We're very, very strong.",
+      "gap": 0.9
+    }
+  ]
+}

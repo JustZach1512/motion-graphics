@@ -1,0 +1,48 @@
+{
+ "kit": "march",
+ "bpm": 116,
+ "length": 58.5,
+ "sections": [
+  {
+   "style": "theme",
+   "from": 0.0,
+   "to": 18.62
+  },
+  {
+   "style": "stop",
+   "from": 18.62
+  },
+  {
+   "style": "jaunty",
+   "from": 19.69,
+   "to": 24.0
+  },
+  {
+   "style": "quiet",
+   "from": 24.0,
+   "to": 39.17
+  },
+  {
+   "style": "jaunty",
+   "from": 39.17,
+   "to": 43.41
+  },
+  {
+   "style": "quiet",
+   "from": 43.41,
+   "to": 48.38
+  },
+  {
+   "style": "final",
+   "from": 48.38,
+   "to": 52.39
+  },
+  {
+   "style": "stop",
+   "from": 52.39
+  }
+ ],
+ "comic": [
+  56.67
+ ]
+}

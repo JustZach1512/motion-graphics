@@ -51,8 +51,13 @@ def process(a, sr, sp):
 
 
 def trim(a, thr=0.01):
+    """cut leading/trailing silence; the onset uses a lower threshold and a 60 ms pre-roll so soft
+    first consonants (the f of "Four", "France") are not clipped"""
     idx = np.where(np.abs(a) > thr)[0]
-    return a if len(idx) == 0 else a[max(0, idx[0] - int(.01 * SR)): idx[-1] + int(.03 * SR)]
+    if len(idx) == 0: return a
+    soft = np.where(np.abs(a[:idx[0] + 1]) > thr * .2)[0]
+    st = soft[0] if len(soft) else idx[0]
+    return a[max(0, st - int(.06 * SR)): idx[-1] + int(.03 * SR)]
 
 
 norm = lambda w: re.sub(r"[^a-záéíóúñü]", "", w.lower())
@@ -61,11 +66,14 @@ syl = lambda w: max(1, len(VOW.findall(w)))
 
 
 def recognise(a):
+    PAD = .3  # the recogniser misses a word that starts right at sample 0, so give it some silence first
     a16 = np.interp(np.arange(0, len(a), SR / 16000), np.arange(len(a)), a).astype(np.float32)
+    a16 = np.concatenate([np.zeros(int(PAD * 16000), np.float32), a16, np.zeros(int(PAD * 16000), np.float32)])
     st = asr.create_stream(); st.accept_waveform(16000, a16); asr.decode_stream(st)
     r = st.result
     words = []  # (text, start)
     for tok, ts in zip(r.tokens, r.timestamps):
+        ts = max(0.0, ts - PAD)
         if tok.startswith((" ", "▁")) or not words:
             words.append([tok.lstrip(" ▁"), ts])
         else:

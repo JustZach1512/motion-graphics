@@ -7,7 +7,9 @@ export const LANG = window.LANG || 'es';
 const LN = id => TL.lines.find(l => l.id === id);
 const Ls = id => LN(id).start, Le = id => LN(id).end;
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, '');
-const ANCHORS = { en: {} };
+const ANCHORS = { en: {             // shots are written against the Spanish words; English maps each anchor
+  'setup:encuentran': 'run', 'reveal:goma': 'rubber', 'reveal:hinchable': 'inflatable', 'reveal:era:1': ['it', 0],
+  'sound:motores': 'engines', 'sound:cadenas': 'tracks', 'bars:espias': 'spies', 'plane:movian': 'moved', 'pay2:fueron': 'were' } };
 export const TXT = { es: { place: ['FRANCIA', '1944'], army: ['EL EJÉRCITO', 'FANTASMA'], fx1: 'BRRRUM', fx2: '¡CLANK CLANK!', radio: '...bzzt... ¡Aquí la 6ª División! ...bzzt...' },
   en: { place: ['FRANCE', '1944'], army: ['THE GHOST', 'ARMY'], fx1: 'VROOOM', fx2: 'CLANK CLANK!', radio: '...bzzt... 6th Armored here! ...bzzt...' } }[LANG];
 function Wt(id, word, n = 0, end = false) {

@@ -39,3 +39,23 @@ Usa el kit de `shorts/` (ver `../README.md`). El campo francés reutiliza el cru
 | `src/props.js` | Tanque hinchable (se infla, se arruga y tiembla), bicis, camión con altavoces, radio, inflador, manguera, tiendas, avión, caballete, periódico y mesas de café. |
 | `src/sets.js` | Campo de día con el campamento, campamento de noche (luna, estrellas y focos) y el café del pueblo. |
 | `src/shots.js` | Lista de planos: el tanque en alto, el pinchazo, el desinflado, el inflado nocturno, los altavoces, la radio, el café, el avión y la vista con prismáticos. |
+
+## English version
+
+`script.en.json` + `music.en.json`; output `build/en/the-rubber-army.mp4` (about 58 s).
+
+| Character | Voice |
+|---|---|
+| Narrator | Kokoro `am_fenrir` +5 semitones, speed 1.15: the same narrator as the English *The Machine That Beat Napoleon*, matched to the reference narrator's pitch, range and pace. A stock voice, not a clone. |
+| The Frenchman | `bm_lewis` +1, opening with a "Mon Dieu!" |
+| The soldier | `am_michael` −1 |
+
+- **Title:** `4 soldiers lifted a 30-ton tank… with their bare hands 💪`
+- **Description:**
+  > In 1944, two Frenchmen saw four American soldiers lift a tank. The truth was even stranger: the Ghost Army, a unit of artists who fooled the Germans with rubber tanks. #history #historyfacts #ww2 #ghostarmy #shorts
+
+```bash
+SHORT_LANG=en node tools/render.js fantasma fantasma/build/en/silent.mp4 4
+python3 tools/music.py fantasma/music.en.json fantasma/build/en
+python3 tools/mix.py fantasma/build/en/vo.wav fantasma/build/en/cues.json ../skills/sound-effects/sfx fantasma/build/en fantasma/build/en/music.wav fantasma/build/en/timings.json
+```

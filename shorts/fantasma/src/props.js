@@ -113,7 +113,7 @@ export function easel(parent, p, ry = 0) {
   const w = mat('easel', () => toon('#a8743f', { g: G3, ol: .004 }));
   [[-.4, 0], [.4, 0]].forEach(([x]) => mesh(box(.06, 2.4, .06), w, { p: [x, 1.2, 0], r: [8, 0, x > 0 ? -8 : 8], parent: g }));
   mesh(box(.06, 2.3, .06), w, { p: [0, 1.1, -.4], r: [-20, 0, 0], parent: g });
-  const art = ctex(400, 300, (x) => { x.fillStyle = '#f4efe0'; x.fillRect(0, 0, 400, 300); x.fillStyle = '#5f6b38'; x.beginPath(); x.roundRect(60, 150, 280, 90, 30); x.fill(); x.fillRect(150, 110, 120, 60); x.fillRect(260, 128, 110, 16); x.strokeStyle = '#2a2a1a'; x.lineWidth = 6; x.beginPath(); x.roundRect(60, 150, 280, 90, 30); x.stroke(); x.fillStyle = '#3d4426'; x.fillRect(50, 230, 300, 30); x.fillStyle = '#c0392b'; x.font = 'bold 30px "Alfa Slab One"'; x.fillText('¿TANQUE?', 120, 70); });
+  const art = ctex(400, 300, (x) => { x.fillStyle = '#f4efe0'; x.fillRect(0, 0, 400, 300); x.fillStyle = '#5f6b38'; x.beginPath(); x.roundRect(60, 150, 280, 90, 30); x.fill(); x.fillRect(150, 110, 120, 60); x.fillRect(260, 128, 110, 16); x.strokeStyle = '#2a2a1a'; x.lineWidth = 6; x.beginPath(); x.roundRect(60, 150, 280, 90, 30); x.stroke(); x.fillStyle = '#3d4426'; x.fillRect(50, 230, 300, 30); x.fillStyle = '#c0392b'; x.font = 'bold 30px "Alfa Slab One"'; x.textAlign = 'center'; x.fillText(window.LANG === 'en' ? 'TANK?' : '¿TANQUE?', 200, 70); });
   mesh(box(1.3, 1.0, .05), toon('#ffffff', { map: art, ol: .004 }), { p: [0, 1.55, .08], r: [-8, 0, 0], parent: g });
   return g;
 }

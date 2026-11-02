@@ -1,0 +1,17 @@
+hook1    N       2.42s  heard 6/7 words  | These four soldiers lifted a 30-ton tank.
+hook2    N       0.95s  heard 4/4 words  | With their bare hands.
+place    N       1.25s  heard 1/3 words  | France 1944
+setup    N       6.33s  heard 19/19 words  | Two Frenchmen are riding their bikes through the countryside, when they run into four American soldiers lifting a tank.
+farmer   FARMER  2.06s  heard 5/6 words  | Mon dear, how is that possible?
+soldier  SOLDIER  2.07s  heard 6/6 words  | Well, we Americans are very strong.
+reveal   N       2.75s  heard 11/11 words  | The trick that tank was made of rubber, it was inflatable.
+army     N       4.17s  heard 14/14 words  | Those soldiers were the ghost army, and their mission was to fool the Germans.
+inflate  N       2.51s  heard 10/10 words  | At night they blew up rubber tanks, trucks and cannons.
+sound    N       4.44s  heard 15/15 words  | They set up speakers blasting the sound of engines, tank tracks and soldiers at work.
+radio    N       3.69s  heard 13/13 words  | They filled the radio with fake messages, from troops that were never there.
+bars     N       3.98s  heard 15/15 words  | They even went to the village bars to tell lies, in case spies were listening.
+plane    N       4.04s  heard 16/16 words  | From the air the Germans saw a huge army, and moved their troops to stop it.
+artists  N       4.74s  heard 13/13 words  | And who were these soldiers? Many of them were artists, painters, designers, decorators.
+pay1     N       2.05s  heard 8/8 words  | They fooled the German army again and again.
+pay2     N       3.29s  heard 13/13 words  | And the only ones who nearly caught them, were two guys on bikes.
+button   SOLDIER  2.39s  heard 6/6 words  | Very strong. We're very very strong.
