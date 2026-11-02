@@ -1,0 +1,9 @@
+build/frames/
+build/silent.mp4
+build/patch.mp4
+build/test.mp4
+build/mix.wav
+build/render.log
+.venv/
+*.onnx
+voices-v1.0.bin

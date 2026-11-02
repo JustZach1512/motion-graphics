@@ -1,0 +1,118 @@
+{
+  "title": "El pueblo que no existía",
+  "voice": "em_alex",
+  "speed": 1.12,
+  "lines": [
+    {
+      "id": "hook1",
+      "text": "Estos dos se inventaron un pueblo.",
+      "gap": 0.15
+    },
+    {
+      "id": "hook2",
+      "text": "Y años después, alguien abrió una tienda en él.",
+      "gap": 0.35
+    },
+    {
+      "id": "ny",
+      "text": "Nueva York, años treinta.",
+      "gap": 0.15
+    },
+    {
+      "id": "maps",
+      "text": "Otto y Ernest dibujan mapas de carreteras, y tienen un problema:",
+      "gap": 0.1
+    },
+    {
+      "id": "copy",
+      "text": "la competencia se los copia. Enteros.",
+      "gap": 0.2
+    },
+    {
+      "id": "prove",
+      "text": "Y demostrarlo es imposible.",
+      "gap": 0.1
+    },
+    {
+      "id": "road",
+      "text": "¿Qué vas a decir? ¿Que esa carretera es tuya?",
+      "gap": 0.25
+    },
+    {
+      "id": "idea",
+      "text": "Así que a Otto se le ocurre algo.",
+      "gap": 0.12
+    },
+    {
+      "id": "cows",
+      "text": "En un cruce perdido, donde solo hay vacas, dibujan un pueblo que no existe.",
+      "gap": 0.15
+    },
+    {
+      "id": "name",
+      "text": "Agloe. Sus iniciales, revueltas.",
+      "gap": 0.45
+    },
+    {
+      "id": "trap",
+      "text": "Es una trampa. Si Agloe sale en el mapa de otro, es que lo han copiado.",
+      "gap": 0.25
+    },
+    {
+      "id": "oneday",
+      "text": "Y un día...",
+      "gap": 0.3
+    },
+    {
+      "id": "zas",
+      "text": "¡Zas! Agloe aparece en el mapa de la competencia.",
+      "gap": 0.2
+    },
+    {
+      "id": "rich",
+      "text": "Otto ya se ve nadando en billetes. Llama a los abogados.",
+      "gap": 0.2
+    },
+    {
+      "id": "calm",
+      "text": "Pero la competencia ni se inmuta.",
+      "gap": 0.15
+    },
+    {
+      "id": "reply",
+      "text": "No hemos copiado nada. Agloe existe. ¡Si hasta tiene tienda!",
+      "voice": "em_santa",
+      "gap": 0.3
+    },
+    {
+      "id": "true",
+      "text": "Y es verdad. En ese cruce, donde solo había vacas, alguien ha abierto la Tienda General de Agloe.",
+      "gap": 0.25
+    },
+    {
+      "id": "why",
+      "text": "Verás: el dueño vio Agloe en el mapa de Otto, y pensó:",
+      "gap": 0.1
+    },
+    {
+      "id": "thought",
+      "text": "si el mapa dice que esto es Agloe... pues será Agloe.",
+      "gap": 0.35
+    },
+    {
+      "id": "pay1",
+      "text": "Otto se inventó un pueblo para pillar a un tramposo.",
+      "gap": 0.12
+    },
+    {
+      "id": "pay2",
+      "text": "Y su propio mapa lo hizo real.",
+      "gap": 0.45
+    },
+    {
+      "id": "button",
+      "text": "Las vacas siguen sin creérselo.",
+      "gap": 0.6
+    }
+  ]
+}
