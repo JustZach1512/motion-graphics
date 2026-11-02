@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#000}#stage{position:relative;width:1080px;height:1920px}#gl{position:absolute;inset:0;width:1080px;height:1920px}</style></head>
+<body><div id="stage"><canvas id="gl" width="720" height="1280"></canvas></div>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+// Profile picture: a character close-up on a flat brand colour (rendered with the same engine as the short)
+import { THREE, renderFrame, W, H, D2R } from '../src/engine.js';
+import { makeChar, CAST, pending } from '../src/characters.js';
+import * as P from '../src/props.js';
+const who = new URLSearchParams(location.search).get('who') || 'otto';
+const sc = new THREE.Scene(); sc.background = new THREE.Color(who === 'cow' ? '#3fa9e0' : '#ffc23d');
+sc.add(new THREE.HemisphereLight('#fff4e0', '#8a6a3a', .9));
+const sun = new THREE.DirectionalLight('#fff1d6', 1.6); sun.position.set(-4, 8, 9); sc.add(sun);
+const cam = new THREE.PerspectiveCamera(30, W / H, .1, 100);
+let pose;
+if (who === 'cow') {
+  const c = P.cow(sc, [0, 0, 0], 1); c.root.rotation.y = -90 * D2R;
+  pose = () => c.set({ t: 0, eyes: 'smug', chew: false, roll: 6 });
+  cam.position.set(0, 2.35, 9.2); cam.lookAt(0, 2.35, 1.6);
+} else {
+  const o = makeChar(CAST.OTTO, 1); sc.add(o.root);
+  pose = () => o.set({ t: 0, still: true, ry: 14, pose: 'idle', eyes: 'smug', brows: 'smug', mouth: 'smirk', look: [-.2, 0], blink: 0 });
+  cam.position.set(.2, 3.3, 9.6); cam.lookAt(0, 3.3, 0);
+}
+window.go = async () => { await document.fonts.ready; pose(); await Promise.all(pending.splice(0)); pose(); await Promise.all(pending.splice(0)); pose();
+  renderFrame(sc, cam, () => pose(), { vig: .3, warm: .3, grain: .012 }); return true; };
+window.ready = true;
+</script></body></html>
