@@ -1,0 +1,156 @@
+{
+  "title": "The Machine That Beat Napoleon",
+  "speakers": {
+    "N": {
+      "engine": "kokoro",
+      "voice": "am_fenrir",
+      "lang": "en-us",
+      "speed": 1.15,
+      "pitch": 5.0
+    },
+    "NAPO": {
+      "engine": "kokoro",
+      "voice": "bm_george",
+      "lang": "en-gb",
+      "speed": 1.0,
+      "pitch": -1.0
+    },
+    "OWNER": {
+      "engine": "kokoro",
+      "voice": "bm_fable",
+      "lang": "en-gb",
+      "speed": 1.05,
+      "pitch": 1.0
+    },
+    "HIDDEN": {
+      "engine": "kokoro",
+      "voice": "am_echo",
+      "lang": "en-us",
+      "speed": 1.1,
+      "pitch": 3.0,
+      "fx": "lowpass=f=2400,aecho=0.8:0.6:18:0.35"
+    }
+  },
+  "lines": [
+    {
+      "id": "hook1",
+      "who": "N",
+      "text": "This chess machine beat Napoleon.",
+      "gap": 0.12
+    },
+    {
+      "id": "hook2",
+      "who": "N",
+      "text": "And Napoleon tried to cheat!",
+      "gap": 0.35
+    },
+    {
+      "id": "vienna",
+      "who": "N",
+      "text": "Vienna, in the year eighteen-oh-nine.",
+      "gap": 0.12
+    },
+    {
+      "id": "turk",
+      "who": "N",
+      "text": "Everyone's talking about the Turk: a puppet in a turban, sitting on a cabinet full of gears,",
+      "gap": 0.08
+    },
+    {
+      "id": "wins",
+      "who": "N",
+      "text": "that plays chess. And beats everybody!",
+      "gap": 0.2
+    },
+    {
+      "id": "doors",
+      "who": "N",
+      "text": "Before every game, its owner opens the little doors: wheels, levers, gears. Nothing else.",
+      "gap": 0.15
+    },
+    {
+      "id": "owner",
+      "who": "OWNER",
+      "text": "Ladies and gentlemen, no tricks, no cheating!",
+      "gap": 0.25
+    },
+    {
+      "id": "napo",
+      "who": "N",
+      "text": "Napoleon sits down, makes a move... and the Turk answers.",
+      "gap": 0.15
+    },
+    {
+      "id": "cheat",
+      "who": "N",
+      "text": "So Napoleon makes an illegal move.",
+      "gap": 0.12
+    },
+    {
+      "id": "fix",
+      "who": "N",
+      "text": "The Turk picks up the piece... and puts it right back.",
+      "gap": 0.2
+    },
+    {
+      "id": "cheat2",
+      "who": "N",
+      "text": "Napoleon tries it again.",
+      "gap": 0.12
+    },
+    {
+      "id": "sweep",
+      "who": "N",
+      "text": "And the Turk, with one swipe, sweeps every piece off the board!",
+      "gap": 0.25
+    },
+    {
+      "id": "napoline",
+      "who": "NAPO",
+      "text": "Ha! This machine has more nerve than my generals!",
+      "gap": 0.3
+    },
+    {
+      "id": "reveal",
+      "who": "N",
+      "text": "See, the Turk wasn't a machine.",
+      "gap": 0.15
+    },
+    {
+      "id": "inside",
+      "who": "N",
+      "text": "Inside the cabinet was a man: a chess master, hidden among the gears, by the light of a candle.",
+      "gap": 0.15
+    },
+    {
+      "id": "slide",
+      "who": "N",
+      "text": "When they opened the doors, he slid along his seat so no one could see him. And he moved the Turk's arm with a lever.",
+      "gap": 0.2
+    },
+    {
+      "id": "hidden",
+      "who": "HIDDEN",
+      "text": "Ugh... how much longer? It's so hot in here...",
+      "gap": 0.3
+    },
+    {
+      "id": "pay1",
+      "who": "N",
+      "text": "Napoleon conquered half of Europe...",
+      "gap": 0.15
+    },
+    {
+      "id": "pay2",
+      "who": "N",
+      "text": "but lost a game of chess to a guy stuck inside a piece of furniture.",
+      "gap": 0.35
+    },
+    {
+      "id": "button",
+      "who": "N",
+      "text": "A very, very tight piece of furniture.",
+      "gap": 0.7
+    }
+  ]
+}

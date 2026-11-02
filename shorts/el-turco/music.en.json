@@ -1,0 +1,37 @@
+{
+  "bpm": 112,
+  "length": 59.82,
+  "sections": [
+    {
+      "style": "theme",
+      "from": 0.0,
+      "to": 30.27
+    },
+    {
+      "style": "stop",
+      "from": 30.27
+    },
+    {
+      "style": "jaunty",
+      "from": 32.25,
+      "to": 35.71
+    },
+    {
+      "style": "mystery",
+      "from": 35.71,
+      "to": 51.17
+    },
+    {
+      "style": "final",
+      "from": 51.17,
+      "to": 57.97
+    },
+    {
+      "style": "end",
+      "at": 57.97
+    }
+  ],
+  "comic": [
+    48.6
+  ]
+}

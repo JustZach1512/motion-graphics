@@ -35,3 +35,24 @@ Usa el kit de `shorts/` (ver `../README.md`). En esta carpeta solo está lo prop
 | `src/props.js` | Tablero y piezas 3D, el armario (puertas, cajón, engranajes que giran, asiento deslizante, palanca), vela, lámparas de araña, columnas, cortinas, silla y banderas. |
 | `src/sets.js` | Salón del palacio, fachada de Schönbrunn y la escena heroica de Napoleón. |
 | `src/shots.js` | Lista de planos y la partida de ajedrez, que es una función del tiempo: jugadas, la trampa, la devolución y el barrido con física. |
+
+## English version
+
+`script.en.json` + `music.en.json`; output `build/en/the-machine-that-beat-napoleon.mp4`.
+
+| Character | Voice |
+|---|---|
+| Narrator | Kokoro `am_fenrir` +5 semitones. Measured against the reference narrator: 197 Hz vs 203 Hz median pitch, 2.1× vs 2.2× range, 3.6 words/s on both, and the recogniser heard every word. A stock voice, not a clone. |
+| Napoleon | `bm_george` −1 (pompous Brit) |
+| The owner | `bm_fable` +1 |
+| The hidden man | `am_echo` +3, muffled |
+
+- **Title:** `Napoleon lost at chess to a machine… or so he thought ♟️`
+- **Description:**
+  > In 1809, Napoleon tried to cheat against "the Turk", the most famous chess machine in the world. He had no idea what was inside. #history #historyfacts #chess #napoleon #shorts
+
+```bash
+SHORT_LANG=en node tools/render.js el-turco el-turco/build/en/silent.mp4 4
+python3 tools/music.py el-turco/music.en.json el-turco/build/en
+python3 tools/mix.py el-turco/build/en/vo.wav el-turco/build/en/cues.json ../skills/sound-effects/sfx el-turco/build/en el-turco/build/en/music.wav el-turco/build/en/timings.json
+```

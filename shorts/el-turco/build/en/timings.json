@@ -1,0 +1,1170 @@
+{
+ "duration": 59.271,
+ "lines": [
+  {
+   "id": "hook1",
+   "who": "N",
+   "text": "This chess machine beat Napoleon.",
+   "start": 0.25,
+   "end": 1.742,
+   "words": [
+    {
+     "w": "This",
+     "start": 0.25,
+     "end": 0.39
+    },
+    {
+     "w": "chess",
+     "start": 0.41,
+     "end": 0.63
+    },
+    {
+     "w": "machine",
+     "start": 0.65,
+     "end": 0.95
+    },
+    {
+     "w": "beat",
+     "start": 0.97,
+     "end": 1.19
+    },
+    {
+     "w": "Napoleon.",
+     "start": 1.21,
+     "end": 1.692
+    }
+   ]
+  },
+  {
+   "id": "hook2",
+   "who": "N",
+   "text": "And Napoleon tried to cheat!",
+   "start": 1.862,
+   "end": 3.153,
+   "words": [
+    {
+     "w": "And",
+     "start": 1.912,
+     "end": 2.002
+    },
+    {
+     "w": "Napoleon",
+     "start": 2.022,
+     "end": 2.482
+    },
+    {
+     "w": "tried",
+     "start": 2.502,
+     "end": 2.722
+    },
+    {
+     "w": "to",
+     "start": 2.742,
+     "end": 2.802
+    },
+    {
+     "w": "cheat!",
+     "start": 2.822,
+     "end": 3.103
+    }
+   ]
+  },
+  {
+   "id": "vienna",
+   "who": "N",
+   "text": "Vienna, in the year eighteen-oh-nine.",
+   "start": 3.503,
+   "end": 4.95,
+   "words": [
+    {
+     "w": "Vienna,",
+     "start": 3.503,
+     "end": 3.883
+    },
+    {
+     "w": "in",
+     "start": 3.903,
+     "end": 3.963
+    },
+    {
+     "w": "the",
+     "start": 3.983,
+     "end": 4.043
+    },
+    {
+     "w": "year",
+     "start": 4.063,
+     "end": 4.183
+    },
+    {
+     "w": "eighteen-oh-nine.",
+     "start": 4.203,
+     "end": 4.901
+    }
+   ]
+  },
+  {
+   "id": "turk",
+   "who": "N",
+   "text": "Everyone's talking about the Turk: a puppet in a turban, sitting on a cabinet full of gears,",
+   "start": 5.07,
+   "end": 9.787,
+   "words": [
+    {
+     "w": "Everyone's",
+     "start": 5.07,
+     "end": 5.61
+    },
+    {
+     "w": "talking",
+     "start": 5.63,
+     "end": 5.93
+    },
+    {
+     "w": "about",
+     "start": 5.95,
+     "end": 6.09
+    },
+    {
+     "w": "the",
+     "start": 6.11,
+     "end": 6.25
+    },
+    {
+     "w": "Turk:",
+     "start": 6.27,
+     "end": 6.81
+    },
+    {
+     "w": "a",
+     "start": 6.83,
+     "end": 6.97
+    },
+    {
+     "w": "puppet",
+     "start": 6.99,
+     "end": 7.29
+    },
+    {
+     "w": "in",
+     "start": 7.31,
+     "end": 7.45
+    },
+    {
+     "w": "a",
+     "start": 7.47,
+     "end": 7.53
+    },
+    {
+     "w": "turban,",
+     "start": 7.55,
+     "end": 8.09
+    },
+    {
+     "w": "sitting",
+     "start": 8.11,
+     "end": 8.33
+    },
+    {
+     "w": "on",
+     "start": 8.35,
+     "end": 8.49
+    },
+    {
+     "w": "a",
+     "start": 8.51,
+     "end": 8.57
+    },
+    {
+     "w": "cabinet",
+     "start": 8.59,
+     "end": 8.97
+    },
+    {
+     "w": "full",
+     "start": 8.99,
+     "end": 9.13
+    },
+    {
+     "w": "of",
+     "start": 9.15,
+     "end": 9.21
+    },
+    {
+     "w": "gears,",
+     "start": 9.23,
+     "end": 9.737
+    }
+   ]
+  },
+  {
+   "id": "wins",
+   "who": "N",
+   "text": "that plays chess. And beats everybody!",
+   "start": 9.867,
+   "end": 11.786,
+   "words": [
+    {
+     "w": "that",
+     "start": 9.867,
+     "end": 10.087
+    },
+    {
+     "w": "plays",
+     "start": 10.107,
+     "end": 10.407
+    },
+    {
+     "w": "chess.",
+     "start": 10.427,
+     "end": 10.647
+    },
+    {
+     "w": "And",
+     "start": 10.667,
+     "end": 10.807
+    },
+    {
+     "w": "beats",
+     "start": 10.827,
+     "end": 11.207
+    },
+    {
+     "w": "everybody!",
+     "start": 11.227,
+     "end": 11.736
+    }
+   ]
+  },
+  {
+   "id": "doors",
+   "who": "N",
+   "text": "Before every game, its owner opens the little doors: wheels, levers, gears. Nothing else.",
+   "start": 11.986,
+   "end": 17.049,
+   "words": [
+    {
+     "w": "Before",
+     "start": 11.986,
+     "end": 12.286
+    },
+    {
+     "w": "every",
+     "start": 12.306,
+     "end": 12.526
+    },
+    {
+     "w": "game,",
+     "start": 12.546,
+     "end": 12.846
+    },
+    {
+     "w": "its",
+     "start": 12.866,
+     "end": 13.006
+    },
+    {
+     "w": "owner",
+     "start": 13.026,
+     "end": 13.406
+    },
+    {
+     "w": "opens",
+     "start": 13.426,
+     "end": 13.806
+    },
+    {
+     "w": "the",
+     "start": 13.826,
+     "end": 13.886
+    },
+    {
+     "w": "little",
+     "start": 13.906,
+     "end": 14.126
+    },
+    {
+     "w": "doors:",
+     "start": 14.146,
+     "end": 14.766
+    },
+    {
+     "w": "wheels,",
+     "start": 14.786,
+     "end": 15.326
+    },
+    {
+     "w": "levers,",
+     "start": 15.346,
+     "end": 15.886
+    },
+    {
+     "w": "gears.",
+     "start": 15.906,
+     "end": 16.366
+    },
+    {
+     "w": "Nothing",
+     "start": 16.386,
+     "end": 16.686
+    },
+    {
+     "w": "else.",
+     "start": 16.706,
+     "end": 16.999
+    }
+   ]
+  },
+  {
+   "id": "owner",
+   "who": "OWNER",
+   "text": "Ladies and gentlemen, no tricks, no cheating!",
+   "start": 17.199,
+   "end": 19.819,
+   "words": [
+    {
+     "w": "Ladies",
+     "start": 17.199,
+     "end": 17.659
+    },
+    {
+     "w": "and",
+     "start": 17.679,
+     "end": 17.739
+    },
+    {
+     "w": "gentlemen,",
+     "start": 17.759,
+     "end": 18.379
+    },
+    {
+     "w": "no",
+     "start": 18.399,
+     "end": 18.619
+    },
+    {
+     "w": "tricks,",
+     "start": 18.639,
+     "end": 19.099
+    },
+    {
+     "w": "no",
+     "start": 19.119,
+     "end": 19.259
+    },
+    {
+     "w": "cheating!",
+     "start": 19.279,
+     "end": 19.769
+    }
+   ]
+  },
+  {
+   "id": "napo",
+   "who": "N",
+   "text": "Napoleon sits down, makes a move... and the Turk answers.",
+   "start": 20.069,
+   "end": 23.144,
+   "words": [
+    {
+     "w": "Napoleon",
+     "start": 20.069,
+     "end": 20.689
+    },
+    {
+     "w": "sits",
+     "start": 20.709,
+     "end": 20.929
+    },
+    {
+     "w": "down,",
+     "start": 20.949,
+     "end": 21.249
+    },
+    {
+     "w": "makes",
+     "start": 21.269,
+     "end": 21.489
+    },
+    {
+     "w": "a",
+     "start": 21.509,
+     "end": 21.569
+    },
+    {
+     "w": "move...",
+     "start": 21.589,
+     "end": 21.889
+    },
+    {
+     "w": "and",
+     "start": 21.909,
+     "end": 22.049
+    },
+    {
+     "w": "the",
+     "start": 22.069,
+     "end": 22.209
+    },
+    {
+     "w": "Turk",
+     "start": 22.229,
+     "end": 22.609
+    },
+    {
+     "w": "answers.",
+     "start": 22.629,
+     "end": 23.094
+    }
+   ]
+  },
+  {
+   "id": "cheat",
+   "who": "N",
+   "text": "So Napoleon makes an illegal move.",
+   "start": 23.294,
+   "end": 25.113,
+   "words": [
+    {
+     "w": "So",
+     "start": 23.294,
+     "end": 23.514
+    },
+    {
+     "w": "Napoleon",
+     "start": 23.534,
+     "end": 23.994
+    },
+    {
+     "w": "makes",
+     "start": 24.014,
+     "end": 24.154
+    },
+    {
+     "w": "an",
+     "start": 24.174,
+     "end": 24.314
+    },
+    {
+     "w": "illegal",
+     "start": 24.334,
+     "end": 24.714
+    },
+    {
+     "w": "move.",
+     "start": 24.734,
+     "end": 25.062
+    }
+   ]
+  },
+  {
+   "id": "fix",
+   "who": "N",
+   "text": "The Turk picks up the piece... and puts it right back.",
+   "start": 25.233,
+   "end": 27.533,
+   "words": [
+    {
+     "w": "The",
+     "start": 25.233,
+     "end": 25.293
+    },
+    {
+     "w": "Turk",
+     "start": 25.313,
+     "end": 25.693
+    },
+    {
+     "w": "picks",
+     "start": 25.713,
+     "end": 25.933
+    },
+    {
+     "w": "up",
+     "start": 25.953,
+     "end": 26.013
+    },
+    {
+     "w": "the",
+     "start": 26.033,
+     "end": 26.093
+    },
+    {
+     "w": "piece...",
+     "start": 26.113,
+     "end": 26.413
+    },
+    {
+     "w": "and",
+     "start": 26.433,
+     "end": 26.573
+    },
+    {
+     "w": "puts",
+     "start": 26.593,
+     "end": 26.813
+    },
+    {
+     "w": "it",
+     "start": 26.833,
+     "end": 26.973
+    },
+    {
+     "w": "right",
+     "start": 26.993,
+     "end": 27.133
+    },
+    {
+     "w": "back.",
+     "start": 27.153,
+     "end": 27.483
+    }
+   ]
+  },
+  {
+   "id": "cheat2",
+   "who": "N",
+   "text": "Napoleon tries it again.",
+   "start": 27.733,
+   "end": 28.914,
+   "words": [
+    {
+     "w": "Napoleon",
+     "start": 27.813,
+     "end": 28.273
+    },
+    {
+     "w": "tries",
+     "start": 28.293,
+     "end": 28.513
+    },
+    {
+     "w": "it",
+     "start": 28.533,
+     "end": 28.593
+    },
+    {
+     "w": "again.",
+     "start": 28.613,
+     "end": 28.864
+    }
+   ]
+  },
+  {
+   "id": "sweep",
+   "who": "N",
+   "text": "And the Turk, with one swipe, sweeps every piece off the board!",
+   "start": 29.034,
+   "end": 31.991,
+   "words": [
+    {
+     "w": "And",
+     "start": 29.084,
+     "end": 29.124
+    },
+    {
+     "w": "the",
+     "start": 29.144,
+     "end": 29.184
+    },
+    {
+     "w": "Turk,",
+     "start": 29.204,
+     "end": 29.574
+    },
+    {
+     "w": "with",
+     "start": 29.594,
+     "end": 29.734
+    },
+    {
+     "w": "one",
+     "start": 29.754,
+     "end": 29.894
+    },
+    {
+     "w": "swipe,",
+     "start": 29.914,
+     "end": 30.294
+    },
+    {
+     "w": "sweeps",
+     "start": 30.314,
+     "end": 30.774
+    },
+    {
+     "w": "every",
+     "start": 30.794,
+     "end": 30.934
+    },
+    {
+     "w": "piece",
+     "start": 30.954,
+     "end": 31.254
+    },
+    {
+     "w": "off",
+     "start": 31.274,
+     "end": 31.414
+    },
+    {
+     "w": "the",
+     "start": 31.434,
+     "end": 31.494
+    },
+    {
+     "w": "board!",
+     "start": 31.514,
+     "end": 31.941
+    }
+   ]
+  },
+  {
+   "id": "napoline",
+   "who": "NAPO",
+   "text": "Ha! This machine has more nerve than my generals!",
+   "start": 32.241,
+   "end": 35.512,
+   "words": [
+    {
+     "w": "Ha!",
+     "start": 32.241,
+     "end": 32.701
+    },
+    {
+     "w": "This",
+     "start": 32.721,
+     "end": 32.861
+    },
+    {
+     "w": "machine",
+     "start": 32.881,
+     "end": 33.341
+    },
+    {
+     "w": "has",
+     "start": 33.361,
+     "end": 33.581
+    },
+    {
+     "w": "more",
+     "start": 33.601,
+     "end": 33.821
+    },
+    {
+     "w": "nerve",
+     "start": 33.841,
+     "end": 34.301
+    },
+    {
+     "w": "than",
+     "start": 34.321,
+     "end": 34.541
+    },
+    {
+     "w": "my",
+     "start": 34.561,
+     "end": 34.701
+    },
+    {
+     "w": "generals!",
+     "start": 34.721,
+     "end": 35.462
+    }
+   ]
+  },
+  {
+   "id": "reveal",
+   "who": "N",
+   "text": "See, the Turk wasn't a machine.",
+   "start": 35.812,
+   "end": 37.087,
+   "words": [
+    {
+     "w": "See,",
+     "start": 35.812,
+     "end": 36.032
+    },
+    {
+     "w": "the",
+     "start": 36.052,
+     "end": 36.112
+    },
+    {
+     "w": "Turk",
+     "start": 36.132,
+     "end": 36.352
+    },
+    {
+     "w": "wasn't",
+     "start": 36.372,
+     "end": 36.592
+    },
+    {
+     "w": "a",
+     "start": 36.612,
+     "end": 36.672
+    },
+    {
+     "w": "machine.",
+     "start": 36.692,
+     "end": 37.037
+    }
+   ]
+  },
+  {
+   "id": "inside",
+   "who": "N",
+   "text": "Inside the cabinet was a man: a chess master, hidden among the gears, by the light of a candle.",
+   "start": 37.237,
+   "end": 42.295,
+   "words": [
+    {
+     "w": "Inside",
+     "start": 37.237,
+     "end": 37.617
+    },
+    {
+     "w": "the",
+     "start": 37.637,
+     "end": 37.697
+    },
+    {
+     "w": "cabinet",
+     "start": 37.717,
+     "end": 38.177
+    },
+    {
+     "w": "was",
+     "start": 38.197,
+     "end": 38.417
+    },
+    {
+     "w": "a",
+     "start": 38.437,
+     "end": 38.497
+    },
+    {
+     "w": "man:",
+     "start": 38.517,
+     "end": 38.977
+    },
+    {
+     "w": "a",
+     "start": 38.997,
+     "end": 39.137
+    },
+    {
+     "w": "chess",
+     "start": 39.157,
+     "end": 39.537
+    },
+    {
+     "w": "master,",
+     "start": 39.557,
+     "end": 40.017
+    },
+    {
+     "w": "hidden",
+     "start": 40.037,
+     "end": 40.337
+    },
+    {
+     "w": "among",
+     "start": 40.357,
+     "end": 40.577
+    },
+    {
+     "w": "the",
+     "start": 40.597,
+     "end": 40.737
+    },
+    {
+     "w": "gears,",
+     "start": 40.757,
+     "end": 41.137
+    },
+    {
+     "w": "by",
+     "start": 41.157,
+     "end": 41.297
+    },
+    {
+     "w": "the",
+     "start": 41.317,
+     "end": 41.377
+    },
+    {
+     "w": "light",
+     "start": 41.397,
+     "end": 41.617
+    },
+    {
+     "w": "of",
+     "start": 41.637,
+     "end": 41.697
+    },
+    {
+     "w": "a",
+     "start": 41.717,
+     "end": 41.777
+    },
+    {
+     "w": "candle.",
+     "start": 41.797,
+     "end": 42.245
+    }
+   ]
+  },
+  {
+   "id": "slide",
+   "who": "N",
+   "text": "When they opened the doors, he slid along his seat so no one could see him. And he moved the Turk's arm with a lever.",
+   "start": 42.445,
+   "end": 48.355,
+   "words": [
+    {
+     "w": "When",
+     "start": 42.445,
+     "end": 42.585
+    },
+    {
+     "w": "they",
+     "start": 42.605,
+     "end": 42.745
+    },
+    {
+     "w": "opened",
+     "start": 42.765,
+     "end": 43.065
+    },
+    {
+     "w": "the",
+     "start": 43.085,
+     "end": 43.145
+    },
+    {
+     "w": "doors,",
+     "start": 43.165,
+     "end": 43.465
+    },
+    {
+     "w": "he",
+     "start": 43.485,
+     "end": 43.625
+    },
+    {
+     "w": "slid",
+     "start": 43.645,
+     "end": 44.025
+    },
+    {
+     "w": "along",
+     "start": 44.045,
+     "end": 44.345
+    },
+    {
+     "w": "his",
+     "start": 44.365,
+     "end": 44.505
+    },
+    {
+     "w": "seat",
+     "start": 44.525,
+     "end": 44.905
+    },
+    {
+     "w": "so",
+     "start": 44.925,
+     "end": 45.145
+    },
+    {
+     "w": "no",
+     "start": 45.165,
+     "end": 45.305
+    },
+    {
+     "w": "one",
+     "start": 45.325,
+     "end": 45.465
+    },
+    {
+     "w": "could",
+     "start": 45.485,
+     "end": 45.705
+    },
+    {
+     "w": "see",
+     "start": 45.725,
+     "end": 45.945
+    },
+    {
+     "w": "him.",
+     "start": 45.965,
+     "end": 46.345
+    },
+    {
+     "w": "And",
+     "start": 46.365,
+     "end": 46.505
+    },
+    {
+     "w": "he",
+     "start": 46.525,
+     "end": 46.585
+    },
+    {
+     "w": "moved",
+     "start": 46.605,
+     "end": 46.825
+    },
+    {
+     "w": "the",
+     "start": 46.845,
+     "end": 46.985
+    },
+    {
+     "w": "Turk's",
+     "start": 47.005,
+     "end": 47.465
+    },
+    {
+     "w": "arm",
+     "start": 47.485,
+     "end": 47.705
+    },
+    {
+     "w": "with",
+     "start": 47.725,
+     "end": 47.785
+    },
+    {
+     "w": "a",
+     "start": 47.805,
+     "end": 47.865
+    },
+    {
+     "w": "lever.",
+     "start": 47.885,
+     "end": 48.305
+    }
+   ]
+  },
+  {
+   "id": "hidden",
+   "who": "HIDDEN",
+   "text": "Ugh... how much longer? It's so hot in here...",
+   "start": 48.555,
+   "end": 50.868,
+   "words": [
+    {
+     "w": "Ugh...",
+     "start": 48.555,
+     "end": 49.015
+    },
+    {
+     "w": "how",
+     "start": 49.035,
+     "end": 49.175
+    },
+    {
+     "w": "much",
+     "start": 49.195,
+     "end": 49.335
+    },
+    {
+     "w": "longer?",
+     "start": 49.355,
+     "end": 49.735
+    },
+    {
+     "w": "It's",
+     "start": 49.755,
+     "end": 49.975
+    },
+    {
+     "w": "so",
+     "start": 49.995,
+     "end": 50.135
+    },
+    {
+     "w": "hot",
+     "start": 50.155,
+     "end": 50.375
+    },
+    {
+     "w": "in",
+     "start": 50.395,
+     "end": 50.535
+    },
+    {
+     "w": "here...",
+     "start": 50.555,
+     "end": 50.818
+    }
+   ]
+  },
+  {
+   "id": "pay1",
+   "who": "N",
+   "text": "Napoleon conquered half of Europe...",
+   "start": 51.168,
+   "end": 52.8,
+   "words": [
+    {
+     "w": "Napoleon",
+     "start": 51.168,
+     "end": 51.708
+    },
+    {
+     "w": "conquered",
+     "start": 51.728,
+     "end": 52.108
+    },
+    {
+     "w": "half",
+     "start": 52.128,
+     "end": 52.348
+    },
+    {
+     "w": "of",
+     "start": 52.368,
+     "end": 52.428
+    },
+    {
+     "w": "Europe...",
+     "start": 52.448,
+     "end": 52.75
+    }
+   ]
+  },
+  {
+   "id": "pay2",
+   "who": "N",
+   "text": "but lost a game of chess to a guy stuck inside a piece of furniture.",
+   "start": 52.95,
+   "end": 56.44,
+   "words": [
+    {
+     "w": "but",
+     "start": 53.0,
+     "end": 53.17
+    },
+    {
+     "w": "lost",
+     "start": 53.19,
+     "end": 53.41
+    },
+    {
+     "w": "a",
+     "start": 53.43,
+     "end": 53.49
+    },
+    {
+     "w": "game",
+     "start": 53.51,
+     "end": 53.73
+    },
+    {
+     "w": "of",
+     "start": 53.75,
+     "end": 53.81
+    },
+    {
+     "w": "chess",
+     "start": 53.83,
+     "end": 54.13
+    },
+    {
+     "w": "to",
+     "start": 54.15,
+     "end": 54.29
+    },
+    {
+     "w": "a",
+     "start": 54.31,
+     "end": 54.45
+    },
+    {
+     "w": "guy",
+     "start": 54.47,
+     "end": 54.69
+    },
+    {
+     "w": "stuck",
+     "start": 54.71,
+     "end": 55.09
+    },
+    {
+     "w": "inside",
+     "start": 55.11,
+     "end": 55.41
+    },
+    {
+     "w": "a",
+     "start": 55.43,
+     "end": 55.49
+    },
+    {
+     "w": "piece",
+     "start": 55.51,
+     "end": 55.73
+    },
+    {
+     "w": "of",
+     "start": 55.75,
+     "end": 55.81
+    },
+    {
+     "w": "furniture.",
+     "start": 55.83,
+     "end": 56.39
+    }
+   ]
+  },
+  {
+   "id": "button",
+   "who": "N",
+   "text": "A very, very tight piece of furniture.",
+   "start": 56.79,
+   "end": 58.571,
+   "words": [
+    {
+     "w": "A",
+     "start": 56.79,
+     "end": 56.93
+    },
+    {
+     "w": "very,",
+     "start": 56.95,
+     "end": 57.17
+    },
+    {
+     "w": "very",
+     "start": 57.19,
+     "end": 57.41
+    },
+    {
+     "w": "tight",
+     "start": 57.43,
+     "end": 57.73
+    },
+    {
+     "w": "piece",
+     "start": 57.75,
+     "end": 57.89
+    },
+    {
+     "w": "of",
+     "start": 57.91,
+     "end": 58.05
+    },
+    {
+     "w": "furniture.",
+     "start": 58.07,
+     "end": 58.521
+    }
+   ]
+  }
+ ]
+}

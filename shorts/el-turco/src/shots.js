@@ -8,7 +8,10 @@ export const LANG = window.LANG || 'es';
 const LN = id => TL.lines.find(l => l.id === id);
 const Ls = id => LN(id).start, Le = id => LN(id).end;
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, '');
-const ANCHORS = { en: {} };          // filled in when the English version is made
+const ANCHORS = {                     // shots are written against the Spanish words; other languages map each anchor
+  en: { 'napo:mueve': 'makes', 'napo:contesta': 'answers', 'cheat:ilegal': 'illegal', 'fix:pieza': 'piece', 'fix:devuelve': 'puts', 'sweep:barre': 'sweeps',
+    'wins:gana': 'beats', 'doors:ruedas': 'wheels', 'slide:movia': 'moved', 'pay2:senor': 'guy', 'button:apretado': 'tight' },
+};
 export const TXT = { es: { title: ['VIENA', '1809'], illegal: '¡ILEGAL!' }, en: { title: ['VIENNA', '1809'], illegal: 'ILLEGAL!' } }[LANG];
 function Wt(id, word, n = 0, end = false) {
   if (LANG !== 'es') { const m = ANCHORS[LANG][`${id}:${word}:${n}`] ?? ANCHORS[LANG][`${id}:${word}`]; if (m === undefined) throw new Error(`no ${LANG} anchor for ${id}:${word}`); [word, n] = Array.isArray(m) ? m : [m, n]; }

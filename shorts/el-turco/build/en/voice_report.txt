@@ -1,0 +1,20 @@
+hook1    N       1.49s  heard 5/5 words  | This chess machine beat Napoleon.
+hook2    N       1.29s  heard 4/5 words  | Napoleon tried to cheat.
+vienna   N       1.45s  heard 4/5 words  | Vienna in the year 1809.
+turk     N       4.72s  heard 17/17 words  | Everyone's talking about the Turk, a puppet in a turban sitting on a cabinet full of gears.
+wins     N       1.92s  heard 6/6 words  | That plays chess and beats everybody.
+doors    N       5.06s  heard 14/14 words  | Before every game its owner opens the little doors, wheels, levers, gears, nothing else.
+owner    OWNER   2.62s  heard 7/7 words  | Ladies and gentlemen, no tricks no cheating.
+napo     N       3.08s  heard 10/10 words  | Napoleon sits down makes a move, and the Turk answers.
+cheat    N       1.82s  heard 6/6 words  | So Napoleon makes an illegal move.
+fix      N       2.30s  heard 11/11 words  | The Turk picks up the piece and puts it right back.
+cheat2   N       1.18s  heard 4/4 words  | Napoleon tries it again.
+sweep    N       2.96s  heard 11/12 words  | The Turk with one swipe sweeps every piece off the board.
+napoline NAPO    3.27s  heard 9/9 words  | Ha, this machine has more nerve than my general's.
+reveal   N       1.27s  heard 6/6 words  | See the Turk wasn't a machine.
+inside   N       5.06s  heard 19/19 words  | Inside the cabinet was a man, a chess master hidden among the gears by the light of a candle.
+slide    N       5.91s  heard 25/25 words  | When they opened the doors he slid along his seat so no one could see him, and he moved the Turk's arm with a lever.
+hidden   HIDDEN  2.31s  heard 8/9 words  | Uggs, how much longer? It's so hot in here.
+pay1     N       1.63s  heard 5/5 words  | Napoleon conquered half of Europe.
+pay2     N       3.49s  heard 14/15 words  | Lost a game of chess to a guy stuck inside a piece of furniture.
+button   N       1.78s  heard 7/7 words  | A very very tight piece of furniture.
